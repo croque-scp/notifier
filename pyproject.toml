@@ -17,7 +17,6 @@ black = "^21.7b0"
 [tool.black]
 line-length = 79
 target-version = ['py38']
-skip-string-normalization = true
 include = '\.pyi?$'
 
 [build-system]
