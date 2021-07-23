@@ -23,6 +23,14 @@ class Connection:
 
     def listpages(self, wiki, **kwargs):
         """Execute a ListPages search against a site."""
+        yield from self.paginated_module(
+            wiki,
+            "list/ListPagesModule",
+            index_key="offset",
+            index_key_increment=250,
+            perPage=250,
+            **kwargs,
+        )
 
     def paginated_module(
         self, wiki, module, index_key, index_key_increment=1, **kwargs
@@ -37,7 +45,7 @@ class Connection:
         :param index_key_increment: The amount by which to increment the
         index key for each page.
         """
-        first_page = self.module(module, **kwargs)
+        first_page = self.module(wiki, module, **kwargs)
         yield first_page
         page_selectors = BeautifulSoup(first_page["body"], "html.parser").find(
             class_="pager"
@@ -50,7 +58,7 @@ class Connection:
         final_page_index = int(final_page_selector.a.string)
         for page_index in range(2, final_page_index + 1):
             kwargs.update({index_key: page_index * index_key_increment})
-            yield self._module(module, **kwargs)
+            yield self.module(wiki, module, **kwargs)
 
     def post(self, url, **kwargs):
         """Make a POST request."""
