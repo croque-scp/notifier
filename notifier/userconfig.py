@@ -6,6 +6,7 @@ from notifier.wikiconnection import Connection
 listpages_body = '''
 slug = "%%fullname%%"
 username = "%%created_by_unix%%"
+user_id = "%%created_by_id%%"
 frequency = "%%form_raw{frequency}%%"
 language = "%%form_raw{language}%%"
 subscriptions = """
