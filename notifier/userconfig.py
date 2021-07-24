@@ -2,7 +2,7 @@ from bs4 import BeautifulSoup
 import tomlkit
 from notifier.wikiconnection import Connection
 
-# For ease of parsing, configurations are downloaded in TOML format
+# For ease of parsing, configurations are coerced to TOML format
 listpages_body = '''
 slug = "%%fullname%%"
 username = "%%created_by_unix%%"
