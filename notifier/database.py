@@ -5,8 +5,8 @@ sqlite3.enable_callback_tracebacks(True)
 
 
 class SqliteDriver:
-    def __init__(self):
-        self.conn = sqlite3.connect("./notifications.db")
+    def __init__(self, location=":memory:"):
+        self.conn = sqlite3.connect(location)
         self.conn.row_factory = sqlite3.Row
         self.conn.execute(queries["enable_foreign_keys"])
         self.create_tables()

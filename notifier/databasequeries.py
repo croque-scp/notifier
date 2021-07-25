@@ -44,7 +44,7 @@ queries = {
             LEFT JOIN
             threads ON posts.thread_id = threads.id
             LEFT JOIN
-            wikis ON thread.wiki_id = wiki.id
+            wikis ON threads.wiki_id = wikis.id
         WHERE
             (
                 -- Get posts in threads subscribed to
@@ -81,12 +81,12 @@ queries = {
             wikis.id, wikis.secure
         FROM
             posts
-            RIGHT JOIN
-            posts AS parent_posts ON posts.parent_post_id = parent_posts.id
             LEFT JOIN
             threads ON posts.thread_id = threads.id
             LEFT JOIN
-            wikis ON thread.wiki_id = wiki.id
+            wikis ON threads.wiki_id = wikis.id
+            LEFT JOIN
+            posts AS parent_posts ON posts.parent_post_id = parent_posts.id
         WHERE
             (
                 -- Get replies to posts subscribed to
@@ -103,7 +103,7 @@ queries = {
                 WHERE user_id = :user_id AND sub = -1
             )
             -- Remove posts not posted in the last time period
-            AND NOT posted_datetime < :search_datetime
+            AND posts.posted_timestamp >= :search_timestamp
             -- Remove posts made by the user
             AND posts.user_id <> :user_id
             -- Remove posts the user already responded to
