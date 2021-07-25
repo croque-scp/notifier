@@ -34,22 +34,22 @@ def sample_database():
         ("p-42", "t-4", None, 65, "Post 4 2", "3", "BUsername"),
     ]
     db.conn.executemany(
-        "INSERT INTO user_configs VALUES (?, ?, ?, ?)", sample_user_configs
+        "INSERT INTO user_config VALUES (?, ?, ?, ?)", sample_user_configs
     )
     db.conn.executemany(
-        "INSERT INTO manual_subs VALUES (?, ?, ?, ?)", sample_manual_subs
+        "INSERT INTO manual_sub VALUES (?, ?, ?, ?)", sample_manual_subs
     )
-    db.conn.executemany("INSERT INTO wikis VALUES (?, ?)", sample_wikis)
-    db.conn.executemany("INSERT INTO threads VALUES (?, ?, ?)", sample_threads)
+    db.conn.executemany("INSERT INTO wiki VALUES (?, ?)", sample_wikis)
+    db.conn.executemany("INSERT INTO thread VALUES (?, ?, ?)", sample_threads)
     db.conn.executemany(
-        "INSERT INTO posts VALUES (?, ?, ?, ?, ? ,? ,?)", sample_posts
+        "INSERT INTO post VALUES (?, ?, ?, ?, ? ,? ,?)", sample_posts
     )
     db.conn.commit()
     return db
 
 
 def ids(posts):
-    return set(p["posts.id"] for p in posts)
+    return set(p["post.id"] for p in posts)
 
 
 @pytest.fixture(scope="class")

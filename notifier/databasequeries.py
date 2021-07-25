@@ -1,33 +1,32 @@
 queries = {
     "enable_foreign_keys": "PRAGMA foreign_keys = ON",
     "create_tables_script": """
-        CREATE TABLE IF NOT EXISTS user_configs (
+        CREATE TABLE IF NOT EXISTS user_config (
             user_id TEXT NOT NULL PRIMARY KEY,
             username TEXT NOT NULL,
             frequency TEXT NOT NULL,
             language TEXT NOT NULL
         );
-        CREATE TABLE manual_subs (
-            user_id TEXT NOT NULL PRIMARY KEY
-                REFERENCES user_configs (user_id),
+        CREATE TABLE manual_sub (
+            user_id TEXT NOT NULL REFERENCES user_config (user_id),
             thread_id TEXT NOT NULL,
             post_id TEXT,
             sub INTEGER NOT NULL CHECK (sub IN (-1, 1)),
             UNIQUE (user_id, thread_id, post_id, sub)
         );
-        CREATE TABLE IF NOT EXISTS wikis (
+        CREATE TABLE IF NOT EXISTS wiki (
             id TEXT NOT NULL PRIMARY KEY,
             secure INTEGER NOT NULL CHECK (secure IN (0, 1))
         );
-        CREATE TABLE IF NOT EXISTS threads (
+        CREATE TABLE IF NOT EXISTS thread (
             id TEXT NOT NULL PRIMARY KEY,
             title TEXT NOT NULL,
-            wiki_id TEXT NOT NULL REFERENCES wikis (id)
+            wiki_id TEXT NOT NULL REFERENCES wiki (id)
         );
-        CREATE TABLE IF NOT EXISTS posts (
+        CREATE TABLE IF NOT EXISTS post (
             id TEXT NOT NULL PRIMARY KEY,
-            thread_id TEXT NOT NULL REFERENCES threads (id),
-            parent_post_id TEXT REFERENCES posts (id),
+            thread_id TEXT NOT NULL REFERENCES thread (id),
+            parent_post_id TEXT REFERENCES post (id),
             posted_timestamp INTEGER NOT NULL,
             title TEXT NOT NULL,
             user_id TEXT NOT NULL,
@@ -36,79 +35,79 @@ queries = {
     """,
     "get_posts_in_subscribed_threads": """
         SELECT
-            posts.title, posts.username, posts.posted_timestamp,
-            threads.title,
-            wikis.id, wikis.secure
+            post.title, post.username, post.posted_timestamp,
+            thread.title,
+            wiki.id, wiki.secure
         FROM
-            posts
+            post
             LEFT JOIN
-            threads ON posts.thread_id = threads.id
+            thread ON post.thread_id = thread.id
             LEFT JOIN
-            wikis ON threads.wiki_id = wikis.id
+            wiki ON thread.wiki_id = wiki.id
         WHERE
             (
                 -- Get posts in threads subscribed to
-                threads.id IN (
-                    SELECT thread_id FROM manual_subs
+                thread.id IN (
+                    SELECT thread_id FROM manual_sub
                     WHERE user_id = :user_id AND sub=1
                 )
                 -- Get posts in threads started by the user
-                OR threads.id IN (
-                    SELECT thread_id FROM posts
+                OR thread.id IN (
+                    SELECT thread_id FROM post
                     GROUP BY thread_id
                     HAVING MIN(posted_timestamp) AND user_id = :user_id
                 )
             )
             -- Remove posts in threads unsubscribed from
-            AND threads.id NOT IN (
-                SELECT thread_id FROM manual_subs
+            AND thread.id NOT IN (
+                SELECT thread_id FROM manual_sub
                 WHERE user_id = :user_id AND sub = -1
             )
             -- Remove posts not posted in the last time period
-            AND posts.posted_timestamp >= :search_timestamp
+            AND post.posted_timestamp >= :search_timestamp
             -- Remove posts made by the user
-            AND posts.user_id <> :user_id
+            AND post.user_id <> :user_id
             -- Remove posts the already responded to
-            AND posts.id NOT IN (
-                SELECT parent_post_id FROM posts WHERE user_id = :user_id
+            AND post.id NOT IN (
+                SELECT parent_post_id FROM post WHERE user_id = :user_id
             )
     """,
     "get_replies_to_subscribed_posts": """
         SELECT
-            posts.title, posts.username, posts.posted_timestamp,
-            parent_posts.title, parent_posts.posted_timestamp,
-            threads.title,
-            wikis.id, wikis.secure
+            post.title, post.username, post.posted_timestamp,
+            parent_post.title, parent_post.posted_timestamp,
+            thread.title,
+            wiki.id, wiki.secure
         FROM
-            posts
+            post
             LEFT JOIN
-            threads ON posts.thread_id = threads.id
+            thread ON post.thread_id = thread.id
             LEFT JOIN
-            wikis ON threads.wiki_id = wikis.id
+            wiki ON thread.wiki_id = wiki.id
             LEFT JOIN
-            posts AS parent_posts ON posts.parent_post_id = parent_posts.id
+            post AS parent_post ON post.parent_post_id = parent_post.id
         WHERE
             (
                 -- Get replies to posts subscribed to
-                parent_posts.id IN (
-                    SELECT post_id FROM manual_subs
+                parent_post.id IN (
+                    SELECT post_id FROM manual_sub
                     WHERE user_id = :user_id AND sub=1
                 )
                 -- Get replies to posts made by the user
-                OR parent_posts.user_id = :user_id
+                OR parent_post.user_id = :user_id
             )
             -- Remove replies to posts unsubscribed from
-            AND parent_posts.id NOT IN (
-                SELECT post_id FROM manual_subs
+            AND parent_post.id NOT IN (
+                SELECT post_id FROM manual_sub
                 WHERE user_id = :user_id AND sub = -1
             )
             -- Remove posts not posted in the last time period
-            AND posts.posted_timestamp >= :search_timestamp
+            AND post.posted_timestamp >= :search_timestamp
             -- Remove posts made by the user
-            AND posts.user_id <> :user_id
+            AND post.user_id <> :user_id
             -- Remove posts the user already responded to
-            AND posts.id NOT IN (
-                SELECT parent_post_id FROM posts WHERE user_id = :user_id
+            AND post.id NOT IN (
+                SELECT parent_post_id FROM post WHERE user_id = :user_id
             )
     """,
 }
