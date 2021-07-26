@@ -1,8 +1,14 @@
 from abc import ABC, abstractmethod
+from dataclasses import dataclass
+
 from apscheduler.triggers.cron import CronTrigger
 
+from notifier.database import DatabaseDriver
 
+
+@dataclass
 class ScheduledTask(ABC):
+    database: DatabaseDriver
     crontab = None
 
     @property

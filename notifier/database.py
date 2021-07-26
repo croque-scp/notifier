@@ -1,10 +1,16 @@
 import sqlite3
+from abc import ABC
+
 from .databasequeries import queries
 
 sqlite3.enable_callback_tracebacks(True)
 
 
-class SqliteDriver:
+class BaseDatabaseDriver(ABC):
+    pass
+
+
+class SqliteDriver(BaseDatabaseDriver):
     def __init__(self, location=":memory:"):
         self.conn = sqlite3.connect(location)
         self.conn.row_factory = sqlite3.Row

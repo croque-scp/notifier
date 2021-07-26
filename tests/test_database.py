@@ -1,10 +1,11 @@
 import pytest
-from notifier.database import SqliteDriver
+
+from notifier.database import DatabaseDriver
 
 
 @pytest.fixture(scope="module")
 def sample_database():
-    db = SqliteDriver()
+    db = DatabaseDriver()
     sample_user_configs = [("1", "MyUsername", "hourly", "en")]
     sample_manual_subs = [
         ("1", "t-1", None, 1),
