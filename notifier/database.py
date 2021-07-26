@@ -12,8 +12,7 @@ class SqliteDriver:
         self.create_tables()
 
     def create_tables(self):
-        c = self.conn.cursor()
-        c.executescript(queries["create_tables_script"])
+        self.conn.executescript(queries["create_tables_script"])
 
     def get_new_posts_for_user(self, user_id, search_timestamp):
         """Get new posts for the users with the given ID made since the
@@ -21,14 +20,13 @@ class SqliteDriver:
 
         Returns a dict containing the thread posts and the post replies.
         """
-        c = self.conn.cursor()
         # Get new posts in subscribed threads
-        thread_posts = c.execute(
+        thread_posts = self.conn.execute(
             queries["get_posts_in_subscribed_threads"],
             {"user_id": user_id, "search_timestamp": search_timestamp},
         ).fetchall()
         # Get new replies to subscribed posts
-        post_replies = c.execute(
+        post_replies = self.conn.execute(
             queries["get_replies_to_subscribed_posts"],
             {"user_id": user_id, "search_timestamp": search_timestamp},
         ).fetchall()
