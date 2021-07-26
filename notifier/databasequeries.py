@@ -18,6 +18,10 @@ queries = {
             id TEXT NOT NULL PRIMARY KEY,
             secure INTEGER NOT NULL CHECK (secure IN (0, 1))
         );
+        CREATE TABLE IF NOT EXISTS wiki_alias (
+            wiki_id TEXT NOT NULL REFERENCES wiki (id),
+            alias TEXT NOT NULL
+        );
         CREATE TABLE IF NOT EXISTS thread (
             id TEXT NOT NULL PRIMARY KEY,
             title TEXT NOT NULL,
