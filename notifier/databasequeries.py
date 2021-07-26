@@ -25,7 +25,7 @@ queries = {
         CREATE TABLE IF NOT EXISTS thread (
             id TEXT NOT NULL PRIMARY KEY,
             title TEXT NOT NULL,
-            wiki_id TEXT NOT NULL REFERENCES wiki (id)
+            wiki_id TEXT NOT NULL
         );
         CREATE TABLE IF NOT EXISTS post (
             id TEXT NOT NULL PRIMARY KEY,
