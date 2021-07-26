@@ -1,4 +1,6 @@
-from typing import TypedDict
+from typing import TypedDict, Union
+
+import requests
 import tomlkit
 
 
@@ -10,8 +12,16 @@ class LocalConfig(TypedDict):
     overrides_url: str
 
 
+class SupportedSiteConfig(TypedDict):
+    secure: Union[0, 1]
+    alts: list[str]
+
+
 def read_local_config(path: str) -> LocalConfig:
-    """Reads the local config file from the specified path."""
+    """Reads the local config file from the specified path.
+
+    Raises AssertionError if there is a problem.
+    """
     with open(path, "r") as config_file:
         config = tomlkit.parse(config_file.read())
     assert "wikidot_username" in config
@@ -22,6 +32,17 @@ def read_local_config(path: str) -> LocalConfig:
     return config
 
 
-def fetch_supported_sites():
-    """Fetch the list of supported sites from the configuration wiki."""
-    pass
+def fetch_supported_sites(
+    supported_sites_url: str,
+) -> dict[str, SupportedSiteConfig]:
+    """Fetch the list of supported sites from the configuration wiki.
+
+    Raises AssertionError if there is a problem, which must be handled.
+    """
+    sites = tomlkit.parse(requests.get(supported_sites_url))
+    assert isinstance(sites, dict)
+    for settings in sites.values():
+        assert settings["secure"] in (0, 1)
+        assert isinstance(settings["alts"], list)
+        assert all(isinstance(alt, str) for alt in settings["alts"])
+    return sites
