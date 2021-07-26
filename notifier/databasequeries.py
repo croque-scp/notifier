@@ -35,9 +35,14 @@ queries = {
     """,
     "get_posts_in_subscribed_threads": """
         SELECT
-            post.title, post.username, post.posted_timestamp,
-            thread.title,
-            wiki.id, wiki.secure
+            post.id AS id,
+            post.title AS title,
+            post.username AS username,
+            post.posted_timestamp AS posted_timestamp,
+            thread.id AS thread_id,
+            thread.title AS thread_title,
+            wiki.id AS wiki_id,
+            wiki.secure AS wiki_secure
         FROM
             post
             LEFT JOIN
@@ -47,37 +52,68 @@ queries = {
         WHERE
             (
                 -- Get posts in threads subscribed to
-                thread.id IN (
-                    SELECT thread_id FROM manual_sub
-                    WHERE user_id = :user_id AND sub=1
+                EXISTS (
+                    SELECT NULL FROM
+                        manual_sub
+                    WHERE
+                        manual_sub.user_id = :user_id
+                        AND manual_sub.thread_id = thread.id
+                        AND manual_sub.post_id IS NULL
+                        AND manual_sub.sub = 1
                 )
+
                 -- Get posts in threads started by the user
-                OR thread.id IN (
-                    SELECT thread_id FROM post
-                    GROUP BY thread_id
-                    HAVING MIN(posted_timestamp) AND user_id = :user_id
+                OR EXISTS (
+                    SELECT NULL FROM
+                        post AS first_post
+                    GROUP BY
+                        first_post.thread_id
+                    HAVING
+                        MIN(first_post.posted_timestamp)
+                        AND first_post.user_id = :user_id
+                        AND first_post.thread_id = post.thread_id
                 )
             )
+
             -- Remove posts in threads unsubscribed from
-            AND thread.id NOT IN (
-                SELECT thread_id FROM manual_sub
-                WHERE user_id = :user_id AND sub = -1
+            AND NOT EXISTS (
+                SELECT NULL FROM
+                    manual_sub
+                WHERE
+                    manual_sub.user_id = :user_id
+                    AND manual_sub.thread_id = thread.id
+                    AND manual_sub.post_id IS NULL
+                    AND manual_sub.sub = -1
             )
+
             -- Remove posts not posted in the last time period
             AND post.posted_timestamp >= :search_timestamp
+
             -- Remove posts made by the user
             AND post.user_id <> :user_id
-            -- Remove posts the already responded to
-            AND post.id NOT IN (
-                SELECT parent_post_id FROM post WHERE user_id = :user_id
+
+            -- Remove posts the user already responded to
+            AND NOT EXISTS (
+                SELECT NULL FROM
+                    post AS child_post
+                WHERE
+                    child_post.parent_post_id = post.id
+                    AND child_post.user_id = :user_id
             )
     """,
     "get_replies_to_subscribed_posts": """
         SELECT
-            post.title, post.username, post.posted_timestamp,
-            parent_post.title, parent_post.posted_timestamp,
-            thread.title,
-            wiki.id, wiki.secure
+            post.id AS id,
+            post.title AS title,
+            post.username AS username,
+            post.posted_timestamp AS posted_timestamp,
+            parent_post.id AS parent_post_id,
+            parent_post.title AS parent_title,
+            parent_post.posted_timestamp AS parent_posted_timestamp,
+            thread.id AS thread_id,
+            thread.title AS thread_title,
+            wiki.id AS wiki_id,
+            wiki.secure AS wiki_secure
         FROM
             post
             LEFT JOIN
@@ -89,25 +125,44 @@ queries = {
         WHERE
             (
                 -- Get replies to posts subscribed to
-                parent_post.id IN (
-                    SELECT post_id FROM manual_sub
-                    WHERE user_id = :user_id AND sub=1
+                EXISTS (
+                    SELECT NULL FROM
+                        manual_sub
+                    WHERE
+                        manual_sub.post_id = parent_post.id
+                        AND manual_sub.thread_id = thread.id
+                        AND manual_sub.user_id = :user_id
+                        AND manual_sub.sub = 1
                 )
+
                 -- Get replies to posts made by the user
                 OR parent_post.user_id = :user_id
             )
+
             -- Remove replies to posts unsubscribed from
-            AND parent_post.id NOT IN (
-                SELECT post_id FROM manual_sub
-                WHERE user_id = :user_id AND sub = -1
+            AND NOT EXISTS (
+                SELECT NULL FROM
+                    manual_sub
+                WHERE
+                    manual_sub.post_id = parent_post.id
+                    AND manual_sub.thread_id = thread.id
+                    AND manual_sub.user_id = :user_id
+                    AND manual_sub.sub = -1
             )
+
             -- Remove posts not posted in the last time period
             AND post.posted_timestamp >= :search_timestamp
+
             -- Remove posts made by the user
             AND post.user_id <> :user_id
+
             -- Remove posts the user already responded to
-            AND post.id NOT IN (
-                SELECT parent_post_id FROM post WHERE user_id = :user_id
+            AND NOT EXISTS (
+                SELECT NULL FROM
+                    post AS child_post
+                WHERE
+                    child_post.parent_post_id = post.id
+                    AND child_post.user_id = :user_id
             )
     """,
 }
