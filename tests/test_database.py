@@ -1,6 +1,6 @@
 import pytest
 
-from notifier.database import DatabaseDriver
+from notifier.database.driver import DatabaseDriver
 
 
 @pytest.fixture(scope="module")

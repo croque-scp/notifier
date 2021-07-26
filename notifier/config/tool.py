@@ -1,4 +1,4 @@
-from typing import TypedDict, Union
+from typing import Dict, List, Literal, TypedDict, Union
 
 import requests
 import tomlkit
@@ -13,8 +13,8 @@ class LocalConfig(TypedDict):
 
 
 class SupportedSiteConfig(TypedDict):
-    secure: Union[0, 1]
-    alts: list[str]
+    secure: Union[Literal[0], Literal[1]]
+    alts: List[str]
 
 
 def read_local_config(path: str) -> LocalConfig:
@@ -34,7 +34,7 @@ def read_local_config(path: str) -> LocalConfig:
 
 def fetch_supported_sites(
     supported_sites_url: str,
-) -> dict[str, SupportedSiteConfig]:
+) -> Dict[str, SupportedSiteConfig]:
     """Fetch the list of supported sites from the configuration wiki.
 
     Raises AssertionError if there is a problem, which must be handled.

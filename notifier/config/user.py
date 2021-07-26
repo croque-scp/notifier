@@ -1,4 +1,4 @@
-from typing import Tuple, TypedDict, Union
+from typing import List, Literal, Tuple, TypedDict, Union
 
 import tomlkit
 from bs4 import BeautifulSoup
@@ -23,7 +23,7 @@ unsubscriptions = """
 class Subscription(TypedDict):
     thread_id: str
     post_id: Union[str, None]
-    sub: Union[-1, 1]
+    sub: Union[Literal[-1], Literal[1]]
 
 
 class UserConfig(TypedDict):
@@ -31,8 +31,8 @@ class UserConfig(TypedDict):
     username: str
     frequency: str
     language: str
-    subscriptions: list[Subscription]
-    unsubscriptions: list[Subscription]
+    subscriptions: List[Subscription]
+    unsubscriptions: List[Subscription]
 
 
 def fetch_user_configs(database: DatabaseDriver, connection: Connection):
