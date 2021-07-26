@@ -1,6 +1,8 @@
 import sqlite3
 from abc import ABC
 
+from notifier.config.tool import SupportedSiteConfig
+
 from .databasequeries import queries
 
 sqlite3.enable_callback_tracebacks(True)
@@ -44,3 +46,24 @@ class SqliteDriver(BaseDatabaseDriver):
             if thread_post["id"] not in post_replies_ids
         ]
         return {"thread_posts": thread_posts, "post_replies": post_replies}
+
+    def store_supported_site(self, sites: dict[str, SupportedSiteConfig]):
+        """Stores a set of supported sites in the database, overwriting any
+        that are already present."""
+        # Destroy all existing wikis in preparation for overwrite
+        self.conn.executescript(queries["remove_all_wikis_script"])
+        # Add each new wiki
+        for wiki_id, wiki in sites.items():
+            self.conn.execute(
+                queries["add_wiki"],
+                {"wiki_id": wiki_id, "wiki_secure": wiki["secure"]},
+            )
+            for alt in wiki["alts"]:
+                self.conn.execute(
+                    queries["add_wiki_alias"],
+                    {"wiki_id": wiki_id, "alias": alt},
+                )
+        self.conn.commit()
+
+
+DatabaseDriver = SqliteDriver

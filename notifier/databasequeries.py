@@ -169,4 +169,20 @@ queries = {
                     AND child_post.user_id = :user_id
             )
     """,
+    "remove_all_wikis_script": """
+        DELETE FROM wiki_alias;
+        DELETE FROM wiki;
+    """,
+    "add_wiki": """
+        INSERT INTO
+            wiki (id, secure)
+        VALUES
+            (:wiki_id, :wiki_secure)
+    """,
+    "add_wiki_alias": """
+        INSERT INTO
+            wiki_alias (wiki_id, alias)
+        VALUES
+            (:wiki_id, :alias)
+    """,
 }
