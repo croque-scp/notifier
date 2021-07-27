@@ -1,5 +1,13 @@
+from typing import List
+
 import requests
 from bs4 import BeautifulSoup
+
+listpages_div_wrap = """
+[[div_ class="listpages-div-wrap"]]
+{}
+[[/div]]
+"""
 
 
 class Connection:
@@ -21,16 +29,28 @@ class Connection:
             raise RuntimeError(response.get("message") or response["status"])
         return response
 
-    def listpages(self, wiki, **kwargs):
-        """Execute a ListPages search against a site."""
-        yield from self.paginated_module(
-            wiki,
-            "list/ListPagesModule",
-            index_key="offset",
-            index_key_increment=250,
-            perPage=250,
-            **kwargs,
-        )
+    def listpages(
+        self, wiki: str, *, module_body: str, **kwargs
+    ) -> List[BeautifulSoup]:
+        """Execute a ListPages search against a site and return all results
+        as soup."""
+        module_body = listpages_div_wrap.format(module_body)
+        items = [
+            soup
+            for page in self.paginated_module(
+                wiki,
+                "list/ListPagesModule",
+                index_key="offset",
+                index_key_increment=250,
+                perPage=250,
+                module_body=module_body,
+                **kwargs,
+            )
+            for soup in BeautifulSoup(page["body"], "html.parser")
+            .find(class_="list-pages-box")
+            .find_all(class_="listpages-div-wrap")
+        ]
+        return items
 
     def paginated_module(
         self, wiki, module, index_key, index_key_increment=1, **kwargs

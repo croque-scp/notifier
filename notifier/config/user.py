@@ -35,37 +35,36 @@ class UserConfig(TypedDict):
     unsubscriptions: List[Subscription]
 
 
-def fetch_user_configs(database: DatabaseDriver, connection: Connection):
+def fetch_user_configs(
+    local_config: LocalConfig, database: DatabaseDriver, connection: Connection
+):
     """Fetches a list of user configurations from the configuration wiki.
 
     User configurations are stored on the dedicated Wikidot site. They are
-    cached in the SQLite database."""
-
-    for page in connection.listpages(
-        "tars",
-        category="notify",
+    cached in the SQLite database.
+    """
+    for raw_config in connection.listpages(
+        local_config["config_wiki"],
+        category=local_config["user_config_category"],
         order="updated_at desc",
-        module_body=listpages_body,
+        module_body=user_config_listpages_body,
     ):
-        page = BeautifulSoup(page["body"], "html.parser")
-        configs = page.find(class_="list-pages-box").find_all("p")
-        for raw_config in configs:
-            raw_config = raw_config.get_text()
-            try:
-                config = parse_raw_user_config(raw_config)
-            except:
-                # If the parse fails, the user was probably trying code
-                # injection or something - discard it
-                print(f"Skipping config for", raw_config.split("\n")[0])
-                continue
-            category, slug = config["slug"].split(":")
-            if category != "notify":
-                continue
-            if slug != config["username"]:
-                # Only accept configs for the user who created the page
-                continue
-            # Store this config in the database
-            pass
+        raw_config = raw_config.get_text()
+        try:
+            config = parse_raw_user_config(raw_config)
+        except:
+            # If the parse fails, the user was probably trying code
+            # injection or something - discard it
+            print(f"Skipping config for", raw_config.split("\n")[0])
+            continue
+        category, slug = config["slug"].split(":")
+        if category != "notify":
+            continue
+        if slug != config["username"]:
+            # Only accept configs for the user who created the page
+            continue
+        # Store this config in the database
+        pass
 
 
 def parse_raw_user_config(raw_config: str) -> UserConfig:
