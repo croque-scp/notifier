@@ -1,0 +1,6 @@
+[notifier]
+wikdot_username = "Notifier"
+user_config_wiki = "notifications"
+user_config_category = "notify"
+supported_sites_url = "https://notifications.wdfiles.com/local--code/sites/1"
+overrides_url = "https://notifications.wdfiles.com/local--code/overrides/1"
