@@ -3,9 +3,11 @@ from typing import List
 import requests
 from bs4 import BeautifulSoup
 
-listpages_div_wrap = """
-[[div_ class="listpages-div-wrap"]]
-{}
+listpages_div_class = "listpages-div-wrap"
+
+listpages_div_wrap = f"""
+[[div_ class="{listpages_div_class}"]]
+{{}}
 [[/div]]
 """
 
@@ -35,7 +37,7 @@ class Connection:
         """Execute a ListPages search against a site and return all results
         as soup."""
         module_body = listpages_div_wrap.format(module_body)
-        items = [
+        items = (
             soup
             for page in self.paginated_module(
                 wiki,
@@ -48,8 +50,8 @@ class Connection:
             )
             for soup in BeautifulSoup(page["body"], "html.parser")
             .find(class_="list-pages-box")
-            .find_all(class_="listpages-div-wrap")
-        ]
+            .find_all(class_=listpages_div_class)
+        )
         return items
 
     def paginated_module(

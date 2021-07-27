@@ -2,9 +2,10 @@ import sqlite3
 from abc import ABC
 from pathlib import Path
 from sqlite3.dbapi2 import Cursor
-from typing import Dict, Iterable
+from typing import Dict, Iterable, List
 
 from notifier.config.tool import SupportedSiteConfig
+from notifier.config.user import Subscription, UserConfig
 
 sqlite3.enable_callback_tracebacks(True)
 
@@ -97,34 +98,30 @@ class SqliteDriver(BaseDatabaseDriver):
         ]
         return {"thread_posts": thread_posts, "post_replies": post_replies}
 
-    def store_user_config(self, user_config, subscriptions, unsubscriptions):
+    def store_user_config(self, user_config: UserConfig):
         """Caches a user notification configuration.
 
-        :param"""
-        self.conn.commit()
-        pass
+        :param user_config: Configuration for a user.
+        """
+        user_id = user_config.user_id
 
-    def store_manual_sub(self, user_id, thread_id, post_id, sub):
+        self.conn.commit()
+
+    def store_manual_sub(self, user_id: str, subscription: Subscription):
         """Caches a single user subscription configuration.
 
         :param user_id: The numeric Wikidot ID of the user, as text.
-        :param thread_id: The numeric ID of the thread, with leading "t-".
-        :param post_id: The numeric ID of the post, with leading "p-", or
-        None to indicate a thread subscription.
-        :param sub: The cardinality of the subscription, with 1 indicating
-        a subscription and -1 indicating an unsubscription.
+        :param thread_id: Data for the subscription.
         """
-        assert sub in [-1, 1]
         self.execute_named(
             "store_manual_sub",
             {
                 "user_id": user_id,
-                "thread_id": thread_id,
-                "post_id": post_id,
-                "sub": sub,
+                "thread_id": subscription["thread_id"],
+                "post_id": subscription["post_id"],
+                "sub": subscription["sub"],
             },
         )
-        self.conn.commit()
 
     def store_supported_site(self, sites: Dict[str, SupportedSiteConfig]):
         """Stores a set of supported sites in the database, overwriting any

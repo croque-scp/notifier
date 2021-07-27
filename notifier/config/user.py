@@ -3,11 +3,12 @@ from typing import List, Literal, Tuple, TypedDict, Union
 import tomlkit
 from bs4 import BeautifulSoup
 
+from notifier.config.tool import LocalConfig
 from notifier.database import DatabaseDriver
 from notifier.wikiconnection import Connection
 
 # For ease of parsing, configurations are coerced to TOML format
-listpages_body = '''
+user_config_listpages_body = '''
 slug = "%%fullname%%"
 username = "%%created_by_unix%%"
 user_id = "%%created_by_id%%"
@@ -46,7 +47,6 @@ def fetch_user_configs(
     for raw_config in connection.listpages(
         local_config["config_wiki"],
         category=local_config["user_config_category"],
-        order="updated_at desc",
         module_body=user_config_listpages_body,
     ):
         raw_config = raw_config.get_text()
@@ -55,7 +55,7 @@ def fetch_user_configs(
         except:
             # If the parse fails, the user was probably trying code
             # injection or something - discard it
-            print(f"Skipping config for", raw_config.split("\n")[0])
+            print("Skipping config for", raw_config.split("\n")[0])
             continue
         category, slug = config["slug"].split(":")
         if category != "notify":
@@ -83,6 +83,10 @@ def parse_raw_user_config(raw_config: str) -> UserConfig:
         pass
     else:
         config["unsubscriptions"] = []
+
+
+def parse_subscriptions(urls: str) -> List[Subscription]:
+    pass
 
 
 def parse_thread_url(url: str) -> Tuple[str, Union[str, None]]:
