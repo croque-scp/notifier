@@ -5,6 +5,7 @@ from bs4 import BeautifulSoup
 
 from notifier.config.tool import LocalConfig
 from notifier.database import DatabaseDriver
+from notifier.database.driver import BaseDatabaseDriver
 from notifier.wikiconnection import Connection
 
 # For ease of parsing, configurations are coerced to TOML format
@@ -37,7 +38,9 @@ class UserConfig(TypedDict):
 
 
 def fetch_user_configs(
-    local_config: LocalConfig, database: DatabaseDriver, connection: Connection
+    local_config: LocalConfig,
+    database: BaseDatabaseDriver,
+    connection: Connection,
 ):
     """Fetches a list of user configurations from the configuration wiki.
 
@@ -64,7 +67,7 @@ def fetch_user_configs(
             # Only accept configs for the user who created the page
             continue
         # Store this config in the database
-        pass
+        raise NotImplementedError
 
 
 def parse_raw_user_config(raw_config: str) -> UserConfig:

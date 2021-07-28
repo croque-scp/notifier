@@ -1,64 +1,92 @@
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
+from datetime import datetime
 
-from apscheduler.triggers.cron import CronTrigger
+import pycron
 
-from notifier.database import DatabaseDriver
+from notifier.config.tool import read_local_config
+from notifier.database.driver import BaseDatabaseDriver
+from notifier.wikiconnection import Connection
 
 
 @dataclass
-class ScheduledTask(ABC):
-    database: DatabaseDriver
+class NotificationChannel(ABC):
+    """A scheduled notification for users on a specific frequency channel.
+
+    :param database: The database to use for notifications.
+
+    :var crontab: Determines when each set of notifications should be sent
+    out.
+    """
+
+    database: BaseDatabaseDriver
     crontab = None
 
-    @property
-    def trigger(self):
-        return CronTrigger.from_crontab(self.crontab)
-
     @abstractmethod
+    def execute(self):
+        """Execute this task's responsibilities."""
+        pass
+
+
+def execute_tasks(
+    local_config_path: str,
+    database: BaseDatabaseDriver,
+    connection: Connection,
+):
+    """Main task executor. Should be called as often as the most frequent
+    notification digest.
+
+    Performs actions that must be run for every set of notifications (i.e.
+    getting data for new posts) and then triggers the relevant notification
+    schedules.
+    """
+    post_search_upper_timestamp = datetime.now()
+    # Check which notification channels should be activated
+    active_channels = [
+        Channel
+        for Channel in [
+            HourlyChannel,
+            DailyChannel,
+            WeeklyChannel,
+            MonthlyChannel,
+        ]
+        if pycron.is_now(Channel.crontab)
+    ]
+    # If there are no active channels, which shouldn't happen, there is
+    # nothing to do
+    if len(active_channels) == 0:
+        print("No active channels")
+        return
+    local_config = read_local_config(local_config_path)
+    read_global_config()
+    read_user_config()
+    for Channel in active_channels:
+        Channel(database).execute()
+
+
+class HourlyChannel(NotificationChannel):
+    crontab = "0 * * * *"
+
     def execute(self):
         pass
 
 
-class Hourly(ScheduledTask):
-    """The hourly task is responsible for updating user configurations,
-    checking for new posts, getting and storing information about those
-    posts, and then sending notifications to users on the hourly channel."""
-
-    crontab = "0 * * * *"
-
-    def execute(self):
-        read_config()
-        get_new_posts()
-        users = get_users()
-
-
-class Daily(ScheduledTask):
-    """The daily task is responsible for sending notifications to users on
-    the daily channel."""
-
+class DailyChannel(NotificationChannel):
     crontab = "0 0 * * *"
 
     def execute(self):
-        users = get_users()
+        pass
 
 
-class Weekly(ScheduledTask):
-    """The weekly task is responsible for sending notifications to users on
-    the weekly channel and for backing up the database."""
-
+class WeeklyChannel(NotificationChannel):
     crontab = "0 0 * * 0"
 
     def execute(self):
-        users = get_users()
-        backup_database()
+        pass
 
 
-class Monthly(ScheduledTask):
-    """The monthly task is responsible for sending notifications to users on
-    the monthly channel."""
-
+class MonthlyChannel(NotificationChannel):
     crontab = "0 0 1 * *"
 
     def execute(self):
-        users = get_users()
+        pass

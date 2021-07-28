@@ -2,16 +2,12 @@ import sys
 from typing import Tuple
 
 from apscheduler.schedulers.blocking import BlockingScheduler
+from apscheduler.triggers.cron import CronTrigger
 
 from notifier.config.tool import read_local_config
 from notifier.database import DatabaseDriver
-from notifier.tasks import Daily, Hourly, Monthly, Weekly
+from notifier.tasks import HourlyChannel, execute_tasks
 from notifier.wikiconnection import Connection
-
-
-def add_job(scheduler, Task, database):
-    task = Task(database)
-    return scheduler.add_job(task.execute, task.trigger)
 
 
 def read_command_line_arguments() -> Tuple[str, str]:
@@ -35,6 +31,9 @@ def read_command_line_arguments() -> Tuple[str, str]:
 
 
 if __name__ == "__main__":
+    # Get config location and password
+    local_config_path, wikidot_password = read_command_line_arguments()
+
     # Scheduler is responsible for executing tasks at the right times
     scheduler = BlockingScheduler()
 
@@ -44,9 +43,12 @@ if __name__ == "__main__":
     # Connection facilitates communications with Wikidot
     connection = Connection()
 
-    hourly_job = add_job(scheduler, Hourly, database)
-    daily_job = add_job(scheduler, Daily, database)
-    weekly_job = add_job(scheduler, Weekly, database)
-    monthly_job = add_job(scheduler, Monthly, database)
+    # Schedule the task
+    scheduler.add_job(
+        execute_tasks,
+        CronTrigger.from_crontab(HourlyChannel.crontab),
+        args=(local_config_path, database, connection),
+    )
 
+    # Let's go
     scheduler.start()
