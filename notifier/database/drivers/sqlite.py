@@ -1,25 +1,28 @@
 import json
 import sqlite3
 from sqlite3.dbapi2 import Cursor
-from typing import Dict, Iterable
+from typing import Iterable, List
 
-from notifier.database.drivers.base import DatabaseWithSqlFileCache
+from notifier.database.drivers.base import (
+    BaseDatabaseDriver,
+    DatabaseWithSqlFileCache,
+)
 from notifier.types import (
     GlobalOverridesConfig,
     NewPostsInfo,
     Subscription,
-    SupportedSiteConfig,
+    SupportedWikiConfig,
     UserConfig,
 )
 
 sqlite3.enable_callback_tracebacks(True)
 
 
-class SqliteDriver(DatabaseWithSqlFileCache):
+class SqliteDriver(DatabaseWithSqlFileCache, BaseDatabaseDriver):
     """Database powered by SQLite."""
 
     def __init__(self, location=":memory:"):
-        super().__init__(location)
+        super().__init__()
         self.conn = sqlite3.connect(location)
         self.conn.row_factory = sqlite3.Row
         self.execute_named("enable_foreign_keys")
@@ -49,6 +52,14 @@ class SqliteDriver(DatabaseWithSqlFileCache):
     def create_tables(self):
         self.execute_named("create_tables")
 
+    def get_global_overrides(self) -> GlobalOverridesConfig:
+        rows = self.execute_named("get_global_overrides").fetchall()
+        overrides = {
+            row["wiki_id"]: json.loads(row["override_settings_json"])
+            for row in rows
+        }
+        return overrides
+
     def store_global_overrides(
         self, global_overrides: GlobalOverridesConfig
     ) -> None:
@@ -62,14 +73,6 @@ class SqliteDriver(DatabaseWithSqlFileCache):
                 },
             )
         self.conn.commit()
-
-    def get_global_overrides(self) -> GlobalOverridesConfig:
-        rows = self.execute_named("get_global_overrides").fetchall()
-        overrides = {
-            row["wiki_id"]: json.loads(row["override_settings_json"])
-            for row in rows
-        }
-        return overrides
 
     def get_new_posts_for_user(
         self, user_id: str, search_timestamp: int
@@ -111,20 +114,17 @@ class SqliteDriver(DatabaseWithSqlFileCache):
             },
         )
 
-    def store_supported_site(
-        self, sites: Dict[str, SupportedSiteConfig]
-    ) -> None:
+    def get_supported_wikis(self) -> List[SupportedWikiConfig]:
+        wikis = self.execute_named("get_supported_wikis").fetchall()
+        return wikis
+
+    def store_supported_wikis(self, wikis: List[SupportedWikiConfig]) -> None:
         # Destroy all existing wikis in preparation for overwrite
-        self.execute_named("remove_all_wikis")
+        self.execute_named("delete_wikis")
         # Add each new wiki
-        for wiki_id, wiki in sites.items():
+        for wiki in wikis:
             self.execute_named(
                 "add_wiki",
-                {"wiki_id": wiki_id, "wiki_secure": wiki["secure"]},
+                {"wiki_id": wiki["id"], "wiki_secure": wiki["secure"]},
             )
-            for alt in wiki["alts"]:
-                self.execute_named(
-                    "add_wiki_alias",
-                    {"wiki_id": wiki_id, "alias": alt},
-                )
         self.conn.commit()

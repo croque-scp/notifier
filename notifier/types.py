@@ -9,12 +9,12 @@ class LocalConfig(TypedDict):
     wikidot_username: str
     config_wiki: str
     user_config_category: str
-    site_config_category: str
+    wiki_config_category: str
     overrides_url: str
 
 
-class SupportedSiteConfig(TypedDict):
-    """A single remote site config."""
+class SupportedWikiConfig(TypedDict):
+    """A single remote wiki config."""
 
     id: str
     secure: IsSecure
@@ -30,7 +30,7 @@ class GlobalOverrideConfig(TypedDict):
     thread_title_matches: Optional[str]
 
 
-# A collection of remote override configs, keyed by site.
+# A collection of remote override configs, keyed by wiki.
 GlobalOverridesConfig = Dict[str, List[GlobalOverrideConfig]]
 
 

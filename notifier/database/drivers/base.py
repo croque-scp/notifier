@@ -1,13 +1,13 @@
 from abc import ABC, abstractmethod
 from pathlib import Path
 from sqlite3.dbapi2 import Cursor
-from typing import Any, Callable, Dict, Tuple, Type
+from typing import Any, Callable, List, Tuple, Type
 
 from notifier.types import (
     GlobalOverridesConfig,
     NewPostsInfo,
     Subscription,
-    SupportedSiteConfig,
+    SupportedWikiConfig,
     UserConfig,
 )
 
@@ -43,6 +43,10 @@ def try_cache(
     kind of error, it will not be caught. Defaults to catching no
     exceptions which obviously is not recommended. If an exception is
     caught, the store is not called.
+
+    Functions intended to be used with this function typically either raise
+    an error or return a no-op value, so `do_not_store` and `catch` should
+    rarely be used together.
     """
     if catch is None:
         catch = tuple()
@@ -105,12 +109,14 @@ class BaseDatabaseDriver(ABC):
         :param user_id: The numeric Wikidot ID of the user, as text.
         :param thread_id: Data for the subscription.
         """
+    
+    @abstractmethod
+    def get_supported_wikis(self) -> List[SupportedWikiConfig]:
+        """Get a list of supported wikis."""
 
     @abstractmethod
-    def store_supported_site(
-        self, sites: Dict[str, SupportedSiteConfig]
-    ) -> None:
-        """Stores a set of supported sites in the database, overwriting any
+    def store_supported_wikis(self, wikis: List[SupportedWikiConfig]) -> None:
+        """Stores a set of supported wikis in the database, overwriting any
         that are already present."""
 
 
@@ -127,7 +133,7 @@ class DatabaseWithSqlFileCache(BaseDatabaseDriver, ABC):
 
     builtin_queries_dir = Path(__file__).parent.parent / "queries"
 
-    def __init__(self, *args):
+    def __init__(self):
         super().__init__()
         self.clear_query_file_cache()
 

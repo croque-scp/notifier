@@ -2,5 +2,5 @@
 wikdot_username = "Notifier"
 config_wiki = "notifications"
 user_config_category = "notify"
-site_config_category = "site"
+wiki_config_category = "wiki"
 overrides_url = "https://notifications.wdfiles.com/local--code/overrides/1"

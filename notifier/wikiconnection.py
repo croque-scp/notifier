@@ -36,7 +36,7 @@ class Connection:
     def listpages(
         self, wiki: str, *, module_body: str, **kwargs
     ) -> List[BeautifulSoup]:
-        """Execute a ListPages search against a site and return all results
+        """Execute a ListPages search against a wiki and return all results
         as soup."""
         module_body = listpages_div_wrap.format(module_body)
         items = (

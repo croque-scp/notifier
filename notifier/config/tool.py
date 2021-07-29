@@ -8,12 +8,12 @@ from notifier.database.drivers.base import BaseDatabaseDriver, try_cache
 from notifier.types import (
     GlobalOverridesConfig,
     LocalConfig,
-    SupportedSiteConfig,
+    SupportedWikiConfig,
 )
 from notifier.wikiconnection import Connection
 
 # For ease of parsing, configurations are coerced to TOML format
-site_config_listpages_body = """
+wiki_config_listpages_body = """
 id = "%%form_data{id}%%"
 secure = %%forum_data{secure}%%
 """
@@ -29,7 +29,7 @@ def read_local_config(path: str) -> LocalConfig:
     assert "wikidot_username" in config
     assert "config_wiki" in config
     assert "user_config_category" in config
-    assert "site_config_category" in config
+    assert "wiki_config_category" in config
     assert "overrides_url" in config
     return config
 
@@ -39,13 +39,20 @@ def get_global_config(
     database: BaseDatabaseDriver,
     connection: Connection,
 ):
+    """Retrieve remote global config for overrides and wikis."""
     try_cache(
-        lambda: fetch_global_overrides(local_config),
-        database.store_global_overrides,
+        get=lambda: fetch_global_overrides(local_config),
+        store=database.store_global_overrides,
         do_not_store={},
     )
+    try_cache(
+        get=lambda: fetch_supported_wikis(local_config, connection),
+        store=database.store_supported_wikis,
+        do_not_store=[],
+    )
     overrides = database.get_global_overrides()
-    sites = fetch_supported_sites(local_config, connection)
+    wikis = database.get_supported_wikis()
+    return overrides, wikis
 
 
 def fetch_global_overrides(local_config: LocalConfig) -> GlobalOverridesConfig:
@@ -60,26 +67,26 @@ def fetch_global_overrides(local_config: LocalConfig) -> GlobalOverridesConfig:
     return config
 
 
-def fetch_supported_sites(
+def fetch_supported_wikis(
     local_config: LocalConfig, connection: Connection
-) -> List[SupportedSiteConfig]:
-    """Fetch the list of supported sites from the configuration wiki."""
+) -> List[SupportedWikiConfig]:
+    """Fetch the list of supported wikis from the configuration wiki."""
     configs = []
     for raw_config in connection.listpages(
         local_config["config_wiki"],
-        category=local_config["site_config_category"],
-        module_body=site_config_listpages_body,
+        category=local_config["wiki_config_category"],
+        module_body=wiki_config_listpages_body,
     ):
         try:
-            configs.append(parse_raw_site_config(raw_config))
+            configs.append(parse_raw_wiki_config(raw_config))
         except (TOMLKitError, AssertionError):
-            print("Couldn't parse site:", raw_config.split("\n")[0])
+            print("Couldn't parse wiki:", raw_config.split("\n")[0])
             continue
     return configs
 
 
-def parse_raw_site_config(raw_config: str) -> SupportedSiteConfig:
-    """Parses a raw site config to a suitable format."""
+def parse_raw_wiki_config(raw_config: str) -> SupportedWikiConfig:
+    """Parses a raw wiki config to a suitable format."""
     config = tomlkit.parse(raw_config)
     assert isinstance(config, dict)
     assert "id" in config
