@@ -104,7 +104,7 @@ class BaseDatabaseDriver(ABC):
 
 class DatabaseWithSqlFileCache(BaseDatabaseDriver, ABC):
 
-    builtin_queries_dir = Path(__file__).parent / "queries"
+    builtin_queries_dir = Path(__file__).parent.parent / "queries"
 
     def clear_query_file_cache(self):
         """Clears the cache of query files, causing subsequent calls to
