@@ -5,6 +5,7 @@ from typing import Any, Callable, Dict, Iterable, List, Tuple, Type, TypedDict
 
 from notifier.types import (
     GlobalOverridesConfig,
+    NewPostsInfo,
     Subscription,
     SupportedSiteConfig,
     UserConfig,
@@ -78,7 +79,7 @@ class BaseDatabaseDriver(ABC):
     @abstractmethod
     def get_new_posts_for_user(
         self, user_id: str, search_timestamp: int
-    ) -> TypedDict("NewPosts", {"thread_posts": List, "post_replies": List}):
+    ) -> NewPostsInfo:
         """Get new posts for the users with the given ID made since the
         given timestamp.
 

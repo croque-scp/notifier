@@ -5,6 +5,7 @@ from typing import Dict, List, TypedDict
 from notifier.database.drivers.base import DatabaseWithSqlFileCache
 from notifier.types import (
     GlobalOverridesConfig,
+    NewPostsInfo,
     Subscription,
     SupportedSiteConfig,
     UserConfig,
@@ -46,7 +47,7 @@ class SqliteDriver(DatabaseWithSqlFileCache):
 
     def get_new_posts_for_user(
         self, user_id: str, search_timestamp: int
-    ) -> TypedDict("NewPosts", {"thread_posts": List, "post_replies": List}):
+    ) -> NewPostsInfo:
         # Get new posts in subscribed threads
         thread_posts = self.execute_named(
             "get_posts_in_subscribed_threads",
