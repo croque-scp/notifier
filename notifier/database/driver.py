@@ -1,8 +1,8 @@
 import sqlite3
-from abc import ABC
+from abc import ABC, abstractmethod
 from pathlib import Path
 from sqlite3.dbapi2 import Cursor
-from typing import Any, Callable, Dict, Iterable, Tuple, Type
+from typing import Any, Callable, Dict, Iterable, List, Tuple, Type, TypedDict
 
 from notifier.config.tool import SupportedSiteConfig
 from notifier.config.user import Subscription, UserConfig
@@ -53,20 +53,9 @@ def try_cache(
         store(value)
 
 
-class BaseDatabaseDriver(ABC):
-    pass
-
-
-class SqliteDriver(BaseDatabaseDriver):
+class DatabaseWithSqlFileCache(ABC):
 
     builtin_queries_dir = Path(__file__).parent / "queries"
-
-    def __init__(self, location=":memory:"):
-        self.conn = sqlite3.connect(location)
-        self.conn.row_factory = sqlite3.Row
-        self.clear_query_file_cache()
-        self.execute_named("enable_foreign_keys")
-        self.create_tables()
 
     def clear_query_file_cache(self):
         """Clears the cache of query files, causing subsequent calls to
@@ -113,15 +102,69 @@ class SqliteDriver(BaseDatabaseDriver):
             params = {}
         return self.conn.execute(query, params)
 
-    def create_tables(self):
-        self.execute_named("create_tables")
 
-    def get_new_posts_for_user(self, user_id, search_timestamp):
+class BaseDatabaseDriver(DatabaseWithSqlFileCache, ABC):
+    @abstractmethod
+    def __init__(self, location: str):
+        pass
+
+    @abstractmethod
+    def create_tables(self) -> None:
+        pass
+
+    @abstractmethod
+    def get_new_posts_for_user(
+        self, user_id: str, search_timestamp: int
+    ) -> TypedDict("NewPosts", {"thread_posts": List, "post_replies": List}):
         """Get new posts for the users with the given ID made since the
         given timestamp.
 
         Returns a dict containing the thread posts and the post replies.
         """
+        pass
+
+    @abstractmethod
+    def store_user_config(self, user_config: UserConfig):
+        """Caches a user notification configuration.
+
+        :param user_config: Configuration for a user.
+        """
+        pass
+
+    @abstractmethod
+    def store_manual_sub(
+        self, user_id: str, subscription: Subscription
+    ) -> None:
+        """Caches a single user subscription configuration.
+
+        :param user_id: The numeric Wikidot ID of the user, as text.
+        :param thread_id: Data for the subscription.
+        """
+        pass
+
+    @abstractmethod
+    def store_supported_site(
+        self, sites: Dict[str, SupportedSiteConfig]
+    ) -> None:
+        """Stores a set of supported sites in the database, overwriting any
+        that are already present."""
+        pass
+
+
+class SqliteDriver(BaseDatabaseDriver):
+    def __init__(self, location=":memory:"):
+        self.conn = sqlite3.connect(location)
+        self.conn.row_factory = sqlite3.Row
+        self.clear_query_file_cache()
+        self.execute_named("enable_foreign_keys")
+        self.create_tables()
+
+    def create_tables(self):
+        self.execute_named("create_tables")
+
+    def get_new_posts_for_user(
+        self, user_id: str, search_timestamp: int
+    ) -> TypedDict("NewPosts", {"thread_posts": List, "post_replies": List}):
         # Get new posts in subscribed threads
         thread_posts = self.execute_named(
             "get_posts_in_subscribed_threads",
@@ -142,20 +185,13 @@ class SqliteDriver(BaseDatabaseDriver):
         return {"thread_posts": thread_posts, "post_replies": post_replies}
 
     def store_user_config(self, user_config: UserConfig):
-        """Caches a user notification configuration.
-
-        :param user_config: Configuration for a user.
-        """
         user_id = user_config.user_id
         # TODO
         self.conn.commit()
 
-    def store_manual_sub(self, user_id: str, subscription: Subscription):
-        """Caches a single user subscription configuration.
-
-        :param user_id: The numeric Wikidot ID of the user, as text.
-        :param thread_id: Data for the subscription.
-        """
+    def store_manual_sub(
+        self, user_id: str, subscription: Subscription
+    ) -> None:
         self.execute_named(
             "store_manual_sub",
             {
@@ -166,9 +202,9 @@ class SqliteDriver(BaseDatabaseDriver):
             },
         )
 
-    def store_supported_site(self, sites: Dict[str, SupportedSiteConfig]):
-        """Stores a set of supported sites in the database, overwriting any
-        that are already present."""
+    def store_supported_site(
+        self, sites: Dict[str, SupportedSiteConfig]
+    ) -> None:
         # Destroy all existing wikis in preparation for overwrite
         self.execute_named("remove_all_wikis")
         # Add each new wiki
