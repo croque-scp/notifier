@@ -5,7 +5,7 @@ from apscheduler.schedulers.blocking import BlockingScheduler
 from apscheduler.triggers.cron import CronTrigger
 
 from notifier.config.tool import read_local_config
-from notifier.database import DatabaseDriver
+from notifier.database.drivers import DatabaseDriver
 from notifier.tasks import HourlyChannel, execute_tasks
 from notifier.wikiconnection import Connection
 

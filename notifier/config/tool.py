@@ -4,7 +4,7 @@ import requests
 import tomlkit
 from tomlkit.exceptions import TOMLKitError
 
-from notifier.database.driver import BaseDatabaseDriver, try_cache
+from notifier.database.drivers.base import BaseDatabaseDriver, try_cache
 from notifier.wikiconnection import Connection
 
 # For ease of parsing, configurations are coerced to TOML format

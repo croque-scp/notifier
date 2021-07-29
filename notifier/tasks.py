@@ -5,7 +5,7 @@ from datetime import datetime
 import pycron
 
 from notifier.config.tool import read_local_config
-from notifier.database.driver import BaseDatabaseDriver
+from notifier.database.drivers.base import BaseDatabaseDriver
 from notifier.wikiconnection import Connection
 
 

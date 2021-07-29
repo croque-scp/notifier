@@ -4,8 +4,7 @@ import tomlkit
 from bs4 import BeautifulSoup
 
 from notifier.config.tool import LocalConfig
-from notifier.database import DatabaseDriver
-from notifier.database.driver import BaseDatabaseDriver
+from notifier.database.drivers.base import BaseDatabaseDriver
 from notifier.wikiconnection import Connection
 
 # For ease of parsing, configurations are coerced to TOML format
