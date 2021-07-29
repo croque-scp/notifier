@@ -14,12 +14,14 @@ class NotificationChannel(ABC):
     """A scheduled notification for users on a specific frequency channel.
 
     :param database: The database to use for notifications.
+    :param connection: Connection to Wikidot.
 
     :var crontab: Determines when each set of notifications should be sent
     out.
     """
 
     database: BaseDatabaseDriver
+    connection: Connection
     crontab = None
 
     @abstractmethod
@@ -58,10 +60,12 @@ def execute_tasks(
         print("No active channels")
         return
     local_config = read_local_config(local_config_path)
-    read_global_config()
-    read_user_config()
+    global_config = read_global_config()
+    user_config = read_user_config()
     for Channel in active_channels:
-        Channel(database).execute()
+        Channel(database, connection).execute(
+            local_config, global_config, user_config
+        )
 
 
 class HourlyChannel(NotificationChannel):
