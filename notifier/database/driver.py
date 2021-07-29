@@ -53,7 +53,55 @@ def try_cache(
         store(value)
 
 
-class DatabaseWithSqlFileCache(ABC):
+class BaseDatabaseDriver(ABC):
+    @abstractmethod
+    def __init__(self, location: str):
+        pass
+
+    @abstractmethod
+    def create_tables(self) -> None:
+        pass
+
+    @abstractmethod
+    def get_new_posts_for_user(
+        self, user_id: str, search_timestamp: int
+    ) -> TypedDict("NewPosts", {"thread_posts": List, "post_replies": List}):
+        """Get new posts for the users with the given ID made since the
+        given timestamp.
+
+        Returns a dict containing the thread posts and the post replies.
+        """
+        pass
+
+    @abstractmethod
+    def store_user_config(self, user_config: UserConfig):
+        """Caches a user notification configuration.
+
+        :param user_config: Configuration for a user.
+        """
+        pass
+
+    @abstractmethod
+    def store_manual_sub(
+        self, user_id: str, subscription: Subscription
+    ) -> None:
+        """Caches a single user subscription configuration.
+
+        :param user_id: The numeric Wikidot ID of the user, as text.
+        :param thread_id: Data for the subscription.
+        """
+        pass
+
+    @abstractmethod
+    def store_supported_site(
+        self, sites: Dict[str, SupportedSiteConfig]
+    ) -> None:
+        """Stores a set of supported sites in the database, overwriting any
+        that are already present."""
+        pass
+
+
+class DatabaseWithSqlFileCache(BaseDatabaseDriver, ABC):
 
     builtin_queries_dir = Path(__file__).parent / "queries"
 
@@ -103,55 +151,7 @@ class DatabaseWithSqlFileCache(ABC):
         return self.conn.execute(query, params)
 
 
-class BaseDatabaseDriver(DatabaseWithSqlFileCache, ABC):
-    @abstractmethod
-    def __init__(self, location: str):
-        pass
-
-    @abstractmethod
-    def create_tables(self) -> None:
-        pass
-
-    @abstractmethod
-    def get_new_posts_for_user(
-        self, user_id: str, search_timestamp: int
-    ) -> TypedDict("NewPosts", {"thread_posts": List, "post_replies": List}):
-        """Get new posts for the users with the given ID made since the
-        given timestamp.
-
-        Returns a dict containing the thread posts and the post replies.
-        """
-        pass
-
-    @abstractmethod
-    def store_user_config(self, user_config: UserConfig):
-        """Caches a user notification configuration.
-
-        :param user_config: Configuration for a user.
-        """
-        pass
-
-    @abstractmethod
-    def store_manual_sub(
-        self, user_id: str, subscription: Subscription
-    ) -> None:
-        """Caches a single user subscription configuration.
-
-        :param user_id: The numeric Wikidot ID of the user, as text.
-        :param thread_id: Data for the subscription.
-        """
-        pass
-
-    @abstractmethod
-    def store_supported_site(
-        self, sites: Dict[str, SupportedSiteConfig]
-    ) -> None:
-        """Stores a set of supported sites in the database, overwriting any
-        that are already present."""
-        pass
-
-
-class SqliteDriver(BaseDatabaseDriver):
+class SqliteDriver(DatabaseWithSqlFileCache):
     def __init__(self, location=":memory:"):
         self.conn = sqlite3.connect(location)
         self.conn.row_factory = sqlite3.Row
