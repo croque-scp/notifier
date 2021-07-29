@@ -2,12 +2,48 @@ import sqlite3
 from abc import ABC
 from pathlib import Path
 from sqlite3.dbapi2 import Cursor
-from typing import Dict, Iterable, List
+from typing import Any, Callable, Dict, Iterable
 
 from notifier.config.tool import SupportedSiteConfig
 from notifier.config.user import Subscription, UserConfig
 
 sqlite3.enable_callback_tracebacks(True)
+
+
+def get_or_get_from_cache(
+    get: Callable,
+    cache_store: Callable,
+    cache_get: Callable,
+    fail_value: Any,
+):
+    """Either retrieves data from some external endpoint, caches it, and
+    returns it; or if that fails for some reason then retrieves cached
+    data.
+
+    :param get: Callable that takes no argument to execute that retrieves
+    data.
+
+    :param cache_store: If `get` succeeded, a callable that takes `get`'s
+    result as its only argument to cache the data.
+
+    :param cache_get: If `get` failed or returned a value equal to
+    `fail_value`, a callable that takes no argument and returns data
+    compatible with `get`'s return value.
+
+    :param fail_value: If `get`'s return value is equal to this, it
+    is considered to have failed, and the result of `cache_get` will be
+    returned instead.
+    """
+    value = fail_value
+    try:
+        value = get()
+    except:
+        # TODO Handle the error properly - only catch specified error types?
+        pass
+    if value == fail_value:
+        return cache_get()
+    cache_store(value)
+    return value
 
 
 class BaseDatabaseDriver(ABC):
