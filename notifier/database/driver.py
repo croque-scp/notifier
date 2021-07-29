@@ -10,52 +10,47 @@ from notifier.config.user import Subscription, UserConfig
 sqlite3.enable_callback_tracebacks(True)
 
 
-def get_and_cache_or_get_from_cache(
-    get: Callable,
-    cache_store: Callable,
-    cache_get: Callable = None,
+def try_cache(
     *,
-    fail_value: Any = None,
+    get: Callable,
+    store: Callable,
+    do_not_store: Any = None,
     catch: Tuple[Type[Exception], ...] = None,
-):
-    """Either retrieves data from some external endpoint, caches it, and
-    returns the value from the cache; or if that fails for some reason then
-    retrieves cached data.
+) -> None:
+    """Attempts to retrieve data from somewhere. If it succeeds, caches the
+    data. If it fails, does nothing.
 
-    :param get: Callable that takes no argument to execute that retrieves
-    data.
+    Intended usage is for the data to be subsequently retrieved from the
+    cache. This ensure that valid data is always received, even if the
+    original call failed - in this case, old cached data is used instead.
 
-    :param cache_store: If `get` succeeded, a callable that takes `get`'s
-    result as its only argument to cache the data.
+    If it is necessary for the getter to succeed, this function should not
+    be used.
 
-    :param cache_get: A callable that takes no argument and returns data
-    representative of `get`'s return value; or nothing.
+    :param get: Callable that takes no argument that retrieves data, and
+    may fail.
 
-    :param fail_value: If `get`'s return value is equal to this, it is
-    considered to have failed, and the result of `cache_get` will be
-    returned instead. Defaults to None; set to a sentinel value to permit
-    `get` to return None.
+    :param store: Callable that takes the result of `get` as its only
+    argument and caches the data.
+
+    :param do_not_store: If the result of `get` is equal to this,
+    it will not be stored. Defaults to None. If `get` returning None is
+    desirable, set to a sentinel value.
 
     :param catch: Tuple of exceptions to catch. If `get` emits any other
     kind of error, it will not be caught. Defaults to catching all
-    exceptions which obviously is not recommended.
-
-    :returns: The result of `cache_get`. If `get` succeeded this should
-    contain information incorporating the new data; otherwise, it will
-    contain only cached data. The difference between the two is determined
-    by `cache_store`. If `cache_get` was not provided, returns nothing.
+    exceptions which obviously is not recommended. If an exception is
+    caught, the store is not called.
     """
     if catch is None:
         catch = Exception
-    value = fail_value
+    value = do_not_store
     try:
         value = get()
     except catch:
         pass
-    if value != fail_value:
-        cache_store(value)
-    if cache_get is not None:
-        return cache_get()
+    if value != do_not_store:
+        store(value)
 
 
 class BaseDatabaseDriver(ABC):
