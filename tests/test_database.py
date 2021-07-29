@@ -5,6 +5,7 @@ from notifier.database.drivers import DatabaseDriver
 
 @pytest.fixture(scope="module")
 def sample_database():
+    """Create a sample database with some fake interactions for testing."""
     db = DatabaseDriver()
     sample_user_configs = [("1", "MyUsername", "hourly", "en")]
     sample_manual_subs = [
@@ -50,11 +51,13 @@ def sample_database():
 
 
 def titles(posts):
+    """Get a set of post titles from a list of posts."""
     return set(p["title"] for p in posts)
 
 
 @pytest.fixture(scope="class")
 def new_posts_for_user(sample_database):
+    """Extract new posts for a single user from the sample database."""
     posts = sample_database.get_new_posts_for_user("1", 0)
     thread_posts = posts["thread_posts"]
     post_replies = posts["post_replies"]
@@ -63,15 +66,18 @@ def new_posts_for_user(sample_database):
 
 @pytest.fixture()
 def thread_posts(new_posts_for_user):
+    """Get only new thread posts for a user."""
     return new_posts_for_user[0]
 
 
 @pytest.fixture()
 def post_replies(new_posts_for_user):
+    """Get only new post replies for a user."""
     return new_posts_for_user[1]
 
 
 def test_get_replied_posts(post_replies):
+    """Test that the post replies are as expected."""
     assert titles(post_replies) == {
         "Post 111",
         "Post 211",
@@ -81,26 +87,34 @@ def test_get_replied_posts(post_replies):
 
 
 def test_get_post_reply_even_if_ignored_thread(post_replies):
+    """Test that post replies are returned even if the thread is ignored."""
     assert "Post 411" in titles(post_replies)
 
 
 def test_ignore_already_responded_post(post_replies, thread_posts):
+    """Test that post replies are not returned if the user has already
+    responded to them."""
     assert "Post 212" not in titles(post_replies) | titles(thread_posts)
 
 
 def test_ignore_own_post_in_thread(thread_posts):
+    """Test that the user is not notified of their own posts to a thread."""
     assert titles(thread_posts).isdisjoint(
-        {"Post 11", "Post 21", "Post 2121" "Post 41"}
+        {"Post 11", "Post 21", "Post 2121", "Post 41"}
     )
 
 
 def test_prioritise_reply_deduplication(thread_posts):
+    """Test that, when a post would end up in both the thread posts and
+    post replies, it only ends up in the post replies."""
     assert titles(thread_posts).isdisjoint({"Post 111", "Post 211"})
 
 
 def test_get_posts_in_threads(thread_posts):
+    """Test that thread posts are as expected."""
     assert titles(thread_posts) == {"Post 12"}
 
 
 def test_respect_ignored_thread(thread_posts):
+    """Test that posts in ignored threads do not appear as thread posts."""
     assert titles(thread_posts).isdisjoint({"Post 41", "Post 42"})

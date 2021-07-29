@@ -30,7 +30,7 @@ class GlobalOverrideConfig(TypedDict):
     thread_title_matches: Optional[str]
 
 
-"""A collection of remote override configs, keyed by site."""
+# A collection of remote override configs, keyed by site.
 GlobalOverridesConfig = Dict[str, List[GlobalOverrideConfig]]
 
 

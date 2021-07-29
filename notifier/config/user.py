@@ -1,9 +1,10 @@
 from typing import List, Tuple, Union
 
 import tomlkit
+from tomlkit.exceptions import TOMLKitError
 
-from notifier.types import LocalConfig, Subscription, UserConfig
 from notifier.database.drivers.base import BaseDatabaseDriver
+from notifier.types import LocalConfig, Subscription, UserConfig
 from notifier.wikiconnection import Connection
 
 # For ease of parsing, configurations are coerced to TOML format
@@ -38,7 +39,7 @@ def fetch_user_configs(
         raw_config = raw_config.get_text()
         try:
             config = parse_raw_user_config(raw_config)
-        except:
+        except (TOMLKitError, AssertionError):
             # If the parse fails, the user was probably trying code
             # injection or something - discard it
             print("Skipping config for", raw_config.split("\n")[0])
@@ -50,7 +51,7 @@ def fetch_user_configs(
             # Only accept configs for the user who created the page
             continue
         # Store this config in the database
-        raise NotImplementedError
+        # TODO
 
 
 def parse_raw_user_config(raw_config: str) -> UserConfig:
@@ -61,7 +62,7 @@ def parse_raw_user_config(raw_config: str) -> UserConfig:
     assert "username" in config
     assert "user_id" in config
     if "subscriptions" in config:
-        # Parse them
+        # Parse them TODO
         pass
     else:
         config["subscriptions"] = []
@@ -69,9 +70,11 @@ def parse_raw_user_config(raw_config: str) -> UserConfig:
         pass
     else:
         config["unsubscriptions"] = []
+    # TODO
 
 
 def parse_subscriptions(urls: str) -> List[Subscription]:
+    # TODO
     pass
 
 

@@ -7,7 +7,6 @@ from apscheduler.triggers.cron import CronTrigger
 from notifier.config.tool import read_local_config
 from notifier.database.drivers import DatabaseDriver
 from notifier.tasks import HourlyChannel, execute_tasks
-from notifier.wikiconnection import Connection
 
 
 def read_command_line_arguments() -> Tuple[str, str]:
@@ -15,18 +14,20 @@ def read_command_line_arguments() -> Tuple[str, str]:
     the config file, and the notifier Wikidot account password."""
     try:
         config_file_path = sys.argv[1]
-    except IndexError:
-        raise IndexError("Argument (1) for config file location is required")
+    except IndexError as error:
+        raise IndexError(
+            "Argument (1) for config file location is required"
+        ) from error
     try:
         read_local_config(config_file_path)
-    except IOError:
-        raise ValueError("Config file location is not readable")
+    except IOError as error:
+        raise ValueError("Config file location is not readable") from error
     try:
         wikidot_password = sys.argv[2]
-    except IndexError:
+    except IndexError as error:
         raise IndexError(
             "Argument (2) for account Wikidot password is required"
-        )
+        ) from error
     return config_file_path, wikidot_password
 
 
@@ -40,14 +41,11 @@ if __name__ == "__main__":
     # Database stores forum posts and caches subscriptions
     database = DatabaseDriver("./postbox.db")
 
-    # Connection facilitates communications with Wikidot
-    connection = Connection()
-
     # Schedule the task
     scheduler.add_job(
         execute_tasks,
         CronTrigger.from_crontab(HourlyChannel.crontab),
-        args=(local_config_path, database, connection),
+        args=(local_config_path, database),
     )
 
     # Let's go

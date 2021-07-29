@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 from pathlib import Path
 from sqlite3.dbapi2 import Cursor
-from typing import Any, Callable, Dict, Iterable, List, Tuple, Type, TypedDict
+from typing import Any, Callable, Dict, Tuple, Type
 
 from notifier.types import (
     GlobalOverridesConfig,
@@ -40,12 +40,12 @@ def try_cache(
     desirable, set to a sentinel value.
 
     :param catch: Tuple of exceptions to catch. If `get` emits any other
-    kind of error, it will not be caught. Defaults to catching all
+    kind of error, it will not be caught. Defaults to catching no
     exceptions which obviously is not recommended. If an exception is
     caught, the store is not called.
     """
     if catch is None:
-        catch = Exception
+        catch = tuple()
     value = do_not_store
     try:
         value = get()
@@ -56,25 +56,28 @@ def try_cache(
 
 
 class BaseDatabaseDriver(ABC):
+    """Base structure for the database driver which must be fulfilled by
+    any implementations."""
+
     @abstractmethod
-    def __init__(self, location: str):
+    def __init__(self):
         pass
 
     @abstractmethod
     def create_tables(self) -> None:
-        pass
+        """Initial setup for the database."""
 
     @abstractmethod
-    def store_global_overrides(self, overrides: GlobalOverridesConfig) -> None:
+    def store_global_overrides(
+        self, global_overrides: GlobalOverridesConfig
+    ) -> None:
         """Store all global overrides, overwriting any that are already
         present."""
-        pass
 
     @abstractmethod
     def get_global_overrides(self) -> GlobalOverridesConfig:
         """Gets all global overrides, keyed to the ID of the wiki they are
         set for."""
-        pass
 
     @abstractmethod
     def get_new_posts_for_user(
@@ -85,7 +88,6 @@ class BaseDatabaseDriver(ABC):
 
         Returns a dict containing the thread posts and the post replies.
         """
-        pass
 
     @abstractmethod
     def store_user_config(self, user_config: UserConfig):
@@ -93,7 +95,6 @@ class BaseDatabaseDriver(ABC):
 
         :param user_config: Configuration for a user.
         """
-        pass
 
     @abstractmethod
     def store_manual_sub(
@@ -104,7 +105,6 @@ class BaseDatabaseDriver(ABC):
         :param user_id: The numeric Wikidot ID of the user, as text.
         :param thread_id: Data for the subscription.
         """
-        pass
 
     @abstractmethod
     def store_supported_site(
@@ -112,12 +112,24 @@ class BaseDatabaseDriver(ABC):
     ) -> None:
         """Stores a set of supported sites in the database, overwriting any
         that are already present."""
-        pass
 
 
 class DatabaseWithSqlFileCache(BaseDatabaseDriver, ABC):
+    """Utilities for a database to read its SQL commands directly from the
+    filesystem, caching those commands between batches of queries.
+
+    This is so that the SQL commands can be safely edited between queries
+    with no downtime.
+
+    Execute clear_query_file_cache to clear the cache and force the next
+    call to each query to re-read from the filesystem.
+    """
 
     builtin_queries_dir = Path(__file__).parent.parent / "queries"
+
+    def __init__(self, *args):
+        super().__init__()
+        self.clear_query_file_cache()
 
     def clear_query_file_cache(self):
         """Clears the cache of query files, causing subsequent calls to
@@ -133,8 +145,8 @@ class DatabaseWithSqlFileCache(BaseDatabaseDriver, ABC):
                 for path in self.builtin_queries_dir.iterdir()
                 if path.name.split(".")[0] == query_name
             )
-        except StopIteration:
-            raise ValueError(f"Query {query_name} does not exist")
+        except StopIteration as stop:
+            raise ValueError(f"Query {query_name} does not exist") from stop
         with query_path.open() as file:
             query = file.read()
         self.query_cache[query_name] = {
@@ -142,24 +154,12 @@ class DatabaseWithSqlFileCache(BaseDatabaseDriver, ABC):
             "query": query,
         }
 
-    def execute_named(
-        self, query_name: str, params: Iterable = None
-    ) -> Cursor:
-        """Execute a named query against the database. The query is read
-        either from file or the cache.
+    def cache_named_query(self, query_name: str) -> Cursor:
+        """Reads an SQL query from the source and puts it to the cache,
+        unless it is already present.
 
         :param query_name: The name of the query to execute, which must
         have a corresponding SQL file.
-        :param params: SQL parameters to pass to the query.
-        :returns: The resultant cursor of the query.
         """
         if query_name not in self.query_cache:
             self.read_query_file(query_name)
-        query = self.query_cache[query_name]["query"]
-        if self.query_cache[query_name]["script"]:
-            if params is not None:
-                raise ValueError("Script does not accept params")
-            return self.conn.executescript(query)
-        if params is None:
-            params = {}
-        return self.conn.execute(query, params)

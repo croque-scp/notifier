@@ -17,6 +17,7 @@ pycron = "^3.0.0"
 black = "^21.7b0"
 pytest = "^6.2.4"
 isort = "^5.9.2"
+pylint = "^2.9.6"
 
 [tool.black]
 line-length = 79
@@ -26,6 +27,14 @@ include = '\.pyi?$'
 [tool.isort]
 profile = "black"
 skip_gitignore = true
+
+[tool.pylint.messages_control]
+disable = [
+  "invalid-name", # oh sorry did I forget to uppercase?
+  "missing-module-docstring", # filenames are good enough
+  "redefined-outer-name", # for pytest
+  "too-few-public-methods", # this is just stupid
+]
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]

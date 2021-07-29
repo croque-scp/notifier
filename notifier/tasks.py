@@ -27,13 +27,11 @@ class NotificationChannel(ABC):
     @abstractmethod
     def execute(self):
         """Execute this task's responsibilities."""
-        pass
 
 
 def execute_tasks(
     local_config_path: str,
     database: BaseDatabaseDriver,
-    connection: Connection,
 ):
     """Main task executor. Should be called as often as the most frequent
     notification digest.
@@ -60,6 +58,7 @@ def execute_tasks(
         print("No active channels")
         return
     local_config = read_local_config(local_config_path)
+    connection = Connection()
     global_config = read_global_config()
     user_config = read_user_config()
     for Channel in active_channels:
@@ -69,6 +68,8 @@ def execute_tasks(
 
 
 class HourlyChannel(NotificationChannel):
+    """Hourly notification channel."""
+
     crontab = "0 * * * *"
 
     def execute(self):
@@ -76,6 +77,8 @@ class HourlyChannel(NotificationChannel):
 
 
 class DailyChannel(NotificationChannel):
+    """Hourly notification channel."""
+
     crontab = "0 0 * * *"
 
     def execute(self):
@@ -83,6 +86,8 @@ class DailyChannel(NotificationChannel):
 
 
 class WeeklyChannel(NotificationChannel):
+    """Hourly notification channel."""
+
     crontab = "0 0 * * 0"
 
     def execute(self):
@@ -90,6 +95,8 @@ class WeeklyChannel(NotificationChannel):
 
 
 class MonthlyChannel(NotificationChannel):
+    """Hourly notification channel."""
+
     crontab = "0 0 1 * *"
 
     def execute(self):

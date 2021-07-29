@@ -13,6 +13,8 @@ listpages_div_wrap = f"""
 
 
 class Connection:
+    """Connection to Wikidot facilitating communications with it."""
+
     def __init__(self, username, password):
         """Connect to Wikidot."""
         self._session = requests.sessions.Session()
@@ -100,6 +102,4 @@ class Connection:
 
     def get_new_posts(self, wiki):
         """Fetches information about new posts from a wiki's RSS."""
-
-    def get_configs():
-        pass
+        # TODO
