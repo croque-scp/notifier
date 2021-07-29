@@ -2,7 +2,7 @@ import sqlite3
 from abc import ABC
 from pathlib import Path
 from sqlite3.dbapi2 import Cursor
-from typing import Any, Callable, Dict, Iterable
+from typing import Any, Callable, Dict, Iterable, Tuple, Type
 
 from notifier.config.tool import SupportedSiteConfig
 from notifier.config.user import Subscription, UserConfig
@@ -14,7 +14,9 @@ def get_or_get_from_cache(
     get: Callable,
     cache_store: Callable,
     cache_get: Callable,
-    fail_value: Any,
+    *,
+    fail_value: Any = None,
+    catch: Tuple[Type[Exception], ...] = None,
 ):
     """Either retrieves data from some external endpoint, caches it, and
     returns it; or if that fails for some reason then retrieves cached
@@ -32,13 +34,19 @@ def get_or_get_from_cache(
 
     :param fail_value: If `get`'s return value is equal to this, it
     is considered to have failed, and the result of `cache_get` will be
-    returned instead.
+    returned instead. Defaults to None; set to a sentinel value to permit
+    `get` to return None.
+
+    :param catch: Tuple of exceptions to catch. If `get` emits any other
+    kind of error, it will not be caught. Defaults to catching all
+    exceptions which obviously is not recommended.
     """
+    if catch is None:
+        catch = Exception
     value = fail_value
     try:
         value = get()
-    except:
-        # TODO Handle the error properly - only catch specified error types?
+    except catch:
         pass
     if value == fail_value:
         return cache_get()
@@ -140,7 +148,7 @@ class SqliteDriver(BaseDatabaseDriver):
         :param user_config: Configuration for a user.
         """
         user_id = user_config.user_id
-
+        # TODO
         self.conn.commit()
 
     def store_manual_sub(self, user_id: str, subscription: Subscription):

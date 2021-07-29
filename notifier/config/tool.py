@@ -4,7 +4,7 @@ import requests
 import tomlkit
 from tomlkit.exceptions import TOMLKitError
 
-from notifier.database.driver import BaseDatabaseDriver
+from notifier.database.driver import BaseDatabaseDriver, get_or_get_from_cache
 from notifier.wikiconnection import Connection
 
 # For ease of parsing, configurations are coerced to TOML format
@@ -58,7 +58,12 @@ def get_global_config(
     database: BaseDatabaseDriver,
     connection: Connection,
 ):
-    overrides = fetch_global_overrides(local_config)
+    overrides = get_or_get_from_cache(
+        lambda: fetch_global_overrides(local_config),
+        database.store_global_overrides,
+        database.get_global_overrides,
+        fail_value={},
+    )
     sites = fetch_supported_sites(local_config, connection)
 
 
