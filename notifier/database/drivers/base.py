@@ -3,8 +3,12 @@ from pathlib import Path
 from sqlite3.dbapi2 import Cursor
 from typing import Any, Callable, Dict, Iterable, List, Tuple, Type, TypedDict
 
-from notifier.config.tool import SupportedSiteConfig
-from notifier.config.user import Subscription, UserConfig
+from notifier.types import (
+    GlobalOverridesConfig,
+    Subscription,
+    SupportedSiteConfig,
+    UserConfig,
+)
 
 
 def try_cache(

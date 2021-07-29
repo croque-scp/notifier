@@ -1,9 +1,13 @@
 import sqlite3
 from typing import Dict, List, TypedDict
 
-from notifier.config.tool import SupportedSiteConfig
-from notifier.config.user import Subscription, UserConfig
 from notifier.database.drivers.base import DatabaseWithSqlFileCache
+from notifier.types import (
+    GlobalOverridesConfig,
+    Subscription,
+    SupportedSiteConfig,
+    UserConfig,
+)
 
 sqlite3.enable_callback_tracebacks(True)
 

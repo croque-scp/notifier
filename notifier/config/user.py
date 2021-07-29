@@ -1,9 +1,8 @@
-from typing import List, Literal, Tuple, TypedDict, Union
+from typing import List, Tuple, Union
 
 import tomlkit
-from bs4 import BeautifulSoup
 
-from notifier.config.tool import LocalConfig
+from notifier.types import LocalConfig, Subscription, UserConfig
 from notifier.database.drivers.base import BaseDatabaseDriver
 from notifier.wikiconnection import Connection
 
@@ -19,21 +18,6 @@ subscriptions = """
 unsubscriptions = """
 %%form_data{unsubscriptions}%%"""
 '''
-
-
-class Subscription(TypedDict):
-    thread_id: str
-    post_id: Union[str, None]
-    sub: Union[Literal[-1], Literal[1]]
-
-
-class UserConfig(TypedDict):
-    user_id: str
-    username: str
-    frequency: str
-    language: str
-    subscriptions: List[Subscription]
-    unsubscriptions: List[Subscription]
 
 
 def fetch_user_configs(

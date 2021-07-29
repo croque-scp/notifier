@@ -1,10 +1,15 @@
-from typing import Dict, List, Literal, Optional, TypedDict, Union
+from typing import List
 
 import requests
 import tomlkit
 from tomlkit.exceptions import TOMLKitError
 
 from notifier.database.drivers.base import BaseDatabaseDriver, try_cache
+from notifier.types import (
+    GlobalOverridesConfig,
+    LocalConfig,
+    SupportedSiteConfig,
+)
 from notifier.wikiconnection import Connection
 
 # For ease of parsing, configurations are coerced to TOML format
@@ -12,30 +17,6 @@ site_config_listpages_body = """
 id = "%%form_data{id}%%"
 secure = %%forum_data{secure}%%
 """
-
-
-class LocalConfig(TypedDict):
-    wikidot_username: str
-    config_wiki: str
-    user_config_category: str
-    site_config_category: str
-    overrides_url: str
-
-
-class SupportedSiteConfig(TypedDict):
-    id: str
-    secure: Union[Literal[0], Literal[1]]
-
-
-class GlobalOverrideConfig(TypedDict):
-    description: str
-    action: str
-    category_id_is: Optional[str]
-    thread_id_is: Optional[str]
-    thread_title_matches: Optional[str]
-
-
-GlobalOverridesConfig = Dict[str, List[GlobalOverrideConfig]]
 
 
 def read_local_config(path: str) -> LocalConfig:
