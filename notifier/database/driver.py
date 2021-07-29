@@ -13,7 +13,7 @@ sqlite3.enable_callback_tracebacks(True)
 def get_and_cache_or_get_from_cache(
     get: Callable,
     cache_store: Callable,
-    cache_get: Callable,
+    cache_get: Callable = None,
     *,
     fail_value: Any = None,
     catch: Tuple[Type[Exception], ...] = None,
@@ -29,7 +29,7 @@ def get_and_cache_or_get_from_cache(
     result as its only argument to cache the data.
 
     :param cache_get: A callable that takes no argument and returns data
-    representative of `get`'s return value.
+    representative of `get`'s return value; or nothing.
 
     :param fail_value: If `get`'s return value is equal to this, it is
     considered to have failed, and the result of `cache_get` will be
@@ -43,7 +43,7 @@ def get_and_cache_or_get_from_cache(
     :returns: The result of `cache_get`. If `get` succeeded this should
     contain information incorporating the new data; otherwise, it will
     contain only cached data. The difference between the two is determined
-    by `cache_store`.
+    by `cache_store`. If `cache_get` was not provided, returns nothing.
     """
     if catch is None:
         catch = Exception
@@ -54,7 +54,8 @@ def get_and_cache_or_get_from_cache(
         pass
     if value != fail_value:
         cache_store(value)
-    return cache_get()
+    if cache_get is not None:
+        return cache_get()
 
 
 class BaseDatabaseDriver(ABC):
