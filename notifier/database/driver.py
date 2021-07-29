@@ -10,7 +10,7 @@ from notifier.config.user import Subscription, UserConfig
 sqlite3.enable_callback_tracebacks(True)
 
 
-def get_or_get_from_cache(
+def get_and_cache_or_get_from_cache(
     get: Callable,
     cache_store: Callable,
     cache_get: Callable,
@@ -19,8 +19,8 @@ def get_or_get_from_cache(
     catch: Tuple[Type[Exception], ...] = None,
 ):
     """Either retrieves data from some external endpoint, caches it, and
-    returns it; or if that fails for some reason then retrieves cached
-    data.
+    returns the value from the cache; or if that fails for some reason then
+    retrieves cached data.
 
     :param get: Callable that takes no argument to execute that retrieves
     data.
@@ -28,18 +28,22 @@ def get_or_get_from_cache(
     :param cache_store: If `get` succeeded, a callable that takes `get`'s
     result as its only argument to cache the data.
 
-    :param cache_get: If `get` failed or returned a value equal to
-    `fail_value`, a callable that takes no argument and returns data
-    compatible with `get`'s return value.
+    :param cache_get: A callable that takes no argument and returns data
+    representative of `get`'s return value.
 
-    :param fail_value: If `get`'s return value is equal to this, it
-    is considered to have failed, and the result of `cache_get` will be
+    :param fail_value: If `get`'s return value is equal to this, it is
+    considered to have failed, and the result of `cache_get` will be
     returned instead. Defaults to None; set to a sentinel value to permit
     `get` to return None.
 
     :param catch: Tuple of exceptions to catch. If `get` emits any other
     kind of error, it will not be caught. Defaults to catching all
     exceptions which obviously is not recommended.
+
+    :returns: The result of `cache_get`. If `get` succeeded this should
+    contain information incorporating the new data; otherwise, it will
+    contain only cached data. The difference between the two is determined
+    by `cache_store`.
     """
     if catch is None:
         catch = Exception
@@ -48,10 +52,9 @@ def get_or_get_from_cache(
         value = get()
     except catch:
         pass
-    if value == fail_value:
-        return cache_get()
-    cache_store(value)
-    return value
+    if value != fail_value:
+        cache_store(value)
+    return cache_get()
 
 
 class BaseDatabaseDriver(ABC):
