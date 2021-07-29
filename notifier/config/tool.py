@@ -1,8 +1,10 @@
-from typing import List, Literal, TypedDict, Union
+from typing import Dict, List, Literal, Optional, TypedDict, Union
 
+import requests
 import tomlkit
 from tomlkit.exceptions import TOMLKitError
 
+from notifier.database.driver import BaseDatabaseDriver
 from notifier.wikiconnection import Connection
 
 # For ease of parsing, configurations are coerced to TOML format
@@ -25,6 +27,17 @@ class SupportedSiteConfig(TypedDict):
     secure: Union[Literal[0], Literal[1]]
 
 
+class GlobalOverrideConfig(TypedDict):
+    description: str
+    action: str
+    category_id_is: Optional[str]
+    thread_id_is: Optional[str]
+    thread_title_matches: Optional[str]
+
+
+GlobalOverridesConfig = Dict[str, List[GlobalOverrideConfig]]
+
+
 def read_local_config(path: str) -> LocalConfig:
     """Reads the local config file from the specified path.
 
@@ -37,6 +50,27 @@ def read_local_config(path: str) -> LocalConfig:
     assert "user_config_category" in config
     assert "site_config_category" in config
     assert "overrides_url" in config
+    return config
+
+
+def get_global_config(
+    local_config: LocalConfig,
+    database: BaseDatabaseDriver,
+    connection: Connection,
+):
+    overrides = fetch_global_overrides(local_config)
+    sites = fetch_supported_sites(local_config, connection)
+
+
+def fetch_global_overrides(local_config: LocalConfig) -> GlobalOverridesConfig:
+    """Get the list of global override actions from the configuration
+    wiki."""
+    raw_config = requests.get(local_config["overrides_url"])
+    config = {}
+    try:
+        config = parse_raw_overrides_config(raw_config)
+    except (TOMLKitError, AssertionError):
+        print("Couldn't parse global overrides config")
     return config
 
 
@@ -65,4 +99,16 @@ def parse_raw_site_config(raw_config: str) -> SupportedSiteConfig:
     assert "id" in config
     assert "secure" in config
     assert config["secure"] in (0, 1)
+    return config
+
+
+def parse_raw_overrides_config(raw_config: str) -> GlobalOverridesConfig:
+    """Parses a raw overrides config to lists of override objects sorted by
+    the wiki ID they correspond to."""
+    config = tomlkit.parse(raw_config)
+    assert isinstance(config, dict)
+    for wiki_id, overrides in config.items():
+        assert isinstance(overrides, list)
+        for override in overrides:
+            assert "action" in override
     return config
