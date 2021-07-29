@@ -1,3 +1,4 @@
+import json
 import sqlite3
 from typing import Dict, List, TypedDict
 
@@ -22,6 +23,26 @@ class SqliteDriver(DatabaseWithSqlFileCache):
 
     def create_tables(self):
         self.execute_named("create_tables")
+
+    def store_global_overrides(self, overrides: GlobalOverridesConfig) -> None:
+        self.execute_named("drop_overrides")
+        for wiki_id, overrides in overrides.item():
+            self.execute_named(
+                "store_global_override",
+                {
+                    "wiki_id": wiki_id,
+                    "override_settings_json": json.dumps(overrides),
+                },
+            )
+        self.conn.commit()
+
+    def get_global_overrides(self) -> GlobalOverridesConfig:
+        rows = self.execute_named("get_global_overrides").fetchall()
+        overrides = {
+            row["wiki_id"]: json.loads(row["override_settings_json"])
+            for row in rows
+        }
+        return overrides
 
     def get_new_posts_for_user(
         self, user_id: str, search_timestamp: int

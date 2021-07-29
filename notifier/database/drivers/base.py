@@ -64,6 +64,18 @@ class BaseDatabaseDriver(ABC):
         pass
 
     @abstractmethod
+    def store_global_overrides(self, overrides: GlobalOverridesConfig) -> None:
+        """Store all global overrides, overwriting any that are already
+        present."""
+        pass
+
+    @abstractmethod
+    def get_global_overrides(self) -> GlobalOverridesConfig:
+        """Gets all global overrides, keyed to the ID of the wiki they are
+        set for."""
+        pass
+
+    @abstractmethod
     def get_new_posts_for_user(
         self, user_id: str, search_timestamp: int
     ) -> TypedDict("NewPosts", {"thread_posts": List, "post_replies": List}):
