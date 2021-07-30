@@ -65,7 +65,7 @@ class SqliteDriver(DatabaseWithSqlFileCache, BaseDatabaseDriver):
     ) -> None:
         # Overwrite all current overrides
         self.execute_named("delete_overrides")
-        for wiki_id, overrides in global_overrides.item():
+        for wiki_id, overrides in global_overrides.items():
             self.execute_named(
                 "store_global_override",
                 {
@@ -125,7 +125,8 @@ class SqliteDriver(DatabaseWithSqlFileCache, BaseDatabaseDriver):
             {
                 "user_id": user_id,
                 "thread_id": subscription["thread_id"],
-                "post_id": subscription.get("post_id"),
+                # "post_id": subscription.get("post_id"),
+                "post_id": subscription["post_id"],
                 "sub": subscription["sub"],
             },
         )

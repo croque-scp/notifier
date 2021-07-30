@@ -26,11 +26,11 @@ def read_local_config(path: str) -> LocalConfig:
     """
     with open(path, "r") as config_file:
         config = tomlkit.parse(config_file.read())
+    assert isinstance(config, dict)
     assert "wikidot_username" in config
     assert "config_wiki" in config
     assert "user_config_category" in config
     assert "wiki_config_category" in config
-    assert "overrides_url" in config
     return config
 
 

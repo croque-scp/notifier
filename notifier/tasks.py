@@ -1,5 +1,4 @@
-from abc import ABC, abstractmethod
-from dataclasses import dataclass
+from abc import ABC
 from datetime import datetime
 
 import pycron
@@ -10,7 +9,6 @@ from notifier.database.drivers.base import BaseDatabaseDriver
 from notifier.wikiconnection import Connection
 
 
-@dataclass
 class NotificationChannel(ABC):
     """A scheduled notification for users on a specific frequency channel.
 
@@ -21,12 +19,10 @@ class NotificationChannel(ABC):
     out.
     """
 
-    database: BaseDatabaseDriver
-    connection: Connection
-    crontab = None
+    crontab = ""
+    frequency = ""
 
-    @abstractmethod
-    def notify(self):
+    def notify(self, database: BaseDatabaseDriver, connection: Connection):
         """Execute this task's responsibilities."""
 
 
@@ -72,33 +68,25 @@ class HourlyChannel(NotificationChannel):
     """Hourly notification channel."""
 
     crontab = "0 * * * *"
-
-    def notify(self):
-        pass
+    frequency = "hourly"
 
 
 class DailyChannel(NotificationChannel):
     """Hourly notification channel."""
 
     crontab = "0 0 * * *"
-
-    def notify(self):
-        pass
+    frequency = "daily"
 
 
 class WeeklyChannel(NotificationChannel):
     """Hourly notification channel."""
 
     crontab = "0 0 * * 0"
-
-    def notify(self):
-        pass
+    frequency = "weekly"
 
 
 class MonthlyChannel(NotificationChannel):
     """Hourly notification channel."""
 
     crontab = "0 0 1 * *"
-
-    def notify(self):
-        pass
+    frequency = "monthly"

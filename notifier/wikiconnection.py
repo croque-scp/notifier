@@ -1,7 +1,8 @@
-from typing import List
+from typing import Generator
 
 import requests
 from bs4 import BeautifulSoup
+from bs4.element import PageElement
 
 listpages_div_class = "listpages-div-wrap"
 
@@ -35,7 +36,7 @@ class Connection:
 
     def listpages(
         self, wiki: str, *, module_body: str, **kwargs
-    ) -> List[BeautifulSoup]:
+    ) -> Generator[PageElement, None, None]:
         """Execute a ListPages search against a wiki and return all results
         as soup."""
         module_body = listpages_div_wrap.format(module_body)
@@ -50,9 +51,9 @@ class Connection:
                 module_body=module_body,
                 **kwargs,
             )
-            for soup in BeautifulSoup(page["body"], "html.parser")
-            .find(class_="list-pages-box")
-            .find_all(class_=listpages_div_class)
+            for soup in BeautifulSoup(page["body"], "html.parser").find_all(
+                class_=listpages_div_class
+            )
         )
         return items
 

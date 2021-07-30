@@ -1,6 +1,5 @@
 from abc import ABC, abstractmethod
 from pathlib import Path
-from sqlite3.dbapi2 import Cursor
 from typing import Any, Callable, List, Tuple, Type
 
 from notifier.types import (
@@ -160,7 +159,7 @@ class DatabaseWithSqlFileCache(BaseDatabaseDriver, ABC):
             "query": query,
         }
 
-    def cache_named_query(self, query_name: str) -> Cursor:
+    def cache_named_query(self, query_name: str) -> None:
         """Reads an SQL query from the source and puts it to the cache,
         unless it is already present.
 

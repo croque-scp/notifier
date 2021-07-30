@@ -38,7 +38,7 @@ class Subscription(TypedDict):
     """A user's (un)subscription to a single thread or post."""
 
     thread_id: str
-    post_id: Union[str, None]
+    post_id: Optional[str]
     sub: Union[Literal[-1], Literal[1]]
 
 
