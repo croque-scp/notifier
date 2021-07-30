@@ -94,10 +94,10 @@ class BaseDatabaseDriver(ABC):
         """
 
     @abstractmethod
-    def store_user_config(self, user_config: UserConfig):
-        """Caches a user notification configuration.
+    def store_user_configs(self, user_configs: List[UserConfig]) -> None:
+        """Caches user notification configurations.
 
-        :param user_config: Configuration for a user.
+        :param user_configs: List of configurations for all users.
         """
 
     @abstractmethod
@@ -109,7 +109,7 @@ class BaseDatabaseDriver(ABC):
         :param user_id: The numeric Wikidot ID of the user, as text.
         :param thread_id: Data for the subscription.
         """
-    
+
     @abstractmethod
     def get_supported_wikis(self) -> List[SupportedWikiConfig]:
         """Get a list of supported wikis."""

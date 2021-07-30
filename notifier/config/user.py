@@ -3,7 +3,7 @@ from typing import List, Tuple, Union
 import tomlkit
 from tomlkit.exceptions import TOMLKitError
 
-from notifier.database.drivers.base import BaseDatabaseDriver
+from notifier.database.drivers.base import BaseDatabaseDriver, try_cache
 from notifier.types import LocalConfig, Subscription, UserConfig
 from notifier.wikiconnection import Connection
 
@@ -21,11 +21,23 @@ unsubscriptions = """
 '''
 
 
-def fetch_user_configs(
+def get_user_config(
     local_config: LocalConfig,
     database: BaseDatabaseDriver,
     connection: Connection,
 ):
+    """Retrieve remote user config."""
+    try_cache(
+        get=lambda: fetch_user_configs(local_config, connection),
+        store=database.store_user_configs
+        # TODO do_not_store or catch
+    )
+
+
+def fetch_user_configs(
+    local_config: LocalConfig,
+    connection: Connection,
+) -> List[UserConfig]:
     """Fetches a list of user configurations from the configuration wiki.
 
     User configurations are stored on the dedicated Wikidot site. They are

@@ -4,7 +4,8 @@ from datetime import datetime
 
 import pycron
 
-from notifier.config.tool import read_local_config
+from notifier.config.tool import get_global_config, read_local_config
+from notifier.config.user import get_user_config
 from notifier.database.drivers.base import BaseDatabaseDriver
 from notifier.wikiconnection import Connection
 
@@ -25,7 +26,7 @@ class NotificationChannel(ABC):
     crontab = None
 
     @abstractmethod
-    def execute(self):
+    def notify(self):
         """Execute this task's responsibilities."""
 
 
@@ -59,10 +60,10 @@ def execute_tasks(
         return
     local_config = read_local_config(local_config_path)
     connection = Connection()
-    global_config = read_global_config()
-    user_config = read_user_config()
+    overrides, wikis = get_global_config(local_config, database, connection)
+    user_config = get_user_config(local_config, database, connection)
     for Channel in active_channels:
-        Channel(database, connection).execute(
+        Channel(database, connection).notify(
             local_config, global_config, user_config
         )
 
@@ -72,7 +73,7 @@ class HourlyChannel(NotificationChannel):
 
     crontab = "0 * * * *"
 
-    def execute(self):
+    def notify(self):
         pass
 
 
@@ -81,7 +82,7 @@ class DailyChannel(NotificationChannel):
 
     crontab = "0 0 * * *"
 
-    def execute(self):
+    def notify(self):
         pass
 
 
@@ -90,7 +91,7 @@ class WeeklyChannel(NotificationChannel):
 
     crontab = "0 0 * * 0"
 
-    def execute(self):
+    def notify(self):
         pass
 
 
@@ -99,5 +100,5 @@ class MonthlyChannel(NotificationChannel):
 
     crontab = "0 0 1 * *"
 
-    def execute(self):
+    def notify(self):
         pass

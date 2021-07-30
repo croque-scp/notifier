@@ -63,7 +63,8 @@ class SqliteDriver(DatabaseWithSqlFileCache, BaseDatabaseDriver):
     def store_global_overrides(
         self, global_overrides: GlobalOverridesConfig
     ) -> None:
-        self.execute_named("drop_overrides")
+        # Overwrite all current overrides
+        self.execute_named("delete_overrides")
         for wiki_id, overrides in global_overrides.item():
             self.execute_named(
                 "store_global_override",
@@ -96,9 +97,24 @@ class SqliteDriver(DatabaseWithSqlFileCache, BaseDatabaseDriver):
         ]
         return {"thread_posts": thread_posts, "post_replies": post_replies}
 
-    def store_user_config(self, user_config: UserConfig):
-        user_id = user_config.user_id
-        # TODO
+    def store_user_configs(self, user_configs: List[UserConfig]) -> None:
+        # Overwrite all current configs
+        self.execute_named("delete_user_configs")
+        self.execute_named("delete_manual_subs")
+        for user_config in user_configs:
+            self.execute_named(
+                "store_user_config",
+                {
+                    "user_id": user_config["user_id"],
+                    "username": user_config["username"],
+                    "frequency": user_config["frequency"],
+                    "language": user_config["language"],
+                },
+            )
+            for subscription in (
+                user_config["subscriptions"] + user_config["unsubscriptions"]
+            ):
+                self.store_manual_sub(user_config["user_id"], subscription)
         self.conn.commit()
 
     def store_manual_sub(
@@ -109,7 +125,7 @@ class SqliteDriver(DatabaseWithSqlFileCache, BaseDatabaseDriver):
             {
                 "user_id": user_id,
                 "thread_id": subscription["thread_id"],
-                "post_id": subscription["post_id"],
+                "post_id": subscription.get("post_id"),
                 "sub": subscription["sub"],
             },
         )

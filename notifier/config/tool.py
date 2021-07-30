@@ -1,4 +1,4 @@
-from typing import List
+from typing import List, Tuple
 
 import requests
 import tomlkit
@@ -38,7 +38,7 @@ def get_global_config(
     local_config: LocalConfig,
     database: BaseDatabaseDriver,
     connection: Connection,
-):
+) -> Tuple[GlobalOverridesConfig, List[SupportedWikiConfig]]:
     """Retrieve remote global config for overrides and wikis."""
     try_cache(
         get=lambda: fetch_global_overrides(local_config),
