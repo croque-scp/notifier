@@ -58,7 +58,7 @@ def get_global_config(
 def fetch_global_overrides(local_config: LocalConfig) -> GlobalOverridesConfig:
     """Get the list of global override actions from the configuration
     wiki."""
-    raw_config = requests.get(local_config["overrides_url"])
+    raw_config = requests.get(local_config["overrides_url"]).text
     config = {}
     try:
         config = parse_raw_overrides_config(raw_config)
@@ -67,16 +67,29 @@ def fetch_global_overrides(local_config: LocalConfig) -> GlobalOverridesConfig:
     return config
 
 
+def parse_raw_overrides_config(raw_config: str) -> GlobalOverridesConfig:
+    """Parses a raw overrides config to lists of override objects sorted by
+    the wiki ID they correspond to."""
+    config = tomlkit.parse(raw_config)
+    assert isinstance(config, dict)
+    for overrides in config.values():
+        assert isinstance(overrides, list)
+        for override in overrides:
+            assert "action" in override
+    return config
+
+
 def fetch_supported_wikis(
     local_config: LocalConfig, connection: Connection
 ) -> List[SupportedWikiConfig]:
     """Fetch the list of supported wikis from the configuration wiki."""
     configs = []
-    for raw_config in connection.listpages(
+    for config_soup in connection.listpages(
         local_config["config_wiki"],
         category=local_config["wiki_config_category"],
         module_body=wiki_config_listpages_body,
     ):
+        raw_config = config_soup.get_text()
         try:
             configs.append(parse_raw_wiki_config(raw_config))
         except (TOMLKitError, AssertionError):
@@ -92,16 +105,4 @@ def parse_raw_wiki_config(raw_config: str) -> SupportedWikiConfig:
     assert "id" in config
     assert "secure" in config
     assert config["secure"] in (0, 1)
-    return config
-
-
-def parse_raw_overrides_config(raw_config: str) -> GlobalOverridesConfig:
-    """Parses a raw overrides config to lists of override objects sorted by
-    the wiki ID they correspond to."""
-    config = tomlkit.parse(raw_config)
-    assert isinstance(config, dict)
-    for wiki_id, overrides in config.items():
-        assert isinstance(overrides, list)
-        for override in overrides:
-            assert "action" in override
     return config

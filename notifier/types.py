@@ -23,7 +23,6 @@ class SupportedWikiConfig(TypedDict):
 class GlobalOverrideConfig(TypedDict):
     """A single remote override config."""
 
-    description: str
     action: str
     category_id_is: Optional[str]
     thread_id_is: Optional[str]

@@ -1,5 +1,5 @@
 from abc import ABC
-from datetime import datetime
+from datetime import datetime, timezone
 
 import pycron
 
@@ -37,7 +37,17 @@ def execute_tasks(
     getting data for new posts) and then triggers the relevant notification
     schedules.
     """
-    post_search_upper_timestamp = datetime.now()
+    # TODO This needs to happen *just before* posts are decached
+    # TODO Move the below comment to where this value is stored
+    # Store this value in the database to define the lower bound for the
+    # next post search on this channel
+    # I could just use the cron to derive the last time the channel
+    # executed, but it wouldn't be precise and might cause duplication of
+    # posts. Plus, if the tool missed notifying a channel, this causes it
+    # to include all the posts that it would otherwise have forgotten
+    post_search_upper_timestamp = int(
+        datetime.now(tz=timezone.utc).timestamp()
+    )
     # Check which notification channels should be activated
     active_channels = [
         Channel
