@@ -52,8 +52,9 @@ def try_cache(
     value = do_not_store
     try:
         value = get()
-    except catch:
-        pass
+    except catch as error:
+        print(f"{get.__name__} failed; will use value from cache")
+        print(f"Failure: {error}")
     if value != do_not_store:
         store(value)
 
