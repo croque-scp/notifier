@@ -85,10 +85,10 @@ class BaseDatabaseDriver(ABC):
 
     @abstractmethod
     def get_new_posts_for_user(
-        self, user_id: str, search_timestamp: int
+        self, user_id: str, timestamp_range: Tuple[int, int]
     ) -> NewPostsInfo:
-        """Get new posts for the users with the given ID made since the
-        given timestamp.
+        """Get new posts for the users with the given ID made during the
+        given time range.
 
         Returns a dict containing the thread posts and the post replies.
         """

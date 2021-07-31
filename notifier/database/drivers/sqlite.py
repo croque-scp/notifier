@@ -1,7 +1,7 @@
 import json
 import sqlite3
 from sqlite3.dbapi2 import Cursor
-from typing import Iterable, List
+from typing import Iterable, List, Tuple
 
 from notifier.database.drivers.base import (
     BaseDatabaseDriver,
@@ -76,17 +76,19 @@ class SqliteDriver(DatabaseWithSqlFileCache, BaseDatabaseDriver):
         self.conn.commit()
 
     def get_new_posts_for_user(
-        self, user_id: str, search_timestamp: int
+        self, user_id: str, timestamp_range: Tuple[int, int]
     ) -> NewPostsInfo:
-        # Get new posts in subscribed threads
+        lower_timestamp, upper_timestamp = timestamp_range
+        criterion = {
+            "user_id": user_id,
+            "upper_timestamp": upper_timestamp,
+            "lower_timestamp": lower_timestamp,
+        }
         thread_posts = self.execute_named(
-            "get_posts_in_subscribed_threads",
-            {"user_id": user_id, "search_timestamp": search_timestamp},
+            "get_posts_in_subscribed_threads", criterion
         ).fetchall()
-        # Get new replies to subscribed posts
         post_replies = self.execute_named(
-            "get_replies_to_subscribed_posts",
-            {"user_id": user_id, "search_timestamp": search_timestamp},
+            "get_replies_to_subscribed_posts", criterion
         ).fetchall()
         # Remove duplicate posts - keep the ones that are post replies
         post_replies_ids = [post["id"] for post in post_replies]

@@ -1,6 +1,7 @@
 import pytest
 
 from notifier.database.drivers import DatabaseDriver
+from notifier.database.drivers.base import BaseDatabaseDriver
 
 
 @pytest.fixture(scope="module")
@@ -56,9 +57,9 @@ def titles(posts):
 
 
 @pytest.fixture(scope="class")
-def new_posts_for_user(sample_database):
+def new_posts_for_user(sample_database: BaseDatabaseDriver):
     """Extract new posts for a single user from the sample database."""
-    posts = sample_database.get_new_posts_for_user("1", 0)
+    posts = sample_database.get_new_posts_for_user("1", (0, 100))
     thread_posts = posts["thread_posts"]
     post_replies = posts["post_replies"]
     return thread_posts, post_replies

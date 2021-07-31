@@ -46,8 +46,8 @@ WHERE
       AND manual_sub.sub = -1
   )
 
-  -- Remove posts not posted in the last time period
-  AND post.posted_timestamp >= :search_timestamp
+  -- Remove posts not posted in the current frequency channel
+  AND post.posted_timestamp BETWEEN :lower_timestamp AND :upper_timestamp
 
   -- Remove posts made by the user
   AND post.user_id <> :user_id
