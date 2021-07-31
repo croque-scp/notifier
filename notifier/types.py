@@ -33,13 +33,16 @@ class GlobalOverrideConfig(TypedDict):
 # A collection of remote override configs, keyed by wiki.
 GlobalOverridesConfig = Dict[str, List[GlobalOverrideConfig]]
 
+# Direction of a subscription (-1 indicates an unsubscription).
+SubscriptionCardinality = Union[Literal[-1], Literal[1]]
+
 
 class Subscription(TypedDict):
     """A user's (un)subscription to a single thread or post."""
 
     thread_id: str
     post_id: Optional[str]
-    sub: Union[Literal[-1], Literal[1]]
+    sub: SubscriptionCardinality
 
 
 class UserConfig(TypedDict):

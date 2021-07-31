@@ -1,10 +1,16 @@
+import re
 from typing import List, Tuple, Union
 
 import tomlkit
 from tomlkit.exceptions import TOMLKitError
 
 from notifier.database.drivers.base import BaseDatabaseDriver, try_cache
-from notifier.types import LocalConfig, Subscription, UserConfig
+from notifier.types import (
+    LocalConfig,
+    Subscription,
+    SubscriptionCardinality,
+    UserConfig,
+)
 from notifier.wikiconnection import Connection
 
 # For ease of parsing, configurations are coerced to TOML format
@@ -29,8 +35,8 @@ def get_user_config(
     """Retrieve remote user config."""
     try_cache(
         get=lambda: fetch_user_configs(local_config, connection),
-        store=database.store_user_configs
-        # TODO do_not_store or catch
+        store=database.store_user_configs,
+        do_not_store=[],
     )
 
 
@@ -43,52 +49,76 @@ def fetch_user_configs(
     User configurations are stored on the dedicated Wikidot site. They are
     cached in the SQLite database.
     """
-    for raw_config in connection.listpages(
+    configs: List[UserConfig] = []
+    for config_soup in connection.listpages(
         local_config["config_wiki"],
         category=local_config["user_config_category"],
         module_body=user_config_listpages_body,
     ):
-        raw_config = raw_config.get_text()
+        raw_config = config_soup.get_text()
         try:
-            config = parse_raw_user_config(raw_config)
+            config, slug = parse_raw_user_config(raw_config)
         except (TOMLKitError, AssertionError):
             # If the parse fails, the user was probably trying code
             # injection or something - discard it
-            print("Skipping config for", raw_config.split("\n")[0])
+            print("Couldn't parse user config:", raw_config.split("\n")[0])
             continue
-        category, slug = config["slug"].split(":")
-        if category != "notify":
-            continue
-        if slug != config["username"]:
+        if (
+            ":" not in slug
+            or slug.split(":")[1].casefold() != config["username"].casefold()
+        ):
             # Only accept configs for the user who created the page
+            print(f"Wrong slug {slug} for {config['username']}")
             continue
-        # Store this config in the database
-        # TODO
+        configs.append(config)
+    return configs
 
 
-def parse_raw_user_config(raw_config: str) -> UserConfig:
-    """Parses a raw user config string to a suitable format."""
+def parse_raw_user_config(raw_config: str) -> Tuple[UserConfig, str]:
+    """Parses a raw user config string to a suitable format, also returning
+    the config slug."""
     config = tomlkit.parse(raw_config)
     assert isinstance(config, dict)
-    assert "slug" in config
+    slug = config.pop("slug", "")
+    assert isinstance(slug, str)
     assert "username" in config
     assert "user_id" in config
-    if "subscriptions" in config:
-        # Parse them TODO
-        pass
-    else:
-        config["subscriptions"] = []
-    if "unsubscriptions" in config:
-        pass
-    else:
-        config["unsubscriptions"] = []
-    # TODO
+    config["subscriptions"] = parse_subscriptions(
+        config.get("subscriptions", []), 1
+    )
+    config["unsubscriptions"] = parse_subscriptions(
+        config.get("unsubscriptions", []), -1
+    )
+    return config, slug
 
 
-def parse_subscriptions(urls: str) -> List[Subscription]:
-    # TODO
-    pass
+def parse_subscriptions(
+    urls: str, cardinality: SubscriptionCardinality
+) -> List[Subscription]:
+    """Parse a list of thread/post URLs to a list of subscriptions."""
+    subscriptions: List[Subscription] = []
+    for url in urls.split("\n"):
+        if not re.search(r"t-[0-9]", url):
+            # The URL doesn't contain a thread ID, so discard it
+            # (Empty rows are permitted so this is valid)
+            continue
+        try:
+            thread_id, post_id = parse_thread_url(url)
+        except ValueError:
+            # The URL parser is extremely forgiving, so this should not
+            # happen; if it somehow does, discard it
+            continue
+        subscriptions.append(
+            {"thread_id": thread_id, "post_id": post_id, "sub": cardinality}
+        )
+    return subscriptions
 
 
 def parse_thread_url(url: str) -> Tuple[str, Union[str, None]]:
-    """Parses a URL to a wiki ID, thread ID and optionally a post ID."""
+    """Parses a URL to a thread ID and optionally a post ID."""
+    pattern = re.compile(r"(t-[0-9]+)(?:.*#(post-[0-9]+))?")
+    match = pattern.search(url)
+    if not match:
+        raise ValueError("Thread URL does not match expected pattern")
+    thread_id, post_id = match.groups()
+    return thread_id, post_id
