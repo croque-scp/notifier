@@ -1,4 +1,4 @@
-from typing import List, Tuple
+from typing import List
 
 import requests
 import tomlkit
@@ -38,7 +38,7 @@ def get_global_config(
     local_config: LocalConfig,
     database: BaseDatabaseDriver,
     connection: Connection,
-) -> Tuple[GlobalOverridesConfig, List[SupportedWikiConfig]]:
+) -> None:
     """Retrieve remote global config for overrides and wikis."""
     try_cache(
         get=lambda: fetch_global_overrides(local_config),
@@ -50,9 +50,6 @@ def get_global_config(
         store=database.store_supported_wikis,
         do_not_store=[],
     )
-    overrides = database.get_global_overrides()
-    wikis = database.get_supported_wikis()
-    return overrides, wikis
 
 
 def fetch_global_overrides(local_config: LocalConfig) -> GlobalOverridesConfig:

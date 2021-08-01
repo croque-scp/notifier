@@ -22,8 +22,32 @@ class NotificationChannel(ABC):
     crontab = ""
     frequency = ""
 
-    def notify(self, database: BaseDatabaseDriver, connection: Connection):
+    def notify(
+        self,
+        database: BaseDatabaseDriver,
+        connection: Connection,
+        upper_timestamp: int,
+    ):
         """Execute this task's responsibilities."""
+        print(f"Executing {self.frequency} notification channel")
+        # Get config sans subscriptions for users who would be notified
+        user_configs = database.get_user_configs(self.frequency)
+        print(f"{len(user_configs)} users for {self.frequency} channel")
+        if len(user_configs) == 0:
+            return
+        # Key the user configs by user ID for easier iteration
+        users = {
+            user_config["user_id"]: {"config": user_config}
+            for user_config in user_configs
+        }
+        for user_id, user in users.items():
+            pass
+        # Get new posts for these users
+
+        # Compile the digests
+        # Send the digests via PM to PM-subscribed users
+        # Get email addresses for contacts, if there are any
+        # Send the digests via email to email-subscribed users
 
 
 def execute_tasks(
@@ -37,17 +61,6 @@ def execute_tasks(
     getting data for new posts) and then triggers the relevant notification
     schedules.
     """
-    # TODO This needs to happen *just before* posts are decached
-    # TODO Move the below comment to where this value is stored
-    # Store this value in the database to define the lower bound for the
-    # next post search on this channel
-    # I could just use the cron to derive the last time the channel
-    # executed, but it wouldn't be precise and might cause duplication of
-    # posts. Plus, if the tool missed notifying a channel, this causes it
-    # to include all the posts that it would otherwise have forgotten
-    post_search_upper_timestamp = int(
-        datetime.now(tz=timezone.utc).timestamp()
-    )
     # Check which notification channels should be activated
     active_channels = [
         Channel
@@ -66,12 +79,23 @@ def execute_tasks(
         return
     local_config = read_local_config(local_config_path)
     connection = Connection()
-    overrides, wikis = get_global_config(local_config, database, connection)
-    user_config = get_user_config(local_config, database, connection)
+    get_global_config(local_config, database, connection)
+    get_user_config(local_config, database, connection)
+    get_new_posts()
+    # TODO Move the below comment to where this value is stored
+    # Store this value in the database to define the lower bound for the
+    # next post search on this channel
+    # I could just use the cron to derive the last time the channel
+    # executed, but it wouldn't be precise and might cause duplication of
+    # posts. Plus, if the tool missed notifying a channel, this causes it
+    # to include all the posts that it would otherwise have forgotten
+    post_search_upper_timestamp = int(
+        datetime.now(tz=timezone.utc).timestamp()
+    )
+    # connection.login()
     for Channel in active_channels:
-        Channel(database, connection).notify(
-            local_config, global_config, user_config
-        )
+        # Should this be asynchronous + parallel?
+        Channel().notify(database, connection, post_search_upper_timestamp)
 
 
 class HourlyChannel(NotificationChannel):
