@@ -1,5 +1,4 @@
 from abc import ABC
-from datetime import datetime, timezone
 
 import pycron
 
@@ -26,7 +25,6 @@ class NotificationChannel(ABC):
         self,
         database: BaseDatabaseDriver,
         connection: Connection,
-        upper_timestamp: int,
     ):
         """Execute this task's responsibilities."""
         print(f"Executing {self.frequency} notification channel")
@@ -82,20 +80,10 @@ def execute_tasks(
     get_global_config(local_config, database, connection)
     get_user_config(local_config, database, connection)
     get_new_posts()
-    # TODO Move the below comment to where this value is stored
-    # Store this value in the database to define the lower bound for the
-    # next post search on this channel
-    # I could just use the cron to derive the last time the channel
-    # executed, but it wouldn't be precise and might cause duplication of
-    # posts. Plus, if the tool missed notifying a channel, this causes it
-    # to include all the posts that it would otherwise have forgotten
-    post_search_upper_timestamp = int(
-        datetime.now(tz=timezone.utc).timestamp()
-    )
     # connection.login()
     for Channel in active_channels:
         # Should this be asynchronous + parallel?
-        Channel().notify(database, connection, post_search_upper_timestamp)
+        Channel().notify(database, connection)
 
 
 class HourlyChannel(NotificationChannel):
