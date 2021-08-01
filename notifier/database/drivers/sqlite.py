@@ -167,18 +167,3 @@ class SqliteDriver(DatabaseWithSqlFileCache, BaseDatabaseDriver):
                 {"wiki_id": wiki["id"], "wiki_secure": wiki["secure"]},
             )
         self.conn.commit()
-
-    def get_last_search_time(self, frequency: str) -> int:
-        row = self.execute_named(
-            "get_last_search_time", {"frequency": frequency}
-        ).fetchone()
-        if row is None:
-            return 0
-        return row["timestamp"]
-
-    def store_last_search_time(self, frequency: str, timestamp: int) -> None:
-        self.execute_named(
-            "store_last_search_time",
-            {"frequency": frequency, "timestamp": timestamp},
-        )
-        self.conn.commit()

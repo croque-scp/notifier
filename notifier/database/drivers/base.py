@@ -141,16 +141,6 @@ class BaseDatabaseDriver(ABC):
         """Stores a set of supported wikis in the database, overwriting any
         that are already present."""
 
-    @abstractmethod
-    def get_last_search_time(self, frequency: str) -> int:
-        """Get the last search time for the channel with the given
-        frequency."""
-
-    @abstractmethod
-    def store_last_search_time(self, frequency: str, timestamp: int) -> None:
-        """Store the previous search time for a given channel frequency,
-        used in the next channel as the starting search time."""
-
 
 class DatabaseWithSqlFileCache(BaseDatabaseDriver, ABC):
     """Utilities for a database to read its SQL commands directly from the

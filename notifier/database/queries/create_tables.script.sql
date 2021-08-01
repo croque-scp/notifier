@@ -43,8 +43,3 @@ CREATE TABLE IF NOT EXISTS post (
   user_id TEXT NOT NULL,
   username TEXT NOT NULL
 );
-
-CREATE TABLE IF NOT EXISTS last_search_time (
-  frequency TEXT NOT NULL PRIMARY KEY,
-  timestamp INTEGER NOT NULL
-);
