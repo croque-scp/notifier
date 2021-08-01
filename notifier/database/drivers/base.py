@@ -3,6 +3,7 @@ from pathlib import Path
 from typing import Any, Callable, List, Tuple, Type
 
 from notifier.types import (
+    CachedUserConfig,
     GlobalOverridesConfig,
     NewPostsInfo,
     Subscription,
@@ -94,6 +95,15 @@ class BaseDatabaseDriver(ABC):
         """
 
     @abstractmethod
+    def get_user_configs(self, frequency: str) -> List[CachedUserConfig]:
+        """Get the cached config for users subscribed to the given channel
+        frequency.
+
+        The cached config does not contain subscriptions, but does contain
+        the timestamp at which the user was last notified.
+        """
+
+    @abstractmethod
     def store_user_configs(self, user_configs: List[UserConfig]) -> None:
         """Caches user notification configurations.
 
@@ -108,6 +118,18 @@ class BaseDatabaseDriver(ABC):
 
         :param user_id: The numeric Wikidot ID of the user, as text.
         :param thread_id: Data for the subscription.
+        """
+
+    @abstractmethod
+    def store_user_last_notified(
+        self, user_id: str, last_notified_timestamp: int
+    ) -> None:
+        """Store the time at which the user with the given ID was last
+        notified.
+
+        The time should be the time of the most recent post the user has
+        been notified about, but must only be saved once the notification
+        has actually been delivered.
         """
 
     @abstractmethod

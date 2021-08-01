@@ -55,6 +55,16 @@ class UserConfig(TypedDict):
     unsubscriptions: List[Subscription]
 
 
+class CachedUserConfig(TypedDict):
+    """A single remote user config as retrieved from the database."""
+
+    user_id: str
+    username: str
+    frequency: str
+    language: str
+    last_notified_timestamp: int
+
+
 class PostInfo(TypedDict):
     """Information for a single post returned from the cache."""
 

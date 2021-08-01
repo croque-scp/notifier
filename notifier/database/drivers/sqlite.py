@@ -1,13 +1,14 @@
 import json
 import sqlite3
 from sqlite3.dbapi2 import Cursor
-from typing import Iterable, List, Tuple
+from typing import Iterable, List, Tuple, cast
 
 from notifier.database.drivers.base import (
     BaseDatabaseDriver,
     DatabaseWithSqlFileCache,
 )
 from notifier.types import (
+    CachedUserConfig,
     GlobalOverridesConfig,
     NewPostsInfo,
     Subscription,
@@ -99,6 +100,14 @@ class SqliteDriver(DatabaseWithSqlFileCache, BaseDatabaseDriver):
         ]
         return {"thread_posts": thread_posts, "post_replies": post_replies}
 
+    def get_user_configs(self, frequency: str) -> List[CachedUserConfig]:
+        return [
+            cast(CachedUserConfig, dict(row))
+            for row in self.execute_named(
+                "get_user_configs_from_frequency", {"frequency": frequency}
+            ).fetchall()
+        ]
+
     def store_user_configs(self, user_configs: List[UserConfig]) -> None:
         # Overwrite all current configs
         self.execute_named("delete_user_configs")
@@ -130,6 +139,17 @@ class SqliteDriver(DatabaseWithSqlFileCache, BaseDatabaseDriver):
                 # "post_id": subscription.get("post_id"),
                 "post_id": subscription["post_id"],
                 "sub": subscription["sub"],
+            },
+        )
+
+    def store_user_last_notified(
+        self, user_id: str, last_notified_timestamp: int
+    ) -> None:
+        self.execute_named(
+            "store_user_last_notified",
+            {
+                "user_id": user_id,
+                "notified_timestamp": last_notified_timestamp,
             },
         )
 
