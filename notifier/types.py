@@ -72,6 +72,7 @@ class PostInfo(TypedDict):
     title: str
     username: str
     posted_timestamp: int
+    snippet: str
     thread_id: str
     thread_title: str
     wiki_id: str

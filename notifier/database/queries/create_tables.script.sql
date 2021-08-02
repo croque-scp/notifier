@@ -40,6 +40,7 @@ CREATE TABLE IF NOT EXISTS post (
   parent_post_id TEXT REFERENCES post (id),
   posted_timestamp INTEGER NOT NULL,
   title TEXT NOT NULL,
+  snippet TEXT NOT NULL,
   user_id TEXT NOT NULL,
   username TEXT NOT NULL
 );

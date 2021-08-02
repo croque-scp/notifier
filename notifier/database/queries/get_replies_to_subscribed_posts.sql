@@ -3,6 +3,7 @@ SELECT
   post.title AS title,
   post.username AS username,
   post.posted_timestamp AS posted_timestamp,
+  post.snippet AS snippet,
   parent_post.id AS parent_post_id,
   parent_post.title AS parent_title,
   parent_post.posted_timestamp AS parent_posted_timestamp,

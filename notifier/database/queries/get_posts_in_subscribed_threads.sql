@@ -3,6 +3,7 @@ SELECT
   post.title AS title,
   post.username AS username,
   post.posted_timestamp AS posted_timestamp,
+  post.snippet AS snippet,
   thread.id AS thread_id,
   thread.title AS thread_title,
   wiki.id AS wiki_id,
