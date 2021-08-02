@@ -42,7 +42,8 @@ class Connection:
         wiki: str,
         moduleName: str,
         index_key: str,
-        index_key_increment=1,
+        starting_index: int,
+        index_increment=1,
         **kwargs,
     ):
         """Generator that iterates pages of a paginated module response.
@@ -50,10 +51,14 @@ class Connection:
         :param wiki: The name of the wiki to query.
         :param moduleName: The name of the module (which will return a
         paginated result) to query.
-        :param index_key: The name of the parameter of this module that must be
-        incrememented to access the next page.
-        :param index_key_increment: The amount by which to increment the
-        index key for each page.
+        :param index_key: The name of the parameter of this module that
+        must be incrememented to access the next page - e.g. 'offset' for
+        ListPages and 'pageNo' for some other modules.
+        :param starting_index: The initial value of the index. Usuaally 0
+        for ListPages and 1 for most other modules.
+        :param index_increment: The amount by which to increment the index
+        key for each page. 1 for the vast majority of modules; often equal
+        to the perPage value for ListPages.
         """
         first_page = self.module(wiki, moduleName, **kwargs)
         yield first_page
@@ -64,14 +69,19 @@ class Connection:
             ),
         )
         if not page_selectors:
+            # There are no page selectors if there is only one page
             return
         final_page_selector = cast(
             Tag,
             cast(Tag, page_selectors.select(".target:nth-last-child(2)")[0]).a,
         )
         final_page_index = int(final_page_selector.get_text())
-        for page_index in range(1, final_page_index + 1):
-            kwargs.update({index_key: page_index * index_key_increment})
+        # Iterate through the remaining pages
+        # Start from the starting index plus one, because the first page
+        # was already done
+        # End at the final page plus one because range() is head exclusive
+        for page_index in range(starting_index + 1, final_page_index + 1):
+            kwargs.update({index_key: page_index * index_increment})
             yield self.module(wiki, moduleName, **kwargs)
 
     def listpages(
@@ -86,7 +96,7 @@ class Connection:
                 wiki,
                 "list/ListPagesModule",
                 index_key="offset",
-                index_key_increment=250,
+                index_increment=250,
                 perPage=250,
                 module_body=module_body,
                 **kwargs,
