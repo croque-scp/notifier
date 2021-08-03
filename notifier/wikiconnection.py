@@ -1,10 +1,11 @@
-from typing import Generator, Iterable, cast
+from typing import Iterable, Iterator, Optional, Tuple, Union, cast
 
 import requests
 from bs4 import BeautifulSoup
 from bs4.element import Tag
 
-from notifier.types import WikidotResponse
+from notifier.parsethread import parse_thread_breadcrumbs, parse_thread_page
+from notifier.types import RawPost, WikidotResponse
 
 listpages_div_class = "listpages-div-wrap"
 
@@ -113,6 +114,65 @@ class Connection:
             )
         )
         return items
+
+    def thread(
+        self, wiki_id: str, thread_id: str, post_id: Optional[str]
+    ) -> Iterator[Union[Tuple[str, str], RawPost]]:
+        """Analyse a Wikidot thread.
+
+        :param wiki_id: The ID of the wiki that contains the thread.
+        :param thread_id: The ID of the thread.
+        :param post_id: Either None, to get posts from the whole thread; or
+        the ID of a post to focus on specifically.
+
+        Returns an iterator.
+
+        The first item of the iterator is information about the forum
+        category that contains the thread; this takes the form of a tuple
+        of category ID, category name.
+
+        All remaining items are posts. If post_id was provided, contains
+        just the posts from the thread page that contains it (the first
+        post might be the thread starter but probably isn't). Otherwise,
+        contains all posts from the thread (the first post is the thread
+        starter).
+        """
+        if post_id is None:
+            thread_pages = (
+                BeautifulSoup(page["body"], "html.parser")
+                for page in self.paginated_module(
+                    wiki_id,
+                    "forum/ForumViewThreadModule",
+                    index_key="pageNo",
+                    starting_index=1,
+                    t=thread_id,
+                )
+            )
+            # I know that at least one page exists, so the call to `next` will
+            # not raise a StopIteration
+            # pylint: disable=stop-iteration-return
+            first_page = next(thread_pages)
+            category_id, category_name = parse_thread_breadcrumbs(first_page)
+            yield category_id, category_name
+            yield from parse_thread_page(thread_id, first_page)
+            yield from (
+                post
+                for page in thread_pages
+                for post in parse_thread_page(thread_id, page)
+            )
+        else:
+            thread_page = BeautifulSoup(
+                self.module(
+                    wiki_id,
+                    "forum/ForumViewThreadModule",
+                    t=thread_id,
+                    postId=post_id,
+                )["body"],
+                "html.parser",
+            )
+            category_id, category_name = parse_thread_breadcrumbs(thread_page)
+            yield category_id, category_name
+            yield from parse_thread_page(thread_id, thread_page)
 
     def login(self, username: str, password: str) -> None:
         """Log in to a Wikidot account."""
