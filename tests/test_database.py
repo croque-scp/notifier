@@ -22,19 +22,19 @@ def sample_database():
         ("t-4", "Thread 4", "my-wiki"),
     ]
     sample_posts = [
-        ("p-11", "t-1", None, 10, "Post 11", "1", "MyUsername"),
-        ("p-12", "t-1", None, 20, "Post 12", "2", "AUsername"),
-        ("p-111", "t-1", "p-11", 30, "Post 111", "2", "AUsername"),
-        ("p-21", "t-2", None, 13, "Post 21", "1", "MyUsername"),
-        ("p-211", "t-2", "p-21", 17, "Post 211", "2", "AUsername"),
-        ("p-212", "t-2", "p-21", 20, "Post 212", "3", "BUsername"),
-        ("p-2121", "t-2", "p-212", 23, "Post 2121", "1", "MyUsername"),
-        ("p-31", "t-3", None, 16, "Post 31", "2", "AUsername"),
-        ("p-32", "t-3", None, 21, "Post 32", "3", "BUsername"),
-        ("p-321", "t-3", "p-32", 31, "Post 321", "2", "AUsername"),
-        ("p-41", "t-4", None, 50, "Post 41", "1", "MyUsername"),
-        ("p-411", "t-4", "p-41", 60, "Post 411", "3", "BUsername"),
-        ("p-42", "t-4", None, 65, "Post 42", "3", "BUsername"),
+        ("p-11", "t-1", None, 10, "Post 11", "", "1", "MyUsername"),
+        ("p-12", "t-1", None, 20, "Post 12", "", "2", "AUsername"),
+        ("p-111", "t-1", "p-11", 30, "Post 111", "", "2", "AUsername"),
+        ("p-21", "t-2", None, 13, "Post 21", "", "1", "MyUsername"),
+        ("p-211", "t-2", "p-21", 17, "Post 211", "", "2", "AUsername"),
+        ("p-212", "t-2", "p-21", 20, "Post 212", "", "3", "BUsername"),
+        ("p-2121", "t-2", "p-212", 23, "Post 2121", "", "1", "MyUsername"),
+        ("p-31", "t-3", None, 16, "Post 31", "", "2", "AUsername"),
+        ("p-32", "t-3", None, 21, "Post 32", "", "3", "BUsername"),
+        ("p-321", "t-3", "p-32", 31, "Post 321", "", "2", "AUsername"),
+        ("p-41", "t-4", None, 50, "Post 41", "", "1", "MyUsername"),
+        ("p-411", "t-4", "p-41", 60, "Post 411", "", "3", "BUsername"),
+        ("p-42", "t-4", None, 65, "Post 42", "", "3", "BUsername"),
     ]
     db.conn.executemany(
         "INSERT INTO user_config VALUES (?, ?, ?, ?)", sample_user_configs
@@ -45,7 +45,7 @@ def sample_database():
     db.conn.executemany("INSERT INTO wiki VALUES (?, ?)", sample_wikis)
     db.conn.executemany("INSERT INTO thread VALUES (?, ?, ?)", sample_threads)
     db.conn.executemany(
-        "INSERT INTO post VALUES (?, ?, ?, ?, ? ,? ,?)", sample_posts
+        "INSERT INTO post VALUES (?, ?, ?, ?, ?, ?, ?, ?)", sample_posts
     )
     db.conn.commit()
     return db
@@ -119,3 +119,8 @@ def test_get_posts_in_threads(thread_posts):
 def test_respect_ignored_thread(thread_posts):
     """Test that posts in ignored threads do not appear as thread posts."""
     assert titles(thread_posts).isdisjoint({"Post 41", "Post 42"})
+
+
+def test_new_threads(sample_database: BaseDatabaseDriver):
+    """Test that the utility for checking if threads exists works."""
+    assert sample_database.find_new_threads(["t-1", "t-2", "t-99"]) == ["t-99"]

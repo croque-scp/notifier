@@ -8,7 +8,7 @@ CREATE TABLE IF NOT EXISTS user_config (
 CREATE TABLE IF NOT EXISTS user_last_notified (
   user_id TEXT NOT NULL PRIMARY KEY,
   notified_timestamp INTEGER NOT NULL
-)
+);
 
 CREATE TABLE manual_sub (
   user_id TEXT NOT NULL REFERENCES user_config (user_id),

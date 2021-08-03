@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 from pathlib import Path
-from typing import Any, Callable, List, Tuple, Type
+from typing import Any, Callable, Iterable, List, Tuple, Type
 
 from notifier.types import (
     CachedUserConfig,
@@ -83,6 +83,11 @@ class BaseDatabaseDriver(ABC):
     def get_global_overrides(self) -> GlobalOverridesConfig:
         """Gets all global overrides, keyed to the ID of the wiki they are
         set for."""
+
+    @abstractmethod
+    def find_new_threads(self, thread_ids: Iterable[str]) -> List[str]:
+        """From a list of thread IDs, return those that are not already
+        present in the cache."""
 
     @abstractmethod
     def get_new_posts_for_user(

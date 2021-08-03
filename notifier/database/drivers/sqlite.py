@@ -76,6 +76,17 @@ class SqliteDriver(DatabaseWithSqlFileCache, BaseDatabaseDriver):
             )
         self.conn.commit()
 
+    def find_new_threads(self, thread_ids: Iterable[str]) -> List[str]:
+        return [
+            thread_id
+            for thread_id in thread_ids
+            if not bool(
+                self.execute_named(
+                    "check_thread_exists", {"id": thread_id}
+                ).fetchone()[0]
+            )
+        ]
+
     def get_new_posts_for_user(
         self, user_id: str, timestamp_range: Tuple[int, int]
     ) -> NewPostsInfo:
