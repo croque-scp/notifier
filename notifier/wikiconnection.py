@@ -4,6 +4,8 @@ import requests
 from bs4 import BeautifulSoup
 from bs4.element import Tag
 
+from notifier.types import WikidotResponse
+
 listpages_div_class = "listpages-div-wrap"
 
 listpages_div_wrap = f"""
@@ -24,12 +26,12 @@ class Connection:
         """Make a POST request."""
         return self._session.request("POST", url, **kwargs)
 
-    def module(self, wiki: str, moduleName: str, **kwargs):
+    def module(self, wiki: str, module_name: str, **kwargs) -> WikidotResponse:
         """Call a Wikidot module."""
         response = self.post(
             "http://{}.wikidot.com/ajax-module-connector.php".format(wiki),
             data=dict(
-                moduleName=moduleName, wikidot_token7="123456", **kwargs
+                moduleName=module_name, wikidot_token7="123456", **kwargs
             ),
             cookies={"wikidot_token7": "123456"},
         ).json()
@@ -40,16 +42,17 @@ class Connection:
     def paginated_module(
         self,
         wiki: str,
-        moduleName: str,
+        module_name: str,
+        *,
         index_key: str,
         starting_index: int,
         index_increment=1,
         **kwargs,
-    ):
+    ) -> Iterator[WikidotResponse]:
         """Generator that iterates pages of a paginated module response.
 
         :param wiki: The name of the wiki to query.
-        :param moduleName: The name of the module (which will return a
+        :param module_name: The name of the module (which will return a
         paginated result) to query.
         :param index_key: The name of the parameter of this module that
         must be incrememented to access the next page - e.g. 'offset' for
@@ -60,7 +63,7 @@ class Connection:
         key for each page. 1 for the vast majority of modules; often equal
         to the perPage value for ListPages.
         """
-        first_page = self.module(wiki, moduleName, **kwargs)
+        first_page = self.module(wiki, module_name, **kwargs)
         yield first_page
         page_selectors = cast(
             Tag,
@@ -82,20 +85,21 @@ class Connection:
         # End at the final page plus one because range() is head exclusive
         for page_index in range(starting_index + 1, final_page_index + 1):
             kwargs.update({index_key: page_index * index_increment})
-            yield self.module(wiki, moduleName, **kwargs)
+            yield self.module(wiki, module_name, **kwargs)
 
     def listpages(
-        self, wiki: str, *, module_body: str, **kwargs
-    ) -> Generator[Tag, None, None]:
+        self, wiki_id: str, *, module_body: str, **kwargs
+    ) -> Iterable[Tag]:
         """Execute a ListPages search against a wiki and return all results
         as soup."""
         module_body = listpages_div_wrap.format(module_body)
         items = (
             soup
             for page in self.paginated_module(
-                wiki,
+                wiki_id,
                 "list/ListPagesModule",
                 index_key="offset",
+                starting_index=0,
                 index_increment=250,
                 perPage=250,
                 module_body=module_body,

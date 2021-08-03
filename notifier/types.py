@@ -3,6 +3,14 @@ from typing import Dict, List, Literal, Optional, TypedDict, Union
 IsSecure = Union[Literal[0], Literal[1]]
 
 
+class WikidotResponse(TypedDict):
+    """A module response from Wikidot."""
+
+    status: str
+    body: str
+    message: Optional[str]
+
+
 class LocalConfig(TypedDict):
     """Contents of the local config file."""
 
