@@ -73,6 +73,19 @@ class CachedUserConfig(TypedDict):
     last_notified_timestamp: int
 
 
+class RawPost(TypedDict):
+    """Information for a single post from remote."""
+
+    id: str
+    thread_id: str
+    parent_post_id: Optional[str]
+    posted_timestamp: int
+    title: str
+    snippet: str
+    user_id: str
+    username: str
+
+
 class PostInfo(TypedDict):
     """Information for a single post returned from the cache."""
 
