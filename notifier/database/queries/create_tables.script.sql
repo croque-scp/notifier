@@ -18,20 +18,27 @@ CREATE TABLE manual_sub (
   UNIQUE (user_id, thread_id, post_id, sub)
 );
 
-CREATE TABLE IF NOT EXISTS wiki (
-  id TEXT NOT NULL PRIMARY KEY,
-  secure INTEGER NOT NULL CHECK (secure IN (0, 1))
-);
-
 CREATE TABLE IF NOT EXISTS global_override (
   wiki_id TEXT NOT NULL,
   override_settings_json TEXT NOT NULL
 );
 
+CREATE TABLE IF NOT EXISTS wiki (
+  id TEXT NOT NULL PRIMARY KEY,
+  secure INTEGER NOT NULL CHECK (secure IN (0, 1))
+);
+
+CREATE TABLE IF NOT EXISTS category (
+  id TEXT NOT NULL PRIMARY KEY,
+  name TEXT NOT NULL,
+  wiki_id TEXT NOT NULL
+);
+
 CREATE TABLE IF NOT EXISTS thread (
   id TEXT NOT NULL PRIMARY KEY,
   title TEXT NOT NULL,
-  wiki_id TEXT NOT NULL
+  category_id TEXT NOT NULL REFERENCES category (id),
+  wiki_id TEXT NOT NULL,
 );
 
 CREATE TABLE IF NOT EXISTS post (
