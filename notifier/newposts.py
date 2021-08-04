@@ -1,4 +1,3 @@
-from functools import partial
 from typing import List, Tuple, cast
 
 import feedparser
@@ -16,38 +15,66 @@ def get_new_posts(database: BaseDatabaseDriver, connection: Connection):
     """For each configured wiki, retrieve and store new posts."""
     for wiki in database.get_supported_wikis():
         print(f"Getting new posts for {wiki['id']}")
-        try_cache(
-            # TODO Probably need to make this lambda a def in order to do
-            # and then context for each wiki
-            get=partial(fetch_new_posts_rss, wiki["id"]),
-            store=lambda: None,
-            do_not_store=[],
-        )
+        fetch_posts_with_context(wiki["id"], database, connection)
 
 
 def fetch_posts_with_context(
     wiki_id: str, database: BaseDatabaseDriver, connection: Connection
 ):
-    """Look up new posts for a wiki and then attach their context."""
+    """Look up new posts for a wiki and then attach their context. Stores
+    the posts in the cache."""
     # Get the list of new posts from the forum's RSS
     new_posts = fetch_new_posts_rss(wiki_id)
     # Find which of these posts were made in new threads
     new_thread_ids = database.find_new_threads(
         [new_post[0] for new_post in new_posts]
     )
+    # Make a list of thread pages to iterate over
+    # The post ID being None indicates that the full thread will be
+    # iterated; otherwise, only the page that contains the specific post is
+    # will be iterated
+    threads_pages_to_get = [
+        (thread_id, None if thread_id in new_thread_ids else post_id)
+        for thread_id, post_id in new_posts
+    ]
+    # Sort the list so that full threads will be crawled first, followed by
+    # individual pages - this is to optimise deduplication
+    threads_pages_to_get.sort(key=lambda page: page[1] is not None)
+    # Record posts and full threads that have already been seen to as not
+    # to duplicate any API calls
+    posts_already_seen: List[str] = []
+    full_threads_already_seen: List[str] = []
     # Download each of the new threads
-    for new_thread_id in new_thread_ids:
-        category_id = category_name = thread_title = None
+    for thread_id, post_id in threads_pages_to_get:
+        if post_id is None and thread_id in full_threads_already_seen:
+            # If a full thread is to be crawled (post_id is None) but it
+            # has already been seen, skip it
+            continue
+        if post_id is not None and post_id in posts_already_seen:
+            # If a page is to be crawled (post_id is not None) but the post
+            # has already been seen, we already have the page; skip it
+            continue
         for post_index, post in enumerate(
-            connection.thread(wiki_id, new_thread_id)
+            connection.thread(wiki_id, thread_id, post_id)
         ):
             if post_index == 0:
+                # First 'post' is the thread meta info
                 assert isinstance(post, tuple)
                 category_id, category_name, thread_title = post
-                do_something_with_the_category_info()
-                # TODO Add categories to the database
+                database.store_thread(
+                    wiki_id,
+                    (category_id, category_name),
+                    (thread_id, thread_title),
+                )
                 continue
+            # Remaining posts are actually posts
             assert not isinstance(post, tuple)
+            database.store_post(post)
+            # Mark each post as seen
+            posts_already_seen.append(post["id"])
+        if post_id is None:
+            # If the full thread was crawled, mark it as seen
+            full_threads_already_seen.append(thread_id)
 
 
 def fetch_post_context(connection: Connection, wiki_id: str, thread_id: str):
