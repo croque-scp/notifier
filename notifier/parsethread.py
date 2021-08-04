@@ -6,8 +6,9 @@ from bs4.element import Tag
 from notifier.types import RawPost
 
 
-def parse_thread_breadcrumbs(thread: Tag) -> Tuple[str, str]:
-    """Parse the breadcrumbs of a thread to a forum category ID and a name.
+def parse_thread_meta(thread: Tag) -> Tuple[str, str, str]:
+    """Parse the meta info of a thread to return forum category ID,
+    category name, and thread title.
 
     :param thread: The thread, as soup. Expected to start at
     .forum-thread-box, which is what the ForumViewThreadModule returns.
@@ -21,7 +22,8 @@ def parse_thread_breadcrumbs(thread: Tag) -> Tuple[str, str]:
         raise ValueError("Couldn't get category ID")
     category_id = match[0]
     category_name = category_link.get_text()
-    return category_id, category_name
+    thread_title = list(breadcrumbs.stripped_strings)[-1].strip(" »")
+    return category_id, category_name, thread_title
 
 
 def parse_thread_page(thread_id: str, thread_page: Tag) -> List[RawPost]:

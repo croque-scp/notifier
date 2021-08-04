@@ -37,13 +37,13 @@ def fetch_posts_with_context(
     )
     # Download each of the new threads
     for new_thread_id in new_thread_ids:
-        category_id = category_name = None
+        category_id = category_name = thread_title = None
         for post_index, post in enumerate(
             connection.thread(wiki_id, new_thread_id)
         ):
             if post_index == 0:
                 assert isinstance(post, tuple)
-                category_id, category_name = post
+                category_id, category_name, thread_title = post
                 do_something_with_the_category_info()
                 # TODO Add categories to the database
                 continue

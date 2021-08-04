@@ -4,7 +4,7 @@ import requests
 from bs4 import BeautifulSoup
 from bs4.element import Tag
 
-from notifier.parsethread import parse_thread_breadcrumbs, parse_thread_page
+from notifier.parsethread import parse_thread_meta, parse_thread_page
 from notifier.types import RawPost, WikidotResponse
 
 listpages_div_class = "listpages-div-wrap"
@@ -117,7 +117,7 @@ class Connection:
 
     def thread(
         self, wiki_id: str, thread_id: str, post_id: Optional[str] = None
-    ) -> Iterator[Union[Tuple[str, str], RawPost]]:
+    ) -> Iterator[Union[Tuple[str, str, str], RawPost]]:
         """Analyse a Wikidot thread.
 
         :param wiki_id: The ID of the wiki that contains the thread.
@@ -129,7 +129,8 @@ class Connection:
 
         The first item of the iterator is information about the forum
         category that contains the thread; this takes the form of a tuple
-        of category ID, category name.
+        of category ID, category name, thread title. (The thread title may
+        differ from the title of the first post.)
 
         All remaining items are posts. If post_id was provided, contains
         just the posts from the thread page that contains it (the first
@@ -152,8 +153,10 @@ class Connection:
             # not raise a StopIteration
             # pylint: disable=stop-iteration-return
             first_page = next(thread_pages)
-            category_id, category_name = parse_thread_breadcrumbs(first_page)
-            yield category_id, category_name
+            category_id, category_name, thread_title = parse_thread_meta(
+                first_page
+            )
+            yield category_id, category_name, thread_title
             yield from parse_thread_page(thread_id, first_page)
             yield from (
                 post
@@ -170,8 +173,10 @@ class Connection:
                 )["body"],
                 "html.parser",
             )
-            category_id, category_name = parse_thread_breadcrumbs(thread_page)
-            yield category_id, category_name
+            category_id, category_name, thread_title = parse_thread_meta(
+                thread_page
+            )
+            yield category_id, category_name, thread_title
             yield from parse_thread_page(thread_id, thread_page)
 
     def login(self, username: str, password: str) -> None:
