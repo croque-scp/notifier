@@ -116,7 +116,7 @@ class Connection:
         return items
 
     def thread(
-        self, wiki_id: str, thread_id: str, post_id: Optional[str]
+        self, wiki_id: str, thread_id: str, post_id: Optional[str] = None
     ) -> Iterator[Union[Tuple[str, str], RawPost]]:
         """Analyse a Wikidot thread.
 
