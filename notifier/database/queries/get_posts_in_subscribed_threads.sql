@@ -7,13 +7,17 @@ SELECT
   thread.id AS thread_id,
   thread.title AS thread_title,
   wiki.id AS wiki_id,
-  wiki.secure AS wiki_secure
+  wiki.secure AS wiki_secure,
+  category.id AS category_id,
+  category.name AS category_name
 FROM
   post
   LEFT JOIN
   thread ON post.thread_id = thread.id
   LEFT JOIN
   wiki ON thread.wiki_id = wiki.id
+  LEFT JOIN
+  category ON thread.category_id = category.id
 WHERE
   (
     -- Get posts in threads subscribed to

@@ -30,15 +30,14 @@ CREATE TABLE IF NOT EXISTS wiki (
 
 CREATE TABLE IF NOT EXISTS category (
   id TEXT NOT NULL PRIMARY KEY,
-  name TEXT NOT NULL,
-  wiki_id TEXT NOT NULL
+  name TEXT NOT NULL
 );
 
 CREATE TABLE IF NOT EXISTS thread (
   id TEXT NOT NULL PRIMARY KEY,
   title TEXT NOT NULL,
-  category_id TEXT NOT NULL REFERENCES category (id),
   wiki_id TEXT NOT NULL,
+  category_id TEXT
 );
 
 CREATE TABLE IF NOT EXISTS post (

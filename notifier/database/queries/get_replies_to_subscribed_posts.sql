@@ -10,7 +10,9 @@ SELECT
   thread.id AS thread_id,
   thread.title AS thread_title,
   wiki.id AS wiki_id,
-  wiki.secure AS wiki_secure
+  wiki.secure AS wiki_secure,
+  category.id AS category_id,
+  category.name AS category_name
 FROM
   post
   LEFT JOIN
@@ -19,6 +21,8 @@ FROM
   wiki ON thread.wiki_id = wiki.id
   LEFT JOIN
   post AS parent_post ON post.parent_post_id = parent_post.id
+  LEFT JOIN
+  category ON thread.category_id = category.id
 WHERE
   (
     -- Get replies to posts subscribed to

@@ -98,6 +98,8 @@ class PostInfo(TypedDict):
     thread_title: str
     wiki_id: str
     wiki_secure: IsSecure
+    category_id: str
+    category_name: str
 
 
 class ThreadPostInfo(PostInfo):
