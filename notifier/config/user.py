@@ -7,9 +7,9 @@ from tomlkit.exceptions import TOMLKitError
 from notifier.database.drivers.base import BaseDatabaseDriver, try_cache
 from notifier.types import (
     LocalConfig,
+    RawUserConfig,
     Subscription,
     SubscriptionCardinality,
-    UserConfig,
 )
 from notifier.wikiconnection import Connection
 
@@ -20,6 +20,7 @@ username = "%%created_by_unix%%"
 user_id = "%%created_by_id%%"
 frequency = "%%form_raw{frequency}%%"
 language = "%%form_raw{language}%%"
+delivery = "%%form_raw{method}%%"
 subscriptions = """
 %%form_data{subscriptions}%%"""
 unsubscriptions = """
@@ -43,13 +44,13 @@ def get_user_config(
 def fetch_user_configs(
     local_config: LocalConfig,
     connection: Connection,
-) -> List[UserConfig]:
+) -> List[RawUserConfig]:
     """Fetches a list of user configurations from the configuration wiki.
 
     User configurations are stored on the dedicated Wikidot site. They are
     cached in the SQLite database.
     """
-    configs: List[UserConfig] = []
+    configs: List[RawUserConfig] = []
     for config_soup in connection.listpages(
         local_config["config_wiki"],
         category=local_config["user_config_category"],
@@ -74,7 +75,7 @@ def fetch_user_configs(
     return configs
 
 
-def parse_raw_user_config(raw_config: str) -> Tuple[UserConfig, str]:
+def parse_raw_user_config(raw_config: str) -> Tuple[RawUserConfig, str]:
     """Parses a raw user config string to a suitable format, also returning
     the config slug."""
     config = tomlkit.parse(raw_config)

@@ -192,10 +192,6 @@ class Connection:
             ),
         )
 
-    def get_new_posts(self, wiki):
-        """Fetches information about new posts from a wiki's RSS."""
-        # TODO
-
     def get_contacts(self):
         """Get the account's contacts list and their emails in order to be
         able to send email notifications.

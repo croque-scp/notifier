@@ -9,7 +9,7 @@ from notifier.types import (
     RawPost,
     Subscription,
     SupportedWikiConfig,
-    UserConfig,
+    RawUserConfig,
 )
 
 
@@ -112,7 +112,7 @@ class BaseDatabaseDriver(ABC):
         """
 
     @abstractmethod
-    def store_user_configs(self, user_configs: List[UserConfig]) -> None:
+    def store_user_configs(self, user_configs: List[RawUserConfig]) -> None:
         """Caches user notification configurations.
 
         :param user_configs: List of configurations for all users.

@@ -3,6 +3,7 @@ SELECT
   user_config.username AS username,
   user_config.frequency AS frequency,
   user_config.language AS language,
+  user_config.delivery AS delivery,
   user_last_notified.notified_timestamp AS last_notified_timestamp
 FROM
   user_config

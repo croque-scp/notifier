@@ -12,9 +12,9 @@ from notifier.types import (
     GlobalOverridesConfig,
     NewPostsInfo,
     RawPost,
+    RawUserConfig,
     Subscription,
     SupportedWikiConfig,
-    UserConfig,
 )
 
 sqlite3.enable_callback_tracebacks(True)
@@ -120,7 +120,7 @@ class SqliteDriver(DatabaseWithSqlFileCache, BaseDatabaseDriver):
             ).fetchall()
         ]
 
-    def store_user_configs(self, user_configs: List[UserConfig]) -> None:
+    def store_user_configs(self, user_configs: List[RawUserConfig]) -> None:
         # Overwrite all current configs
         self.execute_named("delete_user_configs")
         self.execute_named("delete_manual_subs")
@@ -132,6 +132,7 @@ class SqliteDriver(DatabaseWithSqlFileCache, BaseDatabaseDriver):
                     "username": user_config["username"],
                     "frequency": user_config["frequency"],
                     "language": user_config["language"],
+                    "delivery": user_config["delivery"],
                 },
             )
             for subscription in (

@@ -14,9 +14,7 @@ def parse_thread_meta(thread: Tag) -> Tuple[str, str, str]:
     .forum-thread-box, which is what the ForumViewThreadModule returns.
     """
     breadcrumbs = cast(Tag, thread.find(class_="forum-breadcrumbs"))
-    category_link = [
-        link for link in cast(Iterable[Tag], breadcrumbs.find_all("a"))
-    ][-1]
+    category_link = list(cast(Iterable[Tag], breadcrumbs.find_all("a")))[-1]
     match = re.search(r"c-[0-9]+", category_link.get_attribute_list("href")[0])
     if not match:
         raise ValueError("Couldn't get category ID")

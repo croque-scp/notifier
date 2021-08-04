@@ -52,13 +52,18 @@ class Subscription(TypedDict):
     sub: SubscriptionCardinality
 
 
-class UserConfig(TypedDict):
+# A user's choice of delivery method
+DeliveryMethod = Union[Literal["pm"], Literal["email"]]
+
+
+class RawUserConfig(TypedDict):
     """A single remote user config."""
 
     user_id: str
     username: str
     frequency: str
     language: str
+    delivery: DeliveryMethod
     subscriptions: List[Subscription]
     unsubscriptions: List[Subscription]
 
@@ -70,6 +75,7 @@ class CachedUserConfig(TypedDict):
     username: str
     frequency: str
     language: str
+    delivery: DeliveryMethod
     last_notified_timestamp: int
 
 

@@ -2,7 +2,8 @@ CREATE TABLE IF NOT EXISTS user_config (
   user_id TEXT NOT NULL PRIMARY KEY,
   username TEXT NOT NULL,
   frequency TEXT NOT NULL,
-  language TEXT NOT NULL
+  language TEXT NOT NULL,
+  delivery TEXT NOT NULL
 );
 
 CREATE TABLE IF NOT EXISTS user_last_notified (
