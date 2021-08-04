@@ -6,6 +6,7 @@ from notifier.types import (
     CachedUserConfig,
     GlobalOverridesConfig,
     NewPostsInfo,
+    RawPost,
     Subscription,
     SupportedWikiConfig,
     UserConfig,
@@ -145,6 +146,25 @@ class BaseDatabaseDriver(ABC):
     def store_supported_wikis(self, wikis: List[SupportedWikiConfig]) -> None:
         """Stores a set of supported wikis in the database, overwriting any
         that are already present."""
+
+    @abstractmethod
+    def store_thread(
+        self,
+        wiki_id: str,
+        category: Tuple[str, str],
+        thread: Tuple[str, str],
+    ) -> None:
+        """Store a thread. Doesn't matter if the thread or category is
+        already known or not.
+
+        :param wiki_id: The ID of the wiki that contains the thread.
+        :param thread: A tuple containing the ID and title of the thread.
+        :param category: A tuple containing the ID and name of the category.
+        """
+
+    @abstractmethod
+    def store_post(self, post: RawPost) -> None:
+        """Store a post."""
 
 
 class DatabaseWithSqlFileCache(BaseDatabaseDriver, ABC):

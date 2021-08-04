@@ -11,6 +11,7 @@ from notifier.types import (
     CachedUserConfig,
     GlobalOverridesConfig,
     NewPostsInfo,
+    RawPost,
     Subscription,
     SupportedWikiConfig,
     UserConfig,
@@ -178,3 +179,39 @@ class SqliteDriver(DatabaseWithSqlFileCache, BaseDatabaseDriver):
                 {"wiki_id": wiki["id"], "wiki_secure": wiki["secure"]},
             )
         self.conn.commit()
+
+    def store_thread(
+        self,
+        wiki_id: str,
+        category: Tuple[str, str],
+        thread: Tuple[str, str],
+    ) -> None:
+        thread_id, thread_title = thread
+        category_id, category_name = category
+        self.execute_named(
+            "store_category", {"id": category_id, "name": category_name}
+        )
+        self.execute_named(
+            "store_thread",
+            {
+                "id": thread_id,
+                "title": thread_title,
+                "wiki_id": wiki_id,
+                "category_id": category_id,
+            },
+        )
+
+    def store_post(self, post: RawPost) -> None:
+        self.execute_named(
+            "store_post",
+            {
+                "id": post["id"],
+                "thread_id": post["thread_id"],
+                "parent_post_id": post["parent_post_id"],
+                "posted_timestamp": post["posted_timestamp"],
+                "title": post["title"],
+                "snippet": post["snippet"],
+                "user_id": post["user_id"],
+                "username": post["username"],
+            },
+        )
