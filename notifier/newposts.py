@@ -4,7 +4,7 @@ from typing import List, Tuple, cast
 import feedparser
 
 from notifier.config.user import parse_thread_url
-from notifier.database.drivers.base import BaseDatabaseDriver, try_cache
+from notifier.database.drivers.base import BaseDatabaseDriver
 from notifier.wikiconnection import Connection
 
 # HTTPS for the RSS feed doesn't work for insecure wikis, but HTTP does

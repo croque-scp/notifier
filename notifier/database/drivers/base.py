@@ -27,8 +27,10 @@ def try_cache(
     cache. This ensure that valid data is always received, even if the
     original call failed - in this case, old cached data is used instead.
 
-    If it is necessary for the getter to succeed, this function should not
-    be used.
+    If it is necessary for the getter to succeed (e.g. for permanent
+    storage of new posts), this function should not be used. It should only
+    be used when failure is possible and acceptable (e.g. for temporary
+    storage of user config).
 
     :param get: Callable that takes no argument that retrieves data, and
     may fail.
