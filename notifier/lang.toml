@@ -2,8 +2,6 @@
 site = "http://notifications.wikidot.com"
 your_config = "{site}/redirect-to-your-config"
 unsubscribe = "{site}/faq#stop"
-
-[base.pm]
 body = """
 {intro}
 
@@ -15,6 +13,8 @@ body = """
 
 {outro}
 """
+
+[base.pm]
 wiki = """
 ++ {wiki_name}
 
@@ -99,9 +99,8 @@ Croquembouche]]) directly.
 -----
 """
 outro = """
-= {unsubscribe}
+= Unsubscribe from these notifications: {unsubscribe}
 """
-unsubscribe = "Unsubscribe from these notifications: {unsubscribe}"
 main_summary = "You have {summary} from {wiki_count} plural({wiki_count}|wiki|wikis)"
 summary = """|
 {notification_count} plural({notification_count}|notification|notifications)
