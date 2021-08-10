@@ -13,10 +13,11 @@ from notifier.types import (
 from notifier.wikiconnection import Connection
 
 # For ease of parsing, configurations are coerced to TOML format
-wiki_config_listpages_body = """
+wiki_config_listpages_body = '''
 id = "%%form_data{id}%%"
-secure = %%forum_data{secure}%%
-"""
+name = """%%title%%""" # Vulnerability if titles are editable publicly
+secure = %%form_data{secure}%%
+'''
 
 
 def read_local_config(path: str) -> LocalConfig:

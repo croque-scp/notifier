@@ -25,6 +25,7 @@ class SupportedWikiConfig(TypedDict):
     """A single remote wiki config."""
 
     id: str
+    name: str
     secure: IsSecure
 
 
@@ -103,6 +104,7 @@ class PostInfo(TypedDict):
     thread_id: str
     thread_title: str
     wiki_id: str
+    wiki_name: str
     wiki_secure: IsSecure
     category_id: str
     category_name: str

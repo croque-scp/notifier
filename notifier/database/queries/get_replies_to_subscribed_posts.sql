@@ -10,6 +10,7 @@ SELECT
   thread.id AS thread_id,
   thread.title AS thread_title,
   wiki.id AS wiki_id,
+  wiki.name as wiki_name,
   wiki.secure AS wiki_secure,
   category.id AS category_id,
   category.name AS category_name

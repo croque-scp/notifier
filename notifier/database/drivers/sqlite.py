@@ -177,7 +177,11 @@ class SqliteDriver(DatabaseWithSqlFileCache, BaseDatabaseDriver):
         for wiki in wikis:
             self.execute_named(
                 "add_wiki",
-                {"wiki_id": wiki["id"], "wiki_secure": wiki["secure"]},
+                {
+                    "wiki_id": wiki["id"],
+                    "wiki_name": wiki["name"],
+                    "wiki_secure": wiki["secure"],
+                },
             )
         self.conn.commit()
 

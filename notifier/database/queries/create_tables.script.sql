@@ -26,6 +26,7 @@ CREATE TABLE IF NOT EXISTS global_override (
 
 CREATE TABLE IF NOT EXISTS wiki (
   id TEXT NOT NULL PRIMARY KEY,
+  name TEXT NOT NULL,
   secure INTEGER NOT NULL CHECK (secure IN (0, 1))
 );
 

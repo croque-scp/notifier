@@ -1,4 +1,5 @@
 INSERT INTO
-  wiki (id, secure)
+  wiki
+  (id, name, secure)
 VALUES
-  (:wiki_id, :wiki_secure)
+  (:wiki_id, :wiki_name, :wiki_secure)
