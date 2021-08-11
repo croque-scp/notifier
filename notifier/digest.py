@@ -88,13 +88,12 @@ class Digester:
         # Make the lexicon for this user's settings
         lexicon = self.make_lexicon(user["language"], user["delivery"])
         # Get some stats for the message
+        # TODO Subscription statistics
         sub_count = None
         manual_sub_count = None
         auto_thread_sub_count = None
         auto_post_sub_count = None
         total_notification_count = None
-        total_notified_thread_count = None
-        wiki_count = None
         # Construct the message
         subject = lexicon["subject"].format(
             post_count=total_notification_count
