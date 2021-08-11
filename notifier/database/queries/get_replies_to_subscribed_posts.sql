@@ -6,6 +6,7 @@ SELECT
   post.snippet AS snippet,
   parent_post.id AS parent_post_id,
   parent_post.title AS parent_title,
+  parent_post.username AS parent_username,
   parent_post.posted_timestamp AS parent_posted_timestamp,
   thread.id AS thread_id,
   thread.title AS thread_title,

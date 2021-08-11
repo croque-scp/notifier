@@ -117,8 +117,10 @@ class ThreadPostInfo(PostInfo):
 class PostReplyInfo(PostInfo):
     """Information for a new reply to a post from the cache."""
 
-    parent_post_id: Union[str, None]
-    parent_title: Union[str, None]
+    parent_post_id: str
+    parent_title: str
+    parent_username: str
+    parent_posted_timestamp: str
 
 
 class NewPostsInfo(TypedDict):
