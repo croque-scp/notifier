@@ -70,3 +70,8 @@ WHERE
       child_post.parent_post_id = post.id
       AND child_post.user_id = :user_id
   )
+ORDER BY
+  wiki.id,
+  category.id,
+  thread.id,
+  post.posted_timestamp
