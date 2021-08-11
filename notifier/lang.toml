@@ -33,7 +33,7 @@ category = """
 """
 thread = """
 [[li]]
-**{thread_opener} [{thread_url} {thread_title}]** -- [[*user {thread_creator}]] -- {date}
+**{thread_opener} [{thread_url} {thread_title}]** plural({thread_has_creator}||-- [[*user {thread_creator}]]) -- {date}
 
 {replies_section}
 
