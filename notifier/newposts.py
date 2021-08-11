@@ -4,6 +4,7 @@ import feedparser
 
 from notifier.config.user import parse_thread_url
 from notifier.database.drivers.base import BaseDatabaseDriver
+from notifier.types import RawPost, RawThreadMeta
 from notifier.wikiconnection import Connection
 
 # HTTPS for the RSS feed doesn't work for insecure wikis, but HTTP does
@@ -54,21 +55,25 @@ def fetch_posts_with_context(
             # If a page is to be crawled (post_id is not None) but the post
             # has already been seen, we already have the page; skip it
             continue
-        for post_index, post in enumerate(
+        for post_index, thread_or_post in enumerate(
             connection.thread(wiki_id, thread_id, post_id)
         ):
             if post_index == 0:
                 # First 'post' is the thread meta info
-                assert isinstance(post, tuple)
-                category_id, category_name, thread_title = post
+                thread_meta = cast(RawThreadMeta, thread_or_post)
                 database.store_thread(
                     wiki_id,
-                    (category_id, category_name),
-                    (thread_id, thread_title),
+                    (thread_meta["category_id"], thread_meta["category_name"]),
+                    (
+                        thread_id,
+                        thread_meta["title"],
+                        thread_meta["creator_username"],
+                        thread_meta["created_timestamp"],
+                    ),
                 )
                 continue
             # Remaining posts are actually posts
-            assert not isinstance(post, tuple)
+            post = cast(RawPost, thread_or_post)
             database.store_post(post)
             # Mark each post as seen
             posts_already_seen.append(post["id"])

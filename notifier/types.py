@@ -80,6 +80,16 @@ class CachedUserConfig(TypedDict):
     last_notified_timestamp: int
 
 
+class RawThreadMeta(TypedDict):
+    """Information about a thread from its header."""
+
+    category_id: Optional[str]
+    category_name: Optional[str]
+    title: str
+    creator_username: Optional[str]
+    created_timestamp: int
+
+
 class RawPost(TypedDict):
     """Information for a single post from remote."""
 
@@ -103,11 +113,13 @@ class PostInfo(TypedDict):
     snippet: str
     thread_id: str
     thread_title: str
+    thread_creator: Optional[str]
+    thread_timestamp: int
     wiki_id: str
     wiki_name: str
     wiki_secure: IsSecure
-    category_id: str
-    category_name: str
+    category_id: Optional[str]
+    category_name: Optional[str]
 
 
 class ThreadPostInfo(PostInfo):

@@ -1,5 +1,5 @@
 INSERT OR UPDATE INTO
   thread
-  (id, title, wiki_id, category_id)
+  (id, title, wiki_id, category_id, creator_username, created_timestamp)
 VALUES
-  (:id, :title, :wiki_id, :category_id)
+  (:id, :title, :wiki_id, :category_id, :creator_username, :created_timestamp)

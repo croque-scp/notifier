@@ -1,7 +1,7 @@
 import json
 import sqlite3
 from sqlite3.dbapi2 import Cursor
-from typing import Iterable, List, Tuple, cast
+from typing import Iterable, List, Optional, Tuple, cast
 
 from notifier.database.drivers.base import (
     BaseDatabaseDriver,
@@ -189,9 +189,9 @@ class SqliteDriver(DatabaseWithSqlFileCache, BaseDatabaseDriver):
         self,
         wiki_id: str,
         category: Tuple[str, str],
-        thread: Tuple[str, str],
+        thread: Tuple[str, str, Optional[str], int],
     ) -> None:
-        thread_id, thread_title = thread
+        thread_id, thread_title, creator_username, created_timestamp = thread
         category_id, category_name = category
         self.execute_named(
             "store_category", {"id": category_id, "name": category_name}
@@ -203,6 +203,8 @@ class SqliteDriver(DatabaseWithSqlFileCache, BaseDatabaseDriver):
                 "title": thread_title,
                 "wiki_id": wiki_id,
                 "category_id": category_id,
+                "creator_username": creator_username,
+                "created_timestamp": created_timestamp,
             },
         )
 

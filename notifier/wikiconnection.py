@@ -5,7 +5,7 @@ from bs4 import BeautifulSoup
 from bs4.element import Tag
 
 from notifier.parsethread import parse_thread_meta, parse_thread_page
-from notifier.types import RawPost, WikidotResponse
+from notifier.types import RawPost, RawThreadMeta, WikidotResponse
 
 listpages_div_class = "listpages-div-wrap"
 
@@ -117,7 +117,7 @@ class Connection:
 
     def thread(
         self, wiki_id: str, thread_id: str, post_id: Optional[str] = None
-    ) -> Iterator[Union[Tuple[str, str, str], RawPost]]:
+    ) -> Iterator[Union[RawThreadMeta, RawPost]]:
         """Analyse a Wikidot thread.
 
         :param wiki_id: The ID of the wiki that contains the thread.
@@ -153,10 +153,7 @@ class Connection:
             # not raise a StopIteration
             # pylint: disable=stop-iteration-return
             first_page = next(thread_pages)
-            category_id, category_name, thread_title = parse_thread_meta(
-                first_page
-            )
-            yield category_id, category_name, thread_title
+            yield parse_thread_meta(first_page)
             yield from parse_thread_page(thread_id, first_page)
             yield from (
                 post
@@ -173,10 +170,7 @@ class Connection:
                 )["body"],
                 "html.parser",
             )
-            category_id, category_name, thread_title = parse_thread_meta(
-                thread_page
-            )
-            yield category_id, category_name, thread_title
+            yield parse_thread_meta(thread_page)
             yield from parse_thread_page(thread_id, thread_page)
 
     def login(self, username: str, password: str) -> None:

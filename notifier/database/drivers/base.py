@@ -1,15 +1,15 @@
 from abc import ABC, abstractmethod
 from pathlib import Path
-from typing import Any, Callable, Iterable, List, Tuple, Type
+from typing import Any, Callable, Iterable, List, Optional, Tuple, Type
 
 from notifier.types import (
     CachedUserConfig,
     GlobalOverridesConfig,
     NewPostsInfo,
     RawPost,
+    RawUserConfig,
     Subscription,
     SupportedWikiConfig,
-    RawUserConfig,
 )
 
 
@@ -154,13 +154,14 @@ class BaseDatabaseDriver(ABC):
         self,
         wiki_id: str,
         category: Tuple[str, str],
-        thread: Tuple[str, str],
+        thread: Tuple[str, str, Optional[str], int],
     ) -> None:
         """Store a thread. Doesn't matter if the thread or category is
         already known or not.
 
         :param wiki_id: The ID of the wiki that contains the thread.
-        :param thread: A tuple containing the ID and title of the thread.
+        :param thread: A tuple containing information about the thread: ID,
+        title, creator username, and created timestamp.
         :param category: A tuple containing the ID and name of the category.
         """
 

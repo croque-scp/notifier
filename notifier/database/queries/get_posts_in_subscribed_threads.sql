@@ -6,6 +6,8 @@ SELECT
   post.snippet AS snippet,
   thread.id AS thread_id,
   thread.title AS thread_title,
+  thread.creator_username AS thread_creator,
+  thread.created_timestamp AS thread_timestamp,
   wiki.id AS wiki_id,
   wiki.name AS wiki_name,
   wiki.secure AS wiki_secure,

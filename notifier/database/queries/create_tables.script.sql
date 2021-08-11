@@ -39,7 +39,9 @@ CREATE TABLE IF NOT EXISTS thread (
   id TEXT NOT NULL PRIMARY KEY,
   title TEXT NOT NULL,
   wiki_id TEXT NOT NULL,
-  category_id TEXT
+  category_id TEXT,
+  creator_username TEXT,
+  created_timestamp INTEGER NOT NULL
 );
 
 CREATE TABLE IF NOT EXISTS post (

@@ -3,10 +3,10 @@ from typing import Iterable, List, Optional, Tuple, cast
 
 from bs4.element import Tag
 
-from notifier.types import RawPost
+from notifier.types import RawPost, RawThreadMeta
 
 
-def parse_thread_meta(thread: Tag) -> Tuple[str, str, str]:
+def parse_thread_meta(thread: Tag) -> RawThreadMeta:
     """Parse the meta info of a thread to return forum category ID,
     category name, and thread title.
 
@@ -16,12 +16,25 @@ def parse_thread_meta(thread: Tag) -> Tuple[str, str, str]:
     breadcrumbs = cast(Tag, thread.find(class_="forum-breadcrumbs"))
     category_link = list(cast(Iterable[Tag], breadcrumbs.find_all("a")))[-1]
     match = re.search(r"c-[0-9]+", category_link.get_attribute_list("href")[0])
-    if not match:
-        raise ValueError("Couldn't get category ID")
-    category_id = match[0]
-    category_name = category_link.get_text()
-    thread_title = list(breadcrumbs.stripped_strings)[-1].strip(" »")
-    return category_id, category_name, thread_title
+    if match:
+        category_id: Optional[str] = match[0]
+        category_name: Optional[str] = category_link.get_text()
+    else:
+        category_id = category_name = None
+    statistics = cast(Tag, thread.find(class_="statistics"))
+    creator_username = get_user_from_nametag(
+        cast(Tag, statistics.find(class_="printuser"))
+    )[1]
+    created_timestamp = get_timestamp_from_post_info(statistics)
+    if created_timestamp is None:
+        raise ValueError("No timestamp for thread")
+    return {
+        "category_id": category_id,
+        "category_name": category_name,
+        "title": list(breadcrumbs.stripped_strings)[-1].strip(" »"),
+        "creator_username": creator_username,
+        "created_timestamp": created_timestamp,
+    }
 
 
 def parse_thread_page(thread_id: str, thread_page: Tag) -> List[RawPost]:
