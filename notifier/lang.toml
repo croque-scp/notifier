@@ -5,8 +5,6 @@ unsubscribe = "{site}/faq#stop"
 body = """
 {intro}
 
-{main_summary}
-
 {wikis}
 
 {footer}
@@ -17,8 +15,6 @@ body = """
 [base.pm]
 wiki = """
 ++ {wiki_name}
-
-{summary}
 
 {categories}
 """

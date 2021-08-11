@@ -114,17 +114,9 @@ class Digester:
             auto_thread_sub_count=auto_thread_sub_count,
             auto_post_sub_count=auto_post_sub_count,
         )
-        main_summary = lexicon["main_summary"].format(
-            summary=lexicon["summary"].format(
-                notification_count=total_notification_count,
-                thread_count=total_notified_thread_count,
-            ),
-            wiki_count=wiki_count,
-        )
         outro = lexicon["outro"].format(unsubscribe=lexicon["unsubscribe"])
         body = lexicon["body"].format(
             intro=intro,
-            main_summary=main_summary,
             wikis="\n".join(make_wikis_digest(posts, lexicon)),
             footer=lexicon["footer"],
             outro=outro,
@@ -152,7 +144,6 @@ def make_wikis_digest(new_posts: NewPostsInfo, lexicon: dict) -> List[str]:
         digests.append(
             lexicon["wiki"].format(
                 wiki_name=first_post["wiki_name"],
-                summary=None,
                 categories="\n".join(
                     make_categories_digest(posts, replies, lexicon)
                 ),
