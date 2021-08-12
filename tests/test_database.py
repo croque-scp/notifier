@@ -8,18 +8,18 @@ from notifier.database.drivers.base import BaseDatabaseDriver
 def sample_database():
     """Create a sample database with some fake interactions for testing."""
     db = DatabaseDriver()
-    sample_user_configs = [("1", "MyUsername", "hourly", "en")]
+    sample_user_configs = [("1", "MyUsername", "hourly", "en", "pm")]
     sample_manual_subs = [
         ("1", "t-1", None, 1),
         ("1", "t-3", "p-32", 1),
         ("1", "t-4", None, -1),
     ]
-    sample_wikis = [("my-wiki", 1)]
+    sample_wikis = [("my-wiki", "My Wiki", 1)]
     sample_threads = [
-        ("t-1", "Thread 1", "my-wiki"),
-        ("t-2", "Thread 2", "my-wiki"),
-        ("t-3", "Thread 3", "my-wiki"),
-        ("t-4", "Thread 4", "my-wiki"),
+        ("t-1", "Thread 1", "my-wiki", None, None, 10),
+        ("t-2", "Thread 2", "my-wiki", None, None, 13),
+        ("t-3", "Thread 3", "my-wiki", None, None, 16),
+        ("t-4", "Thread 4", "my-wiki", None, None, 50),
     ]
     sample_posts = [
         ("p-11", "t-1", None, 10, "Post 11", "", "1", "MyUsername"),
@@ -37,13 +37,15 @@ def sample_database():
         ("p-42", "t-4", None, 65, "Post 42", "", "3", "BUsername"),
     ]
     db.conn.executemany(
-        "INSERT INTO user_config VALUES (?, ?, ?, ?)", sample_user_configs
+        "INSERT INTO user_config VALUES (?, ?, ?, ?, ?)", sample_user_configs
     )
     db.conn.executemany(
         "INSERT INTO manual_sub VALUES (?, ?, ?, ?)", sample_manual_subs
     )
-    db.conn.executemany("INSERT INTO wiki VALUES (?, ?)", sample_wikis)
-    db.conn.executemany("INSERT INTO thread VALUES (?, ?, ?)", sample_threads)
+    db.conn.executemany("INSERT INTO wiki VALUES (?, ?, ?)", sample_wikis)
+    db.conn.executemany(
+        "INSERT INTO thread VALUES (?, ?, ?, ?, ?, ?)", sample_threads
+    )
     db.conn.executemany(
         "INSERT INTO post VALUES (?, ?, ?, ?, ?, ?, ?, ?)", sample_posts
     )
