@@ -315,7 +315,7 @@ def pluralise(string: str) -> str:
     Substrings of the form `plural(N|X|Y)` with are replaced with X if N is
     an integer and is 1, and Y otherwise.
     """
-    plural = re.compile(r"plural\(([0-9]+)\|(.*?)\|(.*?)\)")
+    plural = re.compile(r"plural\((.*?)\|(.*?)\|(.*?)\)")
     return plural.sub(make_plural, string)
 
 
@@ -326,9 +326,9 @@ def make_plural(match: Match) -> str:
         amount = int(amount)
     except ValueError:
         return multiple
-    if amount > 1:
-        return multiple
-    return single
+    if amount == 1:
+        return single
+    return multiple
 
 
 def group_posts(
