@@ -109,11 +109,13 @@ class Digester:
             site=lexicon["site"],
             sub_count=sub_count,
             manual_sub_count=manual_sub_count,
-            your_config=lexicon["your_config"],
+            your_config=lexicon["your_config"].format(site=lexicon["site"]),
             auto_thread_sub_count=auto_thread_sub_count,
             auto_post_sub_count=auto_post_sub_count,
         )
-        outro = lexicon["outro"].format(unsubscribe=lexicon["unsubscribe"])
+        outro = lexicon["outro"].format(
+            unsubscribe=lexicon["unsubscribe"].format(site=lexicon["site"])
+        )
         body = lexicon["body"].format(
             intro=intro,
             wikis="\n".join(make_wikis_digest(posts, lexicon)),
@@ -223,9 +225,11 @@ def make_threads_digest(
                 thread_title=first_post["thread_title"],
                 thread_has_creator=int(bool(first_post["thread_creator"])),
                 thread_creator=first_post["thread_creator"],
-                date=lexicon["date"].format(first_post["thread_timestamp"]),
+                date=lexicon["date"].format(
+                    timestamp=first_post["thread_timestamp"]
+                ),
                 replies_section=replies_section,
-                posts_rection=posts_section,
+                posts_section=posts_section,
             )
         )
     return digests
@@ -255,7 +259,7 @@ def make_post_replies_digest(
                 ),
                 post_title=replies[0]["parent_title"],
                 date=lexicon["date"].format(
-                    replies[0]["parent_posted_timestamp"]
+                    timestamp=replies[0]["parent_posted_timestamp"]
                 ),
                 posts_section=lexicon["posts_section"].format(
                     posts="\n".join(posts),
@@ -278,7 +282,7 @@ def make_post_digest(post: PostInfo, lexicon: dict) -> str:
         ),
         post_title=post["title"],
         post_author=post["username"],
-        date=lexicon["date"].format(post["posted_timestamp"]),
+        date=lexicon["date"].format(timestamp=post["posted_timestamp"]),
         snippet=post["snippet"],
     )
 
