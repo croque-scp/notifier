@@ -173,7 +173,7 @@ def make_categories_digest(
                     notification_count=len(posts) + len(replies),
                     thread_count=len(threads),
                 ),
-                threads=threads,
+                threads="\n".join(threads),
             )
         )
     return digests
@@ -296,8 +296,8 @@ def process_long_strings(lexicon: lex_or_string) -> lex_or_string:
     if isinstance(lexicon, str):
         if lexicon.startswith("|"):
             lexicon = (
-                # Remove leading/trailing newlines and the pipe
-                lexicon.strip("|\n")
+                # Remove the pipe
+                lexicon.lstrip("|\n")
                 # Save double newlines for later
                 .replace("\n\n", "<<>>")
                 # Remove single newlines
@@ -307,7 +307,7 @@ def process_long_strings(lexicon: lex_or_string) -> lex_or_string:
                 # Insert manual single newlines
                 .replace("<>", "\n")
             )
-        return lexicon
+        return lexicon.strip()
     return {key: process_long_strings(value) for key, value in lexicon.items()}
 
 

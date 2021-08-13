@@ -30,9 +30,7 @@ category = """
 thread = """
 [[li]]
 **{thread_opener} [{thread_url} {thread_title}]** plural({thread_has_creator}||-- [[*user {thread_creator}]]) -- {date}
-
 {replies_section}
-
 {posts_section}
 [[/li]]
 """
@@ -43,7 +41,7 @@ replies_section = """
 """
 post_replied_to = """
 [[li]]
-**{post_replies_opener} [{post_url} {post_title}]** -- {date}**
+**{post_replies_opener} [{post_url} {post_title}]** -- {date}
 
 {posts_section}
 [[/li]]
@@ -54,9 +52,11 @@ posts_section = """
 [[/ul]]
 """
 post = """
+[[li]]
 **[{post_url} {post_title}]** -- [[*user {post_author}]] -- {date}
 
 **|** ##grey|//{snippet}//##
+[[/li]]
 """
 date = """[[date {timestamp} format="%d %b %Y %H:%M:%S|agohover"]]"""
 footer = """
