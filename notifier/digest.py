@@ -122,8 +122,7 @@ class Digester:
             footer=lexicon["footer"],
             outro=outro,
         )
-        body = pluralise(body)
-        body = emojize(body, variant="emoji_type")
+        body = finalise_digest(body)
         return subject, body
 
 
@@ -331,6 +330,11 @@ def make_plural(match: Match) -> str:
     if amount == 1:
         return single
     return multiple
+
+
+def finalise_digest(digest: str) -> str:
+    """Performs final postprocessing on a digest."""
+    return emojize(pluralise(digest), variant="emoji_type")
 
 
 def group_posts(
