@@ -1,0 +1,23 @@
+INSERT OR UPDATE INTO
+  post
+  (
+    id,
+    thread_id,
+    parent_post_id,
+    posted_timestamp,
+    title,
+    snippet,
+    user_id,
+    username
+  )
+VALUES
+  (
+    :id,
+    :thread_id,
+    :parent_post_id,
+    :posted_timestamp,
+    :title,
+    :snippet,
+    :user_id,
+    :username
+  )

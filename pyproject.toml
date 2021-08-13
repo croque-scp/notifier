@@ -1,0 +1,46 @@
+[tool.poetry]
+name = "notifier"
+version = "0.0.0"
+description = "Wikidot notifications"
+authors = ["Ross Williams <rossjrw@gmail.com>"]
+license = "MIT"
+
+[tool.poetry.dependencies]
+python = "^3.8"
+APScheduler = "^3.7.0"
+requests = "^2.26.0"
+bs4 = "^0.0.1"
+tomlkit = "^0.7.2"
+pycron = "^3.0.0"
+feedparser = "^6.0.8"
+emoji = "^1.4.2"
+
+[tool.poetry.dev-dependencies]
+black = "^21.7b0"
+pytest = "^6.2.4"
+isort = "^5.9.2"
+pylint = "^2.9.6"
+mypy = "^0.910"
+types-requests = "^2.25.0"
+types-beautifulsoup4 = "^4.9.1"
+
+[tool.black]
+line-length = 79
+target-version = ['py38']
+include = '\.pyi?$'
+
+[tool.isort]
+profile = "black"
+skip_gitignore = true
+
+[tool.pylint.messages_control]
+disable = [
+  "invalid-name", # oh sorry did I forget to uppercase?
+  "missing-module-docstring", # filenames are good enough
+  "redefined-outer-name", # for pytest
+  "too-few-public-methods", # this is just stupid
+]
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"

@@ -1,0 +1,107 @@
+[base]
+site = "http://notifications.wikidot.com"
+your_config = "{site}/redirect-to-your-config"
+unsubscribe = "{site}/faq#stop"
+body = """
+{intro}
+
+{wikis}
+
+{footer}
+
+{outro}
+"""
+
+[base.pm]
+wiki = """
+++ {wiki_name}
+
+{categories}
+"""
+category = """
++++ {category_name}
+
+{summary}
+
+[[ul style="list-style-type: ':open_mailbox_with_raised_flag: '"]]
+{threads}
+[[/ul]]
+"""
+thread = """
+[[li]]
+**{thread_opener} [{thread_url} {thread_title}]** plural({thread_has_creator}||-- [[*user {thread_creator}]]) -- {date}
+{replies_section}
+{posts_section}
+[[/li]]
+"""
+replies_section = """
+[[ul style="list-style-type: ':package: '"]]
+{posts_replied_to}
+[[/ul]]
+"""
+post_replied_to = """
+[[li]]
+**{post_replies_opener} [{post_url} {post_title}]** -- {date}
+
+{posts_section}
+[[/li]]
+"""
+posts_section = """
+[[ul style="list-style-type: ':envelope: '"]]
+{posts}
+[[/ul]]
+"""
+post = """
+[[li]]
+**[{post_url} {post_title}]** -- [[*user {post_author}]] -- {date}
+
+**|** ##grey|//{snippet}//##
+[[/li]]
+"""
+date = """[[date {timestamp} format="%d %b %Y %H:%M:%S|agohover"]]"""
+footer = """
+[[=]]
++ :open_mailbox_with_lowered_flag:
+[[/=]]
+"""
+
+[en]
+frequency_hourly = "hourly"
+frequency_daily = "daily"
+frequency_weekly = "weekly"
+frequency_monthly = "monthly"
+subject = "[Forum Notifications] {post_count} new posts"
+intro = """|
+Hello! This is your {frequency} notification digest from {site}, notifying
+you of new posts to threads that you're subscribed to.
+
+Not including any subscriptions that have been removed as a result of your
+manual unsubscriptions, this service is keeping track of {sub_count}
+subscriptions for you:
+
+* {manual_sub_count} manual subscriptions, as defined in [{your_config}
+your user configuration].
+
+* {auto_thread_sub_count} automatic thread subscriptions and
+{auto_post_sub_count} automatic post subscriptions. The service is
+[{site}/faq#learning still learning] about your automatic subscriptions, so
+expect this number to increase over time. [{site}/faq#auto Learn what
+constitutes an automatic subscription.]
+
+This account ([[*user Notifier]]) is automated -- any response to this
+message will be ignored. If there are any problems, contact me ([[*user
+Croquembouche]]) directly.
+
+-----
+"""
+outro = """
+= Unsubscribe from these notifications: {unsubscribe}
+"""
+main_summary = "You have {summary} from {wiki_count} plural({wiki_count}|wiki|wikis)"
+summary = """|
+{notification_count} plural({notification_count}|notification|notifications)
+in {thread_count} plural({thread_count}|thread|threads)
+"""
+unknown_category_name = "Other"
+thread_opener = "Thread:"
+post_replies_opener = "Replies to your post:"
