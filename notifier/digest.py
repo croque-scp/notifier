@@ -69,12 +69,12 @@ class Digester:
         # a non-en language, its keys should override all of en's, but in
         # case they don't, en's are used as a fallback.
         lexicon = {
-            **self.lexicon["base"],
-            **self.lexicon["base"][method],
-            **self.lexicon["en"],
-            **self.lexicon["en"][method],
-            **self.lexicon[lang],
-            **self.lexicon[lang][method],
+            **self.lexicon.get("base", {}),
+            **self.lexicon.get("base", {}).get(method, {}),
+            **self.lexicon.get("en", {}),
+            **self.lexicon.get("en", {}).get(method, {}),
+            **self.lexicon.get(lang, {}),
+            **self.lexicon.get(lang, {}).get(method, {}),
         }
         return lexicon
 
