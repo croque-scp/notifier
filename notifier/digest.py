@@ -122,10 +122,8 @@ class Digester:
             footer=lexicon["footer"],
             outro=outro,
         )
-        # Pluralise
         body = pluralise(body)
-        # Add emojis
-        body = emojize(body)
+        body = emojize(body, variant="emoji_type")
         return subject, body
 
 
