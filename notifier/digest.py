@@ -167,7 +167,8 @@ def make_categories_digest(
         threads = make_threads_digest(posts, replies, lexicon)
         digests.append(
             lexicon["category"].format(
-                category_name=first_post["category_name"],
+                category_name=first_post.get("category_name")
+                or lexicon["unknown_category_name"],
                 summary=lexicon["summary"].format(
                     notification_count=len(posts) + len(replies),
                     thread_count=len(threads),
