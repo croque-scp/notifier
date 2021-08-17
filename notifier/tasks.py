@@ -1,3 +1,4 @@
+import time
 from abc import ABC
 
 import pycron
@@ -26,6 +27,7 @@ class NotificationChannel(ABC):
         self,
         database: BaseDatabaseDriver,
         connection: Connection,
+        current_timestamp: int,
     ):
         """Execute this task's responsibilities."""
         print(f"Executing {self.frequency} notification channel")
@@ -81,10 +83,12 @@ def execute_tasks(
     get_global_config(local_config, database, connection)
     get_user_config(local_config, database, connection)
     get_new_posts(database, connection)
+    # Record the 'current' timestamp immediately after downloading posts
+    current_timestamp = int(time.time())
     # connection.login()
     for Channel in active_channels:
         # Should this be asynchronous + parallel?
-        Channel().notify(database, connection)
+        Channel().notify(database, connection, current_timestamp)
 
 
 class HourlyChannel(NotificationChannel):
