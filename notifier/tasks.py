@@ -36,19 +36,16 @@ class NotificationChannel(ABC):
         print(f"{len(user_configs)} users for {self.frequency} channel")
         if len(user_configs) == 0:
             return
-        # Key the user configs by user ID for easier iteration
-        users = {
-            user_config["user_id"]: {"config": user_config}
-            for user_config in user_configs
-        }
-        for user_id, user in users.items():
-            pass
-        # Get new posts for these users
-
-        # Compile the digests
-        # Send the digests via PM to PM-subscribed users
-        # Get email addresses for contacts, if there are any
-        # Send the digests via email to email-subscribed users
+        for user in user_configs:
+            # Get new posts for these users
+            posts = database.get_new_posts_for_user(
+                user["user_id"],
+                (user["last_notified_timestamp"], current_timestamp),
+            )
+            # Compile the digests
+            # Send the digests via PM to PM-subscribed users
+            # Get email addresses for contacts, if there are any
+            # Send the digests via email to email-subscribed users
 
 
 def execute_tasks(
