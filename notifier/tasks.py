@@ -5,6 +5,7 @@ import pycron
 from notifier.config.tool import get_global_config, read_local_config
 from notifier.config.user import get_user_config
 from notifier.database.drivers.base import BaseDatabaseDriver
+from notifier.newposts import get_new_posts
 from notifier.wikiconnection import Connection
 
 
@@ -79,7 +80,7 @@ def execute_tasks(
     connection = Connection()
     get_global_config(local_config, database, connection)
     get_user_config(local_config, database, connection)
-    get_new_posts()
+    get_new_posts(database, connection)
     # connection.login()
     for Channel in active_channels:
         # Should this be asynchronous + parallel?
