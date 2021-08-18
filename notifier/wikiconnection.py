@@ -230,6 +230,22 @@ class Connection:
             ),
         )
 
+    def send_message(self, user_id: str, subject: str, body: str) -> None:
+        """Send a Wikidot message to the given user with the given subject
+        and body.
+
+        The Wikidot connection must be logged-in.
+        """
+        self.module(
+            "www",
+            "Empty",
+            action="DashboardMessageAction",
+            event="send",
+            to_user_id=user_id,
+            subject=subject,
+            source=body,
+        )
+
     def get_contacts(self) -> EmailAddresses:
         """Get the account's contacts list and their emails in order to be
         able to send email notifications.
