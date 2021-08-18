@@ -45,7 +45,7 @@ if __name__ == "__main__":
     scheduler.add_job(
         execute_tasks,
         CronTrigger.from_crontab(HourlyChannel.crontab),
-        args=(local_config_path, database),
+        args=(local_config_path, database, wikidot_password),
     )
 
     # Let's go

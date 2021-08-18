@@ -52,8 +52,7 @@ class NotificationChannel(ABC):
 
 
 def execute_tasks(
-    local_config_path: str,
-    database: BaseDatabaseDriver,
+    local_config_path: str, database: BaseDatabaseDriver, wikidot_password: str
 ):
     """Main task executor. Should be called as often as the most frequent
     notification digest.
