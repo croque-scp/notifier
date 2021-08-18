@@ -147,3 +147,7 @@ class NewPostsInfo(TypedDict):
 
     thread_posts: List[ThreadPostInfo]
     post_replies: List[PostReplyInfo]
+
+
+# Email addresses keyed by Wikidot usernames.
+EmailAddresses = Dict[str, str]

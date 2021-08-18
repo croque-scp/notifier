@@ -1,5 +1,6 @@
 import time
 from abc import ABC
+from typing import List, Type, cast
 
 import pycron
 
@@ -8,6 +9,7 @@ from notifier.config.user import get_user_config
 from notifier.database.drivers.base import BaseDatabaseDriver
 from notifier.digest import Digester
 from notifier.newposts import get_new_posts
+from notifier.types import EmailAddresses, PostInfo
 from notifier.wikiconnection import Connection
 
 
@@ -24,11 +26,12 @@ class NotificationChannel(ABC):
     crontab = ""
     frequency = ""
 
-    def notify(
+    def notify(  # pylint: disable=too-many-arguments
         self,
         database: BaseDatabaseDriver,
         connection: Connection,
         digester: Digester,
+        addresses: EmailAddresses,
         current_timestamp: int,
     ):
         """Execute this task's responsibilities."""
@@ -36,19 +39,50 @@ class NotificationChannel(ABC):
         # Get config sans subscriptions for users who would be notified
         user_configs = database.get_user_configs(self.frequency)
         print(f"{len(user_configs)} users for {self.frequency} channel")
-        if len(user_configs) == 0:
-            return
+        # Notify each user on this frequency channel
         for user in user_configs:
-            # Get new posts for these users
+            # Get new posts for this user
             posts = database.get_new_posts_for_user(
                 user["user_id"],
                 (user["last_notified_timestamp"], current_timestamp),
             )
-            # Compile the digests
-
+            # Extract the 'last notification time' that will be recorded -
+            # it is the timestamp of the most recent post this user is
+            # being notified about
+            last_notified_timestamp = max(
+                post["posted_timestamp"]
+                for post in (
+                    posts["thread_posts"]
+                    + cast(List[PostInfo], posts["post_replies"])
+                )
+            )
+            # Compile the digest
+            count, subject, body = digester.for_user(user, posts)
+            if count == 0:
+                # Nothing to notify the user about
+                continue
             # Send the digests via PM to PM-subscribed users
-            # Get email addresses for contacts, if there are any
+            if user["delivery"] == "pm":
+                connection.send_message(user["username"], subject, body)
             # Send the digests via email to email-subscribed users
+            if user["delivery"] == "email":
+                try:
+                    address = addresses[user["username"]]
+                except KeyError:
+                    # This user requested to be notified via email but
+                    # hasn't added the notification account as a contact,
+                    # meaning their email address is unknown
+                    print(f"{user['username']} is not a back-contact")
+                    # They'll have to fix this themselves
+                    continue
+                send_email(address, subject, body)
+            # Immediately after sending the notification, record the user's
+            # last notification time
+            # Minimising the number of computations between these two
+            # processes is essential
+            database.store_user_last_notified(
+                user["user_id"], last_notified_timestamp
+            )
 
 
 def execute_tasks(
