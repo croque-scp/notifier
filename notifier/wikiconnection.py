@@ -58,11 +58,24 @@ class Connection:
         """Make a POST request."""
         return self._session.request("POST", url, **kwargs)
 
-    def module(self, wiki: str, module_name: str, **kwargs) -> WikidotResponse:
+    def module(
+        self, wiki_id: str, module_name: str, **kwargs
+    ) -> WikidotResponse:
         """Call a Wikidot module."""
+        # Check whether HTTP or HTTPS should be used for this wiki's AJAX
+        # endpoint (HTTP-only wikis will reject HTTPS and vice versa,
+        # though some wikis support both)
+        secure = any(
+            bool(wiki["secure"])
+            for wiki in self.supported_wikis
+            if wiki["id"] == wiki_id
+        )
+        # If we're logged in, grab the token7, otherwise make one up
         token7 = self._session.cookies.get("wikidot_token7", "7777777")
         response = self.post(
-            f"http://{wiki}.wikidot.com/ajax-module-connector.php",
+            "http{}://{}.wikidot.com/ajax-module-connector.php".format(
+                "s" if secure else "", wiki_id
+            ),
             data=dict(moduleName=module_name, wikidot_token7=token7, **kwargs),
             cookies={"wikidot_token7": token7},
         ).json()
@@ -89,7 +102,7 @@ class Connection:
         :param index_key: The name of the parameter of this module that
         must be incrememented to access the next page - e.g. 'offset' for
         ListPages and 'pageNo' for some other modules.
-        :param starting_index: The initial value of the index. Usuaally 0
+        :param starting_index: The initial value of the index. Usually 0
         for ListPages and 1 for most other modules.
         :param index_increment: The amount by which to increment the index
         key for each page. 1 for the vast majority of modules; often equal
