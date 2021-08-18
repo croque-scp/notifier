@@ -11,6 +11,12 @@ class WikidotResponse(TypedDict):
     message: Optional[str]
 
 
+class LocalConfigPaths(TypedDict):
+    """Segment of the local config file containing paths."""
+
+    lang: str
+
+
 class LocalConfig(TypedDict):
     """Contents of the local config file."""
 
@@ -19,6 +25,7 @@ class LocalConfig(TypedDict):
     user_config_category: str
     wiki_config_category: str
     overrides_url: str
+    path: LocalConfigPaths
 
 
 class SupportedWikiConfig(TypedDict):
