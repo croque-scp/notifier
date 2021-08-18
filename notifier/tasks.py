@@ -63,7 +63,7 @@ def execute_tasks(
     schedules.
     """
     # Check which notification channels should be activated
-    active_channels = [
+    active_channels: List[Type[NotificationChannel]] = [
         Channel
         for Channel in [
             HourlyChannel,
@@ -86,10 +86,18 @@ def execute_tasks(
     # Record the 'current' timestamp immediately after downloading posts
     current_timestamp = int(time.time())
     digester = Digester(local_config["path"]["lang"])
-    # connection.login()
+    connection.login(local_config["wikidot_username"], wikidot_password)
+    # If there's at least one user subscribed via email, get the list of
+    # emails from the notification account's back-contacts
+    if database.check_would_email(
+        [Channel.frequency for Channel in active_channels]
+    ):
+        addresses = connection.get_contacts()
     for Channel in active_channels:
         # Should this be asynchronous + parallel?
-        Channel().notify(database, connection, digester, current_timestamp)
+        Channel().notify(
+            database, connection, digester, addresses, current_timestamp
+        )
 
 
 class HourlyChannel(NotificationChannel):
