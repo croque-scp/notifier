@@ -112,7 +112,7 @@ def execute_tasks(
         print("No active channels")
         return
     local_config = read_local_config(local_config_path)
-    connection = Connection()
+    connection = Connection(database.get_supported_wikis())
     get_global_config(local_config, database, connection)
     get_user_config(local_config, database, connection)
     get_new_posts(database, connection)

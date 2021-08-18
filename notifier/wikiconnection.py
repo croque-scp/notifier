@@ -1,4 +1,4 @@
-from typing import Iterable, Iterator, Optional, Union, cast
+from typing import Iterable, Iterator, List, Optional, Union, cast
 
 import requests
 from bs4 import BeautifulSoup
@@ -9,6 +9,7 @@ from notifier.types import (
     EmailAddresses,
     RawPost,
     RawThreadMeta,
+    SupportedWikiConfig,
     WikidotResponse,
 )
 
@@ -24,9 +25,14 @@ listpages_div_wrap = f"""
 class Connection:
     """Connection to Wikidot facilitating communications with it."""
 
-    def __init__(self):
+    def __init__(self, supported_wikis: List[SupportedWikiConfig]):
         """Connect to Wikidot."""
         self._session = requests.sessions.Session()
+        self.supported_wikis = supported_wikis
+        # Always add the 'base' wiki even if it's not configured
+        self.supported_wikis.append(
+            {"id": "www", "name": "Wikidot", "secure": 1}
+        )
 
     def post(self, url, **kwargs):
         """Make a POST request."""
