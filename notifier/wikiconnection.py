@@ -34,12 +34,10 @@ class Connection:
 
     def module(self, wiki: str, module_name: str, **kwargs) -> WikidotResponse:
         """Call a Wikidot module."""
+        token7 = self._session.cookies.get("wikidot_token7")
         response = self.post(
-            "http://{}.wikidot.com/ajax-module-connector.php".format(wiki),
-            data=dict(
-                moduleName=module_name, wikidot_token7="123456", **kwargs
-            ),
-            cookies={"wikidot_token7": "123456"},
+            f"http://{wiki}.wikidot.com/ajax-module-connector.php",
+            data=dict(moduleName=module_name, wikidot_token7=token7, **kwargs),
         ).json()
         if response["status"] != "ok":
             raise RuntimeError(response.get("message") or response["status"])
