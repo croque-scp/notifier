@@ -80,10 +80,11 @@ class Digester:
 
     def for_user(  # pylint: disable=too-many-locals
         self, user: CachedUserConfig, posts: NewPostsInfo
-    ) -> Tuple[str, str]:
+    ) -> Tuple[int, str, str]:
         """Compile a notification digest for a user.
 
-        Returns a tuple of the message subject and the digest body.
+        Returns a tuple of notification count, message subject and the
+        digest body.
         """
         # Make the lexicon for this user's settings
         lexicon = self.make_lexicon(user["language"], user["delivery"])
@@ -93,7 +94,7 @@ class Digester:
         manual_sub_count = None
         auto_thread_sub_count = None
         auto_post_sub_count = None
-        total_notification_count = None
+        total_notification_count = 0
         # Construct the message
         subject = lexicon["subject"].format(
             post_count=total_notification_count
@@ -123,7 +124,7 @@ class Digester:
             outro=outro,
         )
         body = finalise_digest(body)
-        return subject, body
+        return total_notification_count, subject, body
 
 
 def make_wikis_digest(new_posts: NewPostsInfo, lexicon: dict) -> List[str]:

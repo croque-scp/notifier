@@ -1,11 +1,16 @@
-from typing import Iterable, Iterator, Optional, Tuple, Union, cast
+from typing import Iterable, Iterator, Optional, Union, cast
 
 import requests
 from bs4 import BeautifulSoup
 from bs4.element import Tag
 
 from notifier.parsethread import parse_thread_meta, parse_thread_page
-from notifier.types import RawPost, RawThreadMeta, WikidotResponse
+from notifier.types import (
+    EmailAddresses,
+    RawPost,
+    RawThreadMeta,
+    WikidotResponse,
+)
 
 listpages_div_class = "listpages-div-wrap"
 
@@ -186,7 +191,7 @@ class Connection:
             ),
         )
 
-    def get_contacts(self):
+    def get_contacts(self) -> EmailAddresses:
         """Get the account's contacts list and their emails in order to be
         able to send email notifications.
 
