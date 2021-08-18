@@ -6,6 +6,7 @@ import pycron
 from notifier.config.tool import get_global_config, read_local_config
 from notifier.config.user import get_user_config
 from notifier.database.drivers.base import BaseDatabaseDriver
+from notifier.digest import Digester
 from notifier.newposts import get_new_posts
 from notifier.wikiconnection import Connection
 
@@ -27,6 +28,7 @@ class NotificationChannel(ABC):
         self,
         database: BaseDatabaseDriver,
         connection: Connection,
+        digester: Digester,
         current_timestamp: int,
     ):
         """Execute this task's responsibilities."""
@@ -43,6 +45,7 @@ class NotificationChannel(ABC):
                 (user["last_notified_timestamp"], current_timestamp),
             )
             # Compile the digests
+
             # Send the digests via PM to PM-subscribed users
             # Get email addresses for contacts, if there are any
             # Send the digests via email to email-subscribed users
@@ -82,10 +85,11 @@ def execute_tasks(
     get_new_posts(database, connection)
     # Record the 'current' timestamp immediately after downloading posts
     current_timestamp = int(time.time())
+    digester = Digester(local_config["path"]["lang"])
     # connection.login()
     for Channel in active_channels:
         # Should this be asynchronous + parallel?
-        Channel().notify(database, connection, current_timestamp)
+        Channel().notify(database, connection, digester, current_timestamp)
 
 
 class HourlyChannel(NotificationChannel):
