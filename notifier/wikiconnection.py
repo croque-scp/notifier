@@ -7,6 +7,7 @@ from bs4.element import Tag
 from notifier.parsethread import parse_thread_meta, parse_thread_page
 from notifier.types import (
     EmailAddresses,
+    LocalConfig,
     RawPost,
     RawThreadMeta,
     SupportedWikiConfig,
@@ -25,14 +26,33 @@ listpages_div_wrap = f"""
 class Connection:
     """Connection to Wikidot facilitating communications with it."""
 
-    def __init__(self, supported_wikis: List[SupportedWikiConfig]):
+    def __init__(
+        self, config: LocalConfig, supported_wikis: List[SupportedWikiConfig]
+    ):
         """Connect to Wikidot."""
         self._session = requests.sessions.Session()
         self.supported_wikis = supported_wikis
-        # Always add the 'base' wiki even if it's not configured
-        self.supported_wikis.append(
-            {"id": "www", "name": "Wikidot", "secure": 1}
-        )
+        # Always add the 'base' wiki, if it's not already present
+        if not any(
+            True for wiki in self.supported_wikis if wiki["id"] == "www"
+        ):
+            self.supported_wikis.append(
+                {"id": "www", "name": "Wikidot", "secure": 1}
+            )
+        # Always add the configuration wiki, if it's not already present
+        if not any(
+            True
+            for wiki in self.supported_wikis
+            if wiki["id"] == config["config_wiki"]
+        ):
+            self.supported_wikis.append(
+                {
+                    "id": config["config_wiki"],
+                    "name": "Configuration",
+                    # Assume it's unsecure as that's most common
+                    "secure": 0,
+                }
+            )
 
     def post(self, url, **kwargs):
         """Make a POST request."""
