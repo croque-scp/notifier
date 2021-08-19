@@ -63,7 +63,7 @@ class NotificationChannel(ABC):
                 continue
             # Send the digests via PM to PM-subscribed users
             if user["delivery"] == "pm":
-                connection.send_message(user["username"], subject, body)
+                connection.send_message(user["user_id"], subject, body)
             # Send the digests via email to email-subscribed users
             if user["delivery"] == "email":
                 try:
@@ -112,13 +112,15 @@ def execute_tasks(
         print("No active channels")
         return
     local_config = read_local_config(local_config_path)
-    connection = Connection()
+    digester = Digester(local_config["path"]["lang"])
+    connection = Connection(local_config, database.get_supported_wikis())
     get_global_config(local_config, database, connection)
     get_user_config(local_config, database, connection)
+    # Refresh the connection to add any newly-configured wikis
+    connection = Connection(local_config, database.get_supported_wikis())
     get_new_posts(database, connection)
     # Record the 'current' timestamp immediately after downloading posts
     current_timestamp = int(time.time())
-    digester = Digester(local_config["path"]["lang"])
     connection.login(local_config["wikidot_username"], wikidot_password)
     # If there's at least one user subscribed via email, get the list of
     # emails from the notification account's back-contacts

@@ -1,4 +1,4 @@
-from typing import Iterable, Iterator, Optional, Union, cast
+from typing import Iterable, Iterator, List, Optional, Union, cast
 
 import requests
 from bs4 import BeautifulSoup
@@ -7,8 +7,10 @@ from bs4.element import Tag
 from notifier.parsethread import parse_thread_meta, parse_thread_page
 from notifier.types import (
     EmailAddresses,
+    LocalConfig,
     RawPost,
     RawThreadMeta,
+    SupportedWikiConfig,
     WikidotResponse,
 )
 
@@ -24,24 +26,61 @@ listpages_div_wrap = f"""
 class Connection:
     """Connection to Wikidot facilitating communications with it."""
 
-    def __init__(self):
+    def __init__(
+        self, config: LocalConfig, supported_wikis: List[SupportedWikiConfig]
+    ):
         """Connect to Wikidot."""
         self._session = requests.sessions.Session()
+        self.supported_wikis = supported_wikis
+        # Always add the 'base' wiki, if it's not already present
+        if not any(
+            True for wiki in self.supported_wikis if wiki["id"] == "www"
+        ):
+            self.supported_wikis.append(
+                {"id": "www", "name": "Wikidot", "secure": 1}
+            )
+        # Always add the configuration wiki, if it's not already present
+        if not any(
+            True
+            for wiki in self.supported_wikis
+            if wiki["id"] == config["config_wiki"]
+        ):
+            self.supported_wikis.append(
+                {
+                    "id": config["config_wiki"],
+                    "name": "Configuration",
+                    # Assume it's unsecure as that's most common
+                    "secure": 0,
+                }
+            )
 
     def post(self, url, **kwargs):
         """Make a POST request."""
         return self._session.request("POST", url, **kwargs)
 
-    def module(self, wiki: str, module_name: str, **kwargs) -> WikidotResponse:
+    def module(
+        self, wiki_id: str, module_name: str, **kwargs
+    ) -> WikidotResponse:
         """Call a Wikidot module."""
+        # Check whether HTTP or HTTPS should be used for this wiki's AJAX
+        # endpoint (HTTP-only wikis will reject HTTPS and vice versa,
+        # though some wikis support both)
+        secure = any(
+            bool(wiki["secure"])
+            for wiki in self.supported_wikis
+            if wiki["id"] == wiki_id
+        )
+        # If we're logged in, grab the token7, otherwise make one up
+        token7 = self._session.cookies.get("wikidot_token7", "7777777")
         response = self.post(
-            "http://{}.wikidot.com/ajax-module-connector.php".format(wiki),
-            data=dict(
-                moduleName=module_name, wikidot_token7="123456", **kwargs
+            "http{}://{}.wikidot.com/ajax-module-connector.php".format(
+                "s" if secure else "", wiki_id
             ),
-            cookies={"wikidot_token7": "123456"},
+            data=dict(moduleName=module_name, wikidot_token7=token7, **kwargs),
+            cookies={"wikidot_token7": token7},
         ).json()
         if response["status"] != "ok":
+            print(response)
             raise RuntimeError(response.get("message") or response["status"])
         return response
 
@@ -63,7 +102,7 @@ class Connection:
         :param index_key: The name of the parameter of this module that
         must be incrememented to access the next page - e.g. 'offset' for
         ListPages and 'pageNo' for some other modules.
-        :param starting_index: The initial value of the index. Usuaally 0
+        :param starting_index: The initial value of the index. Usually 0
         for ListPages and 1 for most other modules.
         :param index_increment: The amount by which to increment the index
         key for each page. 1 for the vast majority of modules; often equal
@@ -189,6 +228,22 @@ class Connection:
                 action="Login2Action",
                 event="login",
             ),
+        )
+
+    def send_message(self, user_id: str, subject: str, body: str) -> None:
+        """Send a Wikidot message to the given user with the given subject
+        and body.
+
+        The Wikidot connection must be logged-in.
+        """
+        self.module(
+            "www",
+            "Empty",
+            action="DashboardMessageAction",
+            event="send",
+            to_user_id=user_id,
+            subject=subject,
+            source=body,
         )
 
     def get_contacts(self) -> EmailAddresses:
