@@ -30,7 +30,8 @@ def check_authentication(config: LocalConfig) -> None:
     """Verifies that the Wikidot and gmail passwords have been provided."""
     if not keyring.get_password("wikidot", config["wikidot_username"]):
         raise ValueError("Wikidot account password is not configured")
-    # TODO gmail password
+    if not keyring.get_password("yagmail", config["gmail_username"]):
+        raise ValueError("gmail account password is not configured")
 
 
 if __name__ == "__main__":
