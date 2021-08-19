@@ -38,7 +38,6 @@ disable = [
   "invalid-name", # oh sorry did I forget to uppercase?
   "missing-module-docstring", # filenames are good enough
   "redefined-outer-name", # for pytest
-  "too-few-public-methods", # this is just stupid
 ]
 
 [build-system]

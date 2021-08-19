@@ -1,6 +1,5 @@
 import time
-from abc import ABC
-from typing import List, Type, cast
+from typing import List, cast
 
 import pycron
 
@@ -12,80 +11,77 @@ from notifier.newposts import get_new_posts
 from notifier.types import EmailAddresses, PostInfo
 from notifier.wikiconnection import Connection
 
+# Notification channels with frequency names mapping to the crontab of that
+# frequency.
+notification_channels = {
+    "hourly": "0 * * * *",
+    "daily": "0 0 * * *",
+    "weekly": "0 0 * * 0",
+    "monthly": "0 0 1 * *",
+}
 
-class NotificationChannel(ABC):
-    """A scheduled notification for users on a specific frequency channel.
 
-    :param database: The database to use for notifications.
-    :param connection: Connection to Wikidot.
-
-    :var crontab: Determines when each set of notifications should be sent
-    out.
-    """
-
-    crontab = ""
-    frequency = ""
-
-    def notify(  # pylint: disable=too-many-arguments
-        self,
-        database: BaseDatabaseDriver,
-        connection: Connection,
-        digester: Digester,
-        addresses: EmailAddresses,
-        current_timestamp: int,
-    ):
-        """Execute this task's responsibilities."""
-        print(f"Executing {self.frequency} notification channel")
-        # Get config sans subscriptions for users who would be notified
-        user_configs = database.get_user_configs(self.frequency)
-        print(f"{len(user_configs)} users for {self.frequency} channel")
-        # Notify each user on this frequency channel
-        for user in user_configs:
-            # Get new posts for this user
-            posts = database.get_new_posts_for_user(
-                user["user_id"],
-                (user["last_notified_timestamp"], current_timestamp),
+def notify_channel(  # pylint: disable=too-many-arguments
+    channel: str,
+    current_timestamp: int,
+    *,
+    database: BaseDatabaseDriver,
+    connection: Connection,
+    digester: Digester,
+    addresses: EmailAddresses,
+):
+    """Execute this task's responsibilities."""
+    print(f"Executing {channel} notification channel")
+    # Get config sans subscriptions for users who would be notified
+    user_configs = database.get_user_configs(channel)
+    print(f"{len(user_configs)} users for {channel} channel")
+    # Notify each user on this frequency channel
+    for user in user_configs:
+        # Get new posts for this user
+        posts = database.get_new_posts_for_user(
+            user["user_id"],
+            (user["last_notified_timestamp"], current_timestamp),
+        )
+        # Extract the 'last notification time' that will be recorded -
+        # it is the timestamp of the most recent post this user is
+        # being notified about
+        last_notified_timestamp = max(
+            post["posted_timestamp"]
+            for post in (
+                posts["thread_posts"]
+                + cast(List[PostInfo], posts["post_replies"])
             )
-            # Extract the 'last notification time' that will be recorded -
-            # it is the timestamp of the most recent post this user is
-            # being notified about
-            last_notified_timestamp = max(
-                post["posted_timestamp"]
-                for post in (
-                    posts["thread_posts"]
-                    + cast(List[PostInfo], posts["post_replies"])
-                )
-            )
-            # Compile the digest
-            count, subject, body = digester.for_user(user, posts)
-            if count == 0:
-                # Nothing to notify the user about
+        )
+        # Compile the digest
+        count, subject, body = digester.for_user(user, posts)
+        if count == 0:
+            # Nothing to notify the user about
+            continue
+        # Send the digests via PM to PM-subscribed users
+        if user["delivery"] == "pm":
+            connection.send_message(user["user_id"], subject, body)
+        # Send the digests via email to email-subscribed users
+        if user["delivery"] == "email":
+            try:
+                address = addresses[user["username"]]
+            except KeyError:
+                # This user requested to be notified via email but
+                # hasn't added the notification account as a contact,
+                # meaning their email address is unknown
+                print(f"{user['username']} is not a back-contact")
+                # They'll have to fix this themselves
                 continue
-            # Send the digests via PM to PM-subscribed users
-            if user["delivery"] == "pm":
-                connection.send_message(user["user_id"], subject, body)
-            # Send the digests via email to email-subscribed users
-            if user["delivery"] == "email":
-                try:
-                    address = addresses[user["username"]]
-                except KeyError:
-                    # This user requested to be notified via email but
-                    # hasn't added the notification account as a contact,
-                    # meaning their email address is unknown
-                    print(f"{user['username']} is not a back-contact")
-                    # They'll have to fix this themselves
-                    continue
-                send_email(address, subject, body)
-            # Immediately after sending the notification, record the user's
-            # last notification time
-            # Minimising the number of computations between these two
-            # processes is essential
-            database.store_user_last_notified(
-                user["user_id"], last_notified_timestamp
-            )
+            send_email(address, subject, body)
+        # Immediately after sending the notification, record the user's
+        # last notification time
+        # Minimising the number of computations between these two
+        # processes is essential
+        database.store_user_last_notified(
+            user["user_id"], last_notified_timestamp
+        )
 
 
-def execute_tasks(
+def notify_active_channels(
     local_config_path: str, database: BaseDatabaseDriver, wikidot_password: str
 ):
     """Main task executor. Should be called as often as the most frequent
@@ -96,15 +92,10 @@ def execute_tasks(
     schedules.
     """
     # Check which notification channels should be activated
-    active_channels: List[Type[NotificationChannel]] = [
-        Channel
-        for Channel in [
-            HourlyChannel,
-            DailyChannel,
-            WeeklyChannel,
-            MonthlyChannel,
-        ]
-        if pycron.is_now(Channel.crontab)
+    active_channels = [
+        frequency
+        for frequency, crontab in notification_channels.items()
+        if pycron.is_now(crontab)
     ]
     # If there are no active channels, which shouldn't happen, there is
     # nothing to do
@@ -124,40 +115,15 @@ def execute_tasks(
     connection.login(local_config["wikidot_username"], wikidot_password)
     # If there's at least one user subscribed via email, get the list of
     # emails from the notification account's back-contacts
-    if database.check_would_email(
-        [Channel.frequency for Channel in active_channels]
-    ):
+    if database.check_would_email(active_channels):
         addresses = connection.get_contacts()
-    for Channel in active_channels:
+    for channel in active_channels:
         # Should this be asynchronous + parallel?
-        Channel().notify(
-            database, connection, digester, addresses, current_timestamp
+        notify_channel(
+            channel,
+            current_timestamp,
+            database=database,
+            connection=connection,
+            digester=digester,
+            addresses=addresses,
         )
-
-
-class HourlyChannel(NotificationChannel):
-    """Hourly notification channel."""
-
-    crontab = "0 * * * *"
-    frequency = "hourly"
-
-
-class DailyChannel(NotificationChannel):
-    """Hourly notification channel."""
-
-    crontab = "0 0 * * *"
-    frequency = "daily"
-
-
-class WeeklyChannel(NotificationChannel):
-    """Hourly notification channel."""
-
-    crontab = "0 0 * * 0"
-    frequency = "weekly"
-
-
-class MonthlyChannel(NotificationChannel):
-    """Hourly notification channel."""
-
-    crontab = "0 0 1 * *"
-    frequency = "monthly"

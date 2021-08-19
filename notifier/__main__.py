@@ -6,7 +6,7 @@ from apscheduler.triggers.cron import CronTrigger
 
 from notifier.config.tool import read_local_config
 from notifier.database.drivers import DatabaseDriver
-from notifier.tasks import HourlyChannel, execute_tasks
+from notifier.tasks import notification_channels, notify_active_channels
 
 
 def read_command_line_arguments() -> Tuple[str, str]:
@@ -43,8 +43,8 @@ if __name__ == "__main__":
 
     # Schedule the task
     scheduler.add_job(
-        execute_tasks,
-        CronTrigger.from_crontab(HourlyChannel.crontab),
+        notify_active_channels,
+        CronTrigger.from_crontab(notification_channels["hourly"]),
         args=(local_config_path, database, wikidot_password),
     )
 
