@@ -1,6 +1,7 @@
 import time
 from typing import List, cast
 
+import keyring
 import pycron
 
 from notifier.config.tool import get_global_config, read_local_config
@@ -82,7 +83,7 @@ def notify_channel(  # pylint: disable=too-many-arguments
 
 
 def notify_active_channels(
-    local_config_path: str, database: BaseDatabaseDriver, wikidot_password: str
+    local_config_path: str, database: BaseDatabaseDriver
 ):
     """Main task executor. Should be called as often as the most frequent
     notification digest.
@@ -102,17 +103,23 @@ def notify_active_channels(
     if len(active_channels) == 0:
         print("No active channels")
         return
-    local_config = read_local_config(local_config_path)
-    digester = Digester(local_config["path"]["lang"])
-    connection = Connection(local_config, database.get_supported_wikis())
-    get_global_config(local_config, database, connection)
-    get_user_config(local_config, database, connection)
+    config = read_local_config(local_config_path)
+    digester = Digester(config["path"]["lang"])
+    connection = Connection(config, database.get_supported_wikis())
+    get_global_config(config, database, connection)
+    get_user_config(config, database, connection)
     # Refresh the connection to add any newly-configured wikis
-    connection = Connection(local_config, database.get_supported_wikis())
+    connection = Connection(config, database.get_supported_wikis())
     get_new_posts(database, connection)
     # Record the 'current' timestamp immediately after downloading posts
     current_timestamp = int(time.time())
-    connection.login(local_config["wikidot_username"], wikidot_password)
+    # Get the password from keyring for login
+    wikidot_password = keyring.get_password(
+        "wikidot", config["wikidot_username"]
+    )
+    if not wikidot_password:
+        raise ValueError("Wikidot password improperly configured")
+    connection.login(config["wikidot_username"], wikidot_password)
     # If there's at least one user subscribed via email, get the list of
     # emails from the notification account's back-contacts
     if database.check_would_email(active_channels):
