@@ -3,6 +3,15 @@ Wikidot notifications
 
 # Usage
 
+Please note that there should only be one instance of this service running
+at once &mdash; any duplication would result in duplicated messages and
+would cause spam.
+
+These instructions are provided in case for whatever reason this specific
+service is no longer able to operate and/or I am no longer able to maintain
+it. Please do not actually attempt to launch another instance of this
+service outside of that circumstance.
+
 ## Installation
 
 Requires at least Python 3.8.
