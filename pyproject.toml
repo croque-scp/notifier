@@ -14,6 +14,7 @@ tomlkit = "^0.7.2"
 pycron = "^3.0.0"
 feedparser = "^6.0.8"
 emoji = "^1.4.2"
+yagmail = {extras = ["all"], version = "^0.14.256"}
 keyring = "^23.1.0"
 
 [tool.poetry.dev-dependencies]
