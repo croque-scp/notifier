@@ -282,10 +282,14 @@ class Connection:
             return {}
         addresses = {}
         for row in cast(Iterable[Tag], back_contacts_table.find_all("tr")):
-            nametag_cell, address_cell = cast(Iterator[Tag], row.children)
-            _, username = get_user_from_nametag(nametag_cell.contents[0])
+            nametag_cell, address_cell = cast(
+                Iterable[Tag], row.find_all("td")
+            )
+            _, username = get_user_from_nametag(
+                cast(Tag, nametag_cell.find("span"))
+            )
             if username is None:
                 continue
-            address = address_cell.get_text()
-            addresses[username] = address
+            address = address_cell.get_text().strip()
+            addresses[username.strip()] = address
         return addresses
