@@ -1,17 +1,18 @@
 import sys
-from typing import Tuple
 
+import keyring
 from apscheduler.schedulers.blocking import BlockingScheduler
 from apscheduler.triggers.cron import CronTrigger
 
 from notifier.config.tool import read_local_config
 from notifier.database.drivers import DatabaseDriver
 from notifier.tasks import notification_channels, notify_active_channels
+from notifier.types import LocalConfig
 
 
-def read_command_line_arguments() -> Tuple[str, str]:
-    """Extracts from the command line two required arguments; the path to
-    the config file, and the notifier Wikidot account password."""
+def read_command_line_arguments() -> str:
+    """Extracts from the command line the required argument: the path to
+    the config file.."""
     try:
         config_file_path = sys.argv[1]
     except IndexError as error:
@@ -22,18 +23,22 @@ def read_command_line_arguments() -> Tuple[str, str]:
         read_local_config(config_file_path)
     except IOError as error:
         raise ValueError("Config file location is not readable") from error
-    try:
-        wikidot_password = sys.argv[2]
-    except IndexError as error:
-        raise IndexError(
-            "Argument (2) for account Wikidot password is required"
-        ) from error
-    return config_file_path, wikidot_password
+    return config_file_path
+
+
+def check_authentication(config: LocalConfig) -> None:
+    """Verifies that the Wikidot and gmail passwords have been provided."""
+    if not keyring.get_password("wikidot", config["wikidot_username"]):
+        raise ValueError("Wikidot account password is not configured")
+    # TODO gmail password
 
 
 if __name__ == "__main__":
-    # Get config location and password
-    local_config_path, wikidot_password = read_command_line_arguments()
+    # Get config location
+    local_config_path = read_command_line_arguments()
+
+    # Check that authentication has been set up
+    check_authentication(read_local_config(local_config_path))
 
     # Scheduler is responsible for executing tasks at the right times
     scheduler = BlockingScheduler()
@@ -45,7 +50,7 @@ if __name__ == "__main__":
     scheduler.add_job(
         notify_active_channels,
         CronTrigger.from_crontab(notification_channels["hourly"]),
-        args=(local_config_path, database, wikidot_password),
+        args=(local_config_path, database),
     )
 
     # Let's go
