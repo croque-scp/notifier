@@ -63,7 +63,7 @@ class NotificationChannel(ABC):
                 continue
             # Send the digests via PM to PM-subscribed users
             if user["delivery"] == "pm":
-                connection.send_message(user["username"], subject, body)
+                connection.send_message(user["user_id"], subject, body)
             # Send the digests via email to email-subscribed users
             if user["delivery"] == "email":
                 try:
