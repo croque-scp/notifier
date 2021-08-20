@@ -72,12 +72,13 @@ must be entered in order for it to be able to work.
 Run tests:
 
 ```shell
-poetry run python3 -m pytest
+poetry run pytest
 ```
 
 Lint:
 
 ```shell
 poetry run pylint notifier
+poetry run black notifier
 ```
 
