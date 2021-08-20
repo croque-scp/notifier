@@ -8,6 +8,7 @@ from notifier.config.tool import get_global_config, read_local_config
 from notifier.config.user import get_user_config
 from notifier.database.drivers.base import BaseDatabaseDriver
 from notifier.digest import Digester
+from notifier.emailer import Emailer
 from notifier.newposts import get_new_posts
 from notifier.types import EmailAddresses, PostInfo
 from notifier.wikiconnection import Connection
@@ -29,6 +30,7 @@ def notify_channel(  # pylint: disable=too-many-arguments
     database: BaseDatabaseDriver,
     connection: Connection,
     digester: Digester,
+    emailer: Emailer,
     addresses: EmailAddresses,
 ):
     """Execute this task's responsibilities."""
@@ -72,7 +74,7 @@ def notify_channel(  # pylint: disable=too-many-arguments
                 print(f"{user['username']} is not a back-contact")
                 # They'll have to fix this themselves
                 continue
-            send_email(address, subject, body)
+            emailer.send(address, subject, body)
         # Immediately after sending the notification, record the user's
         # last notification time
         # Minimising the number of computations between these two
@@ -104,7 +106,6 @@ def notify_active_channels(
         print("No active channels")
         return
     config = read_local_config(local_config_path)
-    digester = Digester(config["path"]["lang"])
     connection = Connection(config, database.get_supported_wikis())
     get_global_config(config, database, connection)
     get_user_config(config, database, connection)
@@ -122,6 +123,7 @@ def notify_active_channels(
     connection.login(config["wikidot_username"], wikidot_password)
     # If there's at least one user subscribed via email, get the list of
     # emails from the notification account's back-contacts
+    addresses = {}
     if database.check_would_email(active_channels):
         addresses = connection.get_contacts()
     for channel in active_channels:
@@ -131,6 +133,7 @@ def notify_active_channels(
             current_timestamp,
             database=database,
             connection=connection,
-            digester=digester,
+            digester=Digester(config["path"]["lang"]),
+            emailer=Emailer(config["gmail_username"]),
             addresses=addresses,
         )
