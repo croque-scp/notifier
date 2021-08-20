@@ -107,8 +107,8 @@ class BaseDatabaseDriver(ABC):
         """Get the cached config for users subscribed to the given channel
         frequency.
 
-        The cached config does not contain subscriptions, but does contain
-        the timestamp at which the user was last notified.
+        The cached config also includes information about the user's
+        subscriptions both manual and automatic.
         """
 
     @abstractmethod

@@ -86,6 +86,8 @@ class CachedUserConfig(TypedDict):
     language: str
     delivery: DeliveryMethod
     last_notified_timestamp: int
+    manual_subs: List[Subscription]
+    auto_subs: List[Subscription]
 
 
 class RawThreadMeta(TypedDict):
