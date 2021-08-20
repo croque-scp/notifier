@@ -20,6 +20,7 @@ from typing import (
 import tomlkit
 from emoji import emojize
 
+from notifier.formatter import convert_syntax_to_html
 from notifier.types import (
     CachedUserConfig,
     DeliveryMethod,
@@ -78,7 +79,7 @@ class Digester:
         }
         return lexicon
 
-    def for_user(  # pylint: disable=too-many-locals
+    def for_user(
         self, user: CachedUserConfig, posts: NewPostsInfo
     ) -> Tuple[int, str, str]:
         """Compile a notification digest for a user.
@@ -124,6 +125,8 @@ class Digester:
             outro=outro,
         )
         body = finalise_digest(body)
+        if user["delivery"] == "email":
+            body = convert_syntax_to_html(body)
         return total_notification_count, subject, body
 
 

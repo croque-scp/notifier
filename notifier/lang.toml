@@ -11,8 +11,6 @@ body = """
 
 {outro}
 """
-
-[base.pm]
 wiki = """
 ++ {wiki_name}
 
