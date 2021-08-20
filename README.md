@@ -64,6 +64,9 @@ poetry run python3 -m notifier path_to_config_file
 
 The standard config file is `config.toml`.
 
+Note that the script will immediately ask for the keyring password, which
+must be entered in order for it to be able to work.
+
 # Development
 
 Run tests:
