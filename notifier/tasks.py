@@ -45,6 +45,15 @@ def notify_channel(  # pylint: disable=too-many-arguments
             user["user_id"],
             (user["last_notified_timestamp"], current_timestamp),
         )
+        post_count = len(posts["thread_posts"]) + len(posts["post_replies"])
+        print(
+            "[{}] Notifying {} about {} posts via {}".format(
+                channel, user["username"], post_count, user["delivery"]
+            )
+        )
+        if post_count == 0:
+            # Nothing to notify this user about
+            continue
         # Extract the 'last notification time' that will be recorded -
         # it is the timestamp of the most recent post this user is
         # being notified about
@@ -56,10 +65,7 @@ def notify_channel(  # pylint: disable=too-many-arguments
             )
         )
         # Compile the digest
-        count, subject, body = digester.for_user(user, posts)
-        if count == 0:
-            # Nothing to notify the user about
-            continue
+        subject, body = digester.for_user(user, posts)
         # Send the digests via PM to PM-subscribed users
         if user["delivery"] == "pm":
             connection.send_message(user["user_id"], subject, body)
@@ -86,6 +92,7 @@ def notify_channel(  # pylint: disable=too-many-arguments
         database.store_user_last_notified(
             user["user_id"], last_notified_timestamp
         )
+    print(f"Notified {len(user_configs)} users in {channel} channel")
 
 
 def notify_active_channels(

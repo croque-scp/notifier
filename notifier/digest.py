@@ -76,7 +76,7 @@ class Digester:
 
     def for_user(
         self, user: CachedUserConfig, posts: NewPostsInfo
-    ) -> Tuple[int, str, str]:
+    ) -> Tuple[str, str]:
         """Compile a notification digest for a user.
 
         Returns a tuple of notification count, message subject and the
@@ -90,7 +90,7 @@ class Digester:
         manual_sub_count = None
         auto_thread_sub_count = None
         auto_post_sub_count = None
-        total_notification_count = 0
+        total_notification_count = None
         # Construct the message
         subject = lexicon["subject"].format(
             post_count=total_notification_count
@@ -121,7 +121,7 @@ class Digester:
         )
         body = finalise_digest(body)
         body = convert_syntax(body, user["delivery"])
-        return total_notification_count, subject, body
+        return subject, body
 
 
 def make_wikis_digest(new_posts: NewPostsInfo, lexicon: dict) -> List[str]:
