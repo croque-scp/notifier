@@ -52,7 +52,7 @@ posts_section = """
 post = """
 [[li]]
 **[{post_url} {post_title}]** -- [[*user {post_author}]] -- {date}
-
+<br>
 **|** ##grey|//{snippet}//##
 [[/li]]
 """

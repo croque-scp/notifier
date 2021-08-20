@@ -9,4 +9,4 @@ class Emailer:  # pylint: disable=too-few-public-methods
 
     def send(self, address: str, subject: str, body: str) -> None:
         """Send an email to an address."""
-        self.yag.send(address, subject, body)
+        self.yag.send(address, subject, body, prettify_html=False)

@@ -103,9 +103,7 @@ def test_fake_digest():
             if post_timestamp >= fake_user["last_notified_timestamp"]
         ],
     }
-    lexicon = digester.make_lexicon(
-        fake_user["language"], fake_user["delivery"]
-    )
+    lexicon = digester.make_lexicon(fake_user["language"])
     digest = "\n".join(make_wikis_digest(fake_posts, lexicon))
     print(digest)
     print(digest[:25].replace("\n", "\\n"))

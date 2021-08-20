@@ -23,7 +23,6 @@ from emoji import emojize
 from notifier.formatter import convert_syntax_to_html
 from notifier.types import (
     CachedUserConfig,
-    DeliveryMethod,
     IsSecure,
     NewPostsInfo,
     PostInfo,
@@ -59,23 +58,19 @@ class Digester:
         self.lexicon = process_long_strings(self.lexicon)
 
     @lru_cache(maxsize=None)
-    def make_lexicon(self, lang: str, method: DeliveryMethod):
-        """Constructs a subset of the full lexicon for a given language and
-        delivery method.
+    def make_lexicon(self, lang: str):
+        """Constructs a subset of the full lexicon for a given language.
 
-        These lexicons are cached per language and method, which will be
-        necessarily cleared on construction of a new Digester.
+        These lexicons are cached per language, which will be necessarily
+        cleared on construction of a new Digester.
         """
         # Later keys in the lexicon will override previous ones - e.g. for
         # a non-en language, its keys should override all of en's, but in
         # case they don't, en's are used as a fallback.
         lexicon = {
             **self.lexicon.get("base", {}),
-            **self.lexicon.get("base", {}).get(method, {}),
             **self.lexicon.get("en", {}),
-            **self.lexicon.get("en", {}).get(method, {}),
             **self.lexicon.get(lang, {}),
-            **self.lexicon.get(lang, {}).get(method, {}),
         }
         return lexicon
 
@@ -88,7 +83,7 @@ class Digester:
         digest body.
         """
         # Make the lexicon for this user's settings
-        lexicon = self.make_lexicon(user["language"], user["delivery"])
+        lexicon = self.make_lexicon(user["language"])
         # Get some stats for the message
         # TODO Subscription statistics
         sub_count = None
