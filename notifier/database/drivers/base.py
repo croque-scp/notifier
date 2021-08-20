@@ -119,15 +119,6 @@ class BaseDatabaseDriver(ABC):
         """
 
     @abstractmethod
-    def check_would_email(self, frequencies: List[str]) -> bool:
-        """Checks if there is at least one user who is subscribed to one of
-        the provided frequency channels who has opted to recieve
-        notifications via email.
-
-        :param frequencies: The list of frequency channel names.
-        """
-
-    @abstractmethod
     def store_manual_sub(
         self, user_id: str, subscription: Subscription
     ) -> None:

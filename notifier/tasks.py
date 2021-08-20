@@ -1,5 +1,5 @@
 import time
-from typing import List, cast
+from typing import List, Optional, cast
 
 import keyring
 import pycron
@@ -31,7 +31,7 @@ def notify_channel(  # pylint: disable=too-many-arguments
     connection: Connection,
     digester: Digester,
     emailer: Emailer,
-    addresses: EmailAddresses,
+    addresses: Optional[EmailAddresses] = None,
 ):
     """Execute this task's responsibilities."""
     print(f"Executing {channel} notification channel")
@@ -65,6 +65,10 @@ def notify_channel(  # pylint: disable=too-many-arguments
             connection.send_message(user["user_id"], subject, body)
         # Send the digests via email to email-subscribed users
         if user["delivery"] == "email":
+            if addresses is None:
+                # Only get the contacts when there is actually a user who
+                # needs to be emailed
+                addresses = connection.get_contacts()
             try:
                 address = addresses[user["username"]]
             except KeyError:
@@ -121,11 +125,6 @@ def notify_active_channels(
     if not wikidot_password:
         raise ValueError("Wikidot password improperly configured")
     connection.login(config["wikidot_username"], wikidot_password)
-    # If there's at least one user subscribed via email, get the list of
-    # emails from the notification account's back-contacts
-    addresses = {}
-    if database.check_would_email(active_channels):
-        addresses = connection.get_contacts()
     for channel in active_channels:
         # Should this be asynchronous + parallel?
         notify_channel(
@@ -135,5 +134,4 @@ def notify_active_channels(
             connection=connection,
             digester=Digester(config["path"]["lang"]),
             emailer=Emailer(config["gmail_username"]),
-            addresses=addresses,
         )
