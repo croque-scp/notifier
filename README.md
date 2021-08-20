@@ -25,7 +25,12 @@ poetry install
 ## Authentication
 
 notifier requires authentication in order to access its Wikidot account and
-its gmail account.
+its gmail account. [keyring](https://github.com/jaraco/keyring) is used for
+securely storing passwords.
+
+You may wish to set up keyring's backend yourself. notifier comes with
+[keyrings.cryptfile](https://pypi.org/project/keyrings.cryptfile/)
+installed by default.
 
 To set the authentication, open a Python shell:
 
@@ -40,6 +45,9 @@ import keyring
 keyring.set_password("yagmail", GMAIL_USERNAME, GMAIL_PASSWORD)
 keyring.set_password("wikidot", WIKIDOT_USERNAME, WIKIDOT_PASSWORD)
 ```
+
+You may be required to set a keyring password. Make sure you keep a record
+of it.
 
 The usernames must be the same as those defined in the config file.
 
