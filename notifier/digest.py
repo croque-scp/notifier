@@ -20,7 +20,7 @@ from typing import (
 import tomlkit
 from emoji import emojize
 
-from notifier.formatter import convert_syntax_to_html
+from notifier.formatter import convert_syntax
 from notifier.types import (
     CachedUserConfig,
     IsSecure,
@@ -120,8 +120,7 @@ class Digester:
             outro=outro,
         )
         body = finalise_digest(body)
-        if user["delivery"] == "email":
-            body = convert_syntax_to_html(body)
+        body = convert_syntax(body, user["delivery"])
         return total_notification_count, subject, body
 
 

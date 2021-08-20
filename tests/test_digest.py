@@ -6,6 +6,7 @@ from notifier.digest import (
     pluralise,
     process_long_strings,
 )
+from notifier.formatter import convert_syntax
 from notifier.types import CachedUserConfig, NewPostsInfo
 
 
@@ -116,3 +117,4 @@ def test_fake_digest():
     assert digest.count(lexicon["post_replies_opener"]) == 4
     assert digest.count("Contents...") == 6
     assert digest.count("Response...") == 8
+    print(convert_syntax(digest, "email"))
