@@ -4,6 +4,7 @@ config_wiki = "notifications"
 user_config_category = "notify"
 wiki_config_category = "wiki"
 overrides_url = "https://notifications.wdfiles.com/local--code/overrides/1"
+gmail_username = "wikidotnotifier@gmail.com"
 
 [notifier.path]
 # Paths:

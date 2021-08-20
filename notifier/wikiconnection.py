@@ -4,7 +4,11 @@ import requests
 from bs4 import BeautifulSoup
 from bs4.element import Tag
 
-from notifier.parsethread import parse_thread_meta, parse_thread_page
+from notifier.parsethread import (
+    get_user_from_nametag,
+    parse_thread_meta,
+    parse_thread_page,
+)
 from notifier.types import (
     EmailAddresses,
     LocalConfig,
@@ -255,4 +259,37 @@ class Connection:
 
         Connection needs to be logged in.
         """
-        # TODO
+        contacts = BeautifulSoup(
+            self.module("www", "dashboard/messages/DMContactsModule")["body"],
+            "html.parser",
+        )
+        # Back contacts are stored in optional table.contact-list-table
+        # which immediately follows h2 (there is an optional one
+        # immediately following a h1 which is the regular contacts)
+        back_contacts_heading = cast(Union[Tag, None], contacts.find("h2"))
+        if back_contacts_heading is None:
+            # The heading does not appear if there are no back contacts
+            return {}
+        back_contacts_table = cast(
+            Union[Tag, None],
+            back_contacts_heading.find_next_sibling(
+                class_="contact-list-table"
+            ),
+        )
+        if back_contacts_table is None:
+            # If there is a heading there should also be a contacts table,
+            # but can't hurt to be sure
+            return {}
+        addresses = {}
+        for row in cast(Iterable[Tag], back_contacts_table.find_all("tr")):
+            nametag_cell, address_cell = cast(
+                Iterable[Tag], row.find_all("td")
+            )
+            _, username = get_user_from_nametag(
+                cast(Tag, nametag_cell.find("span"))
+            )
+            if username is None:
+                continue
+            address = address_cell.get_text().strip()
+            addresses[username.strip()] = address
+        return addresses

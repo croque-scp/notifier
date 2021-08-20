@@ -1,12 +1,14 @@
 import time
-from typing import List, cast
+from typing import List, Optional, cast
 
+import keyring
 import pycron
 
 from notifier.config.tool import get_global_config, read_local_config
 from notifier.config.user import get_user_config
 from notifier.database.drivers.base import BaseDatabaseDriver
 from notifier.digest import Digester
+from notifier.emailer import Emailer
 from notifier.newposts import get_new_posts
 from notifier.types import EmailAddresses, PostInfo
 from notifier.wikiconnection import Connection
@@ -28,7 +30,8 @@ def notify_channel(  # pylint: disable=too-many-arguments
     database: BaseDatabaseDriver,
     connection: Connection,
     digester: Digester,
-    addresses: EmailAddresses,
+    emailer: Emailer,
+    addresses: Optional[EmailAddresses] = None,
 ):
     """Execute this task's responsibilities."""
     print(f"Executing {channel} notification channel")
@@ -42,6 +45,15 @@ def notify_channel(  # pylint: disable=too-many-arguments
             user["user_id"],
             (user["last_notified_timestamp"], current_timestamp),
         )
+        post_count = len(posts["thread_posts"]) + len(posts["post_replies"])
+        print(
+            "[{}] Notifying {} about {} posts via {}".format(
+                channel, user["username"], post_count, user["delivery"]
+            )
+        )
+        if post_count == 0:
+            # Nothing to notify this user about
+            continue
         # Extract the 'last notification time' that will be recorded -
         # it is the timestamp of the most recent post this user is
         # being notified about
@@ -53,15 +65,16 @@ def notify_channel(  # pylint: disable=too-many-arguments
             )
         )
         # Compile the digest
-        count, subject, body = digester.for_user(user, posts)
-        if count == 0:
-            # Nothing to notify the user about
-            continue
+        subject, body = digester.for_user(user, posts)
         # Send the digests via PM to PM-subscribed users
         if user["delivery"] == "pm":
             connection.send_message(user["user_id"], subject, body)
         # Send the digests via email to email-subscribed users
         if user["delivery"] == "email":
+            if addresses is None:
+                # Only get the contacts when there is actually a user who
+                # needs to be emailed
+                addresses = connection.get_contacts()
             try:
                 address = addresses[user["username"]]
             except KeyError:
@@ -71,7 +84,7 @@ def notify_channel(  # pylint: disable=too-many-arguments
                 print(f"{user['username']} is not a back-contact")
                 # They'll have to fix this themselves
                 continue
-            send_email(address, subject, body)
+            emailer.send(address, subject, body)
         # Immediately after sending the notification, record the user's
         # last notification time
         # Minimising the number of computations between these two
@@ -79,10 +92,11 @@ def notify_channel(  # pylint: disable=too-many-arguments
         database.store_user_last_notified(
             user["user_id"], last_notified_timestamp
         )
+    print(f"Notified {len(user_configs)} users in {channel} channel")
 
 
 def notify_active_channels(
-    local_config_path: str, database: BaseDatabaseDriver, wikidot_password: str
+    local_config_path: str, database: BaseDatabaseDriver
 ):
     """Main task executor. Should be called as often as the most frequent
     notification digest.
@@ -102,21 +116,22 @@ def notify_active_channels(
     if len(active_channels) == 0:
         print("No active channels")
         return
-    local_config = read_local_config(local_config_path)
-    digester = Digester(local_config["path"]["lang"])
-    connection = Connection(local_config, database.get_supported_wikis())
-    get_global_config(local_config, database, connection)
-    get_user_config(local_config, database, connection)
+    config = read_local_config(local_config_path)
+    connection = Connection(config, database.get_supported_wikis())
+    get_global_config(config, database, connection)
+    get_user_config(config, database, connection)
     # Refresh the connection to add any newly-configured wikis
-    connection = Connection(local_config, database.get_supported_wikis())
+    connection = Connection(config, database.get_supported_wikis())
     get_new_posts(database, connection)
     # Record the 'current' timestamp immediately after downloading posts
     current_timestamp = int(time.time())
-    connection.login(local_config["wikidot_username"], wikidot_password)
-    # If there's at least one user subscribed via email, get the list of
-    # emails from the notification account's back-contacts
-    if database.check_would_email(active_channels):
-        addresses = connection.get_contacts()
+    # Get the password from keyring for login
+    wikidot_password = keyring.get_password(
+        "wikidot", config["wikidot_username"]
+    )
+    if not wikidot_password:
+        raise ValueError("Wikidot password improperly configured")
+    connection.login(config["wikidot_username"], wikidot_password)
     for channel in active_channels:
         # Should this be asynchronous + parallel?
         notify_channel(
@@ -124,6 +139,6 @@ def notify_active_channels(
             current_timestamp,
             database=database,
             connection=connection,
-            digester=digester,
-            addresses=addresses,
+            digester=Digester(config["path"]["lang"]),
+            emailer=Emailer(config["gmail_username"]),
         )

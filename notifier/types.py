@@ -25,6 +25,7 @@ class LocalConfig(TypedDict):
     user_config_category: str
     wiki_config_category: str
     overrides_url: str
+    gmail_username: str
     path: LocalConfigPaths
 
 

@@ -141,16 +141,6 @@ class SqliteDriver(DatabaseWithSqlFileCache, BaseDatabaseDriver):
                 self.store_manual_sub(user_config["user_id"], subscription)
         self.conn.commit()
 
-    def check_would_email(self, frequencies: List[str]) -> bool:
-        return any(
-            bool(
-                self.execute_named(
-                    "check_would_email", {"frequency": frequency}
-                ).fetchone()[0]
-            )
-            for frequency in frequencies
-        )
-
     def store_manual_sub(
         self, user_id: str, subscription: Subscription
     ) -> None:

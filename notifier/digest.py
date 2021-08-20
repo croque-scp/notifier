@@ -20,9 +20,9 @@ from typing import (
 import tomlkit
 from emoji import emojize
 
+from notifier.formatter import convert_syntax
 from notifier.types import (
     CachedUserConfig,
-    DeliveryMethod,
     IsSecure,
     NewPostsInfo,
     PostInfo,
@@ -58,43 +58,39 @@ class Digester:
         self.lexicon = process_long_strings(self.lexicon)
 
     @lru_cache(maxsize=None)
-    def make_lexicon(self, lang: str, method: DeliveryMethod):
-        """Constructs a subset of the full lexicon for a given language and
-        delivery method.
+    def make_lexicon(self, lang: str):
+        """Constructs a subset of the full lexicon for a given language.
 
-        These lexicons are cached per language and method, which will be
-        necessarily cleared on construction of a new Digester.
+        These lexicons are cached per language, which will be necessarily
+        cleared on construction of a new Digester.
         """
         # Later keys in the lexicon will override previous ones - e.g. for
         # a non-en language, its keys should override all of en's, but in
         # case they don't, en's are used as a fallback.
         lexicon = {
             **self.lexicon.get("base", {}),
-            **self.lexicon.get("base", {}).get(method, {}),
             **self.lexicon.get("en", {}),
-            **self.lexicon.get("en", {}).get(method, {}),
             **self.lexicon.get(lang, {}),
-            **self.lexicon.get(lang, {}).get(method, {}),
         }
         return lexicon
 
-    def for_user(  # pylint: disable=too-many-locals
+    def for_user(
         self, user: CachedUserConfig, posts: NewPostsInfo
-    ) -> Tuple[int, str, str]:
+    ) -> Tuple[str, str]:
         """Compile a notification digest for a user.
 
         Returns a tuple of notification count, message subject and the
         digest body.
         """
         # Make the lexicon for this user's settings
-        lexicon = self.make_lexicon(user["language"], user["delivery"])
+        lexicon = self.make_lexicon(user["language"])
         # Get some stats for the message
         # TODO Subscription statistics
         sub_count = None
         manual_sub_count = None
         auto_thread_sub_count = None
         auto_post_sub_count = None
-        total_notification_count = 0
+        total_notification_count = None
         # Construct the message
         subject = lexicon["subject"].format(
             post_count=total_notification_count
@@ -124,7 +120,8 @@ class Digester:
             outro=outro,
         )
         body = finalise_digest(body)
-        return total_notification_count, subject, body
+        body = convert_syntax(body, user["delivery"])
+        return subject, body
 
 
 def make_wikis_digest(new_posts: NewPostsInfo, lexicon: dict) -> List[str]:
