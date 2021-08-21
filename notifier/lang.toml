@@ -75,13 +75,16 @@ you of new posts to threads that you're subscribed to.
 
 Not including any subscriptions that have been removed as a result of your
 manual unsubscriptions, this service is keeping track of {sub_count}
-subscriptions for you:
+plural({sub_count}|subscription|subscriptions) for you:
 
-* {manual_sub_count} manual subscriptions, as defined in [{your_config}
-your user configuration].
+* {manual_sub_count} manual
+plural({manual_sub_count}|subscription|subscriptions), as defined in
+[{your_config} your user configuration].
 
-* {auto_thread_sub_count} automatic thread subscriptions and
-{auto_post_sub_count} automatic post subscriptions. The service is
+* {auto_thread_sub_count} automatic thread
+plural({auto_thread_sub_count}|subscription|subscriptions) and
+{auto_post_sub_count} automatic post
+plural({auto_post_sub_count}|subscription|subscriptions). The service is
 [{site}/faq#learning still learning] about your automatic subscriptions, so
 expect this number to increase over time. [{site}/faq#auto Learn what
 constitutes an automatic subscription.]
