@@ -82,3 +82,8 @@ poetry run pylint notifier
 poetry run black notifier
 ```
 
+Typecheck:
+
+```shell
+poetry run mypy notifier
+```
