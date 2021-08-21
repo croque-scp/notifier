@@ -85,12 +85,27 @@ class Digester:
         # Make the lexicon for this user's settings
         lexicon = self.make_lexicon(user["language"])
         # Get some stats for the message
-        # TODO Subscription statistics
-        sub_count = None
-        manual_sub_count = None
-        auto_thread_sub_count = None
-        auto_post_sub_count = None
-        total_notification_count = None
+        manual_sub_count = len(
+            [sub for sub in user["manual_subs"] if sub["sub"] == 1]
+        )
+        auto_thread_sub_count = len(
+            [
+                sub
+                for sub in user["auto_subs"]
+                if sub["sub"] == 1 and sub["post_id"] is None
+            ]
+        )
+        auto_post_sub_count = len(
+            [
+                sub
+                for sub in user["auto_subs"]
+                if sub["sub"] == 1 and sub["post_id"] is not None
+            ]
+        )
+        sub_count = manual_sub_count
+        total_notification_count = len(posts["thread_posts"]) + len(
+            posts["post_replies"]
+        )
         # Construct the message
         subject = lexicon["subject"].format(
             post_count=total_notification_count
