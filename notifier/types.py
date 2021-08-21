@@ -86,6 +86,8 @@ class CachedUserConfig(TypedDict):
     language: str
     delivery: DeliveryMethod
     last_notified_timestamp: int
+    manual_subs: List[Subscription]
+    auto_subs: List[Subscription]
 
 
 class RawThreadMeta(TypedDict):
@@ -140,7 +142,7 @@ class PostReplyInfo(PostInfo):
     parent_post_id: str
     parent_title: str
     parent_username: str
-    parent_posted_timestamp: str
+    parent_posted_timestamp: int
 
 
 class NewPostsInfo(TypedDict):

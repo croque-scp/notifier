@@ -23,7 +23,7 @@ notification_channels = {
 }
 
 
-def notify_channel(  # pylint: disable=too-many-arguments
+def notify_channel(
     channel: str,
     current_timestamp: int,
     *,

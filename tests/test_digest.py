@@ -1,5 +1,7 @@
 from pathlib import Path
 
+import pytest
+
 from notifier.digest import (
     Digester,
     make_wikis_digest,
@@ -8,6 +10,82 @@ from notifier.digest import (
 )
 from notifier.formatter import convert_syntax
 from notifier.types import CachedUserConfig, NewPostsInfo
+
+
+@pytest.fixture(scope="module")
+def fake_user() -> CachedUserConfig:
+    """Create a fake user config."""
+    return {  # TODO Subscriptions and auto subscriptions
+        "user_id": "1000",
+        "username": "Me",
+        "frequency": "hourly",
+        "language": "en",
+        "delivery": "pm",
+        "last_notified_timestamp": 0,
+        "manual_subs": [],
+        "auto_subs": [],
+    }
+
+
+@pytest.fixture(scope="module")
+def fake_posts(fake_user: CachedUserConfig) -> NewPostsInfo:
+    """Create a set of posts as would be returned from the cache."""
+    return {
+        "thread_posts": [
+            {
+                "id": f"post-{post_index}",
+                "title": f"Post {post_index}",
+                "username": "AnotherUser",
+                "posted_timestamp": post_timestamp,
+                "snippet": "Contents...",
+                "thread_id": f"t-{thread_index}",
+                "thread_title": f"Post {thread_index}",
+                "thread_creator": "AnotherUser",
+                "thread_timestamp": thread_index * 10,
+                "wiki_id": "my-wiki",
+                "wiki_name": "My Wiki",
+                "wiki_secure": 1,
+                "category_id": None,
+                "category_name": None,
+            }
+            for thread_index in range(1, 2 + 1)
+            for post_index in range(1, 3 + 1)
+            for post_timestamp in [thread_index * 10 + post_index]
+            if post_timestamp >= fake_user["last_notified_timestamp"]
+        ],
+        "post_replies": [
+            {
+                "id": f"post-{post_index}",
+                "title": f"Post {post_index}",
+                "username": "AnotherUser",
+                "posted_timestamp": post_timestamp,
+                "snippet": "Response...",
+                "thread_id": f"t-{thread_index}",
+                "thread_title": f"Post {thread_index}",
+                "thread_creator": "AnotherUser",
+                "thread_timestamp": thread_index * 10,
+                "wiki_id": "my-wiki",
+                "wiki_name": "My Wiki",
+                "wiki_secure": 1,
+                "category_id": None,
+                "category_name": None,
+                "parent_post_id": f"post-{parent_index}",
+                "parent_title": f"Post {parent_index}",
+                "parent_username": "Me",
+                "parent_posted_timestamp": parent_index * 10,
+            }
+            for thread_index in range(1, 2 + 1)
+            for parent_index in range(1, 2 + 1)
+            for post_index in [
+                (parent_index * 10) + post_index
+                for post_index in range(1, 2 + 1)
+            ]
+            for post_timestamp in [
+                (thread_index + parent_index) * 10 + post_index
+            ]
+            if post_timestamp >= fake_user["last_notified_timestamp"]
+        ],
+    }
 
 
 def test_long_string_processor():
@@ -36,74 +114,10 @@ def test_pluralise():
     assert pluralise("plural(X|s|m)plural(1|y god|olasses)") == "my god"
 
 
-def test_fake_digest():
+def test_fake_digest(fake_user: CachedUserConfig, fake_posts: NewPostsInfo):
     """Construct a digest from fake data and compare it to the expected
     output."""
-    digester = Digester(Path.cwd() / "notifier" / "lang.toml")
-    fake_user: CachedUserConfig = {
-        "user_id": "1000",
-        "username": "Me",
-        "frequency": "hourly",
-        "language": "en",
-        "delivery": "pm",
-        "last_notified_timestamp": 0,
-    }
-    fake_posts: NewPostsInfo = {
-        "thread_posts": [
-            {
-                "id": f"post-{post_index}",
-                "title": f"Post {post_index}",
-                "username": "You",
-                "posted_timestamp": post_timestamp,
-                "snippet": "Contents...",
-                "thread_id": f"t-{thread_index}",
-                "thread_title": f"Post {thread_index}",
-                "thread_creator": "You",
-                "thread_timestamp": thread_index * 10,
-                "wiki_id": "my-wiki",
-                "wiki_name": "My Wiki",
-                "wiki_secure": 1,
-                "category_id": None,
-                "category_name": None,
-            }
-            for thread_index in range(1, 2 + 1)
-            for post_index in range(1, 3 + 1)
-            for post_timestamp in [thread_index * 10 + post_index]
-            if post_timestamp >= fake_user["last_notified_timestamp"]
-        ],
-        "post_replies": [
-            {
-                "id": f"post-{post_index}",
-                "title": f"Post {post_index}",
-                "username": "You",
-                "posted_timestamp": post_timestamp,
-                "snippet": "Response...",
-                "thread_id": f"t-{thread_index}",
-                "thread_title": f"Post {thread_index}",
-                "thread_creator": "You",
-                "thread_timestamp": thread_index * 10,
-                "wiki_id": "my-wiki",
-                "wiki_name": "My Wiki",
-                "wiki_secure": 1,
-                "category_id": None,
-                "category_name": None,
-                "parent_post_id": f"post-{parent_index}",
-                "parent_title": f"Post {parent_index}",
-                "parent_username": "Me",
-                "parent_posted_timestamp": parent_index * 10,
-            }
-            for thread_index in range(1, 2 + 1)
-            for parent_index in range(1, 2 + 1)
-            for post_index in [
-                (parent_index * 10) + post_index
-                for post_index in range(1, 2 + 1)
-            ]
-            for post_timestamp in [
-                (thread_index + parent_index) * 10 + post_index
-            ]
-            if post_timestamp >= fake_user["last_notified_timestamp"]
-        ],
-    }
+    digester = Digester(str(Path.cwd() / "notifier" / "lang.toml"))
     lexicon = digester.make_lexicon(fake_user["language"])
     digest = "\n".join(make_wikis_digest(fake_posts, lexicon))
     print(digest)

@@ -75,6 +75,13 @@ Run tests:
 poetry run pytest
 ```
 
+Produce a sample digest and print it to stdout, where `[lang]` is the code
+of any supported language and `[method]` is either `pm` or `email`:
+
+```shell
+poetry run python3 tests/make_sample_digest.py [lang] [method]
+```
+
 Lint:
 
 ```shell
@@ -82,3 +89,8 @@ poetry run pylint notifier
 poetry run black notifier
 ```
 
+Typecheck:
+
+```shell
+poetry run mypy notifier
+```

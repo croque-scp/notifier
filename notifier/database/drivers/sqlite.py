@@ -113,12 +113,32 @@ class SqliteDriver(DatabaseWithSqlFileCache, BaseDatabaseDriver):
         return {"thread_posts": thread_posts, "post_replies": post_replies}
 
     def get_user_configs(self, frequency: str) -> List[CachedUserConfig]:
-        return [
+        user_configs = [
             cast(CachedUserConfig, dict(row))
             for row in self.execute_named(
-                "get_user_configs_from_frequency", {"frequency": frequency}
+                "get_user_configs_for_frequency", {"frequency": frequency}
             ).fetchall()
         ]
+        for user_config in user_configs:
+            user_config["manual_subs"] = [
+                cast(Subscription, dict(row))
+                for row in self.execute_named(
+                    "get_manual_subs_for_user",
+                    {"user_id": user_config["user_id"]},
+                ).fetchall()
+            ]
+            user_config["auto_subs"] = [
+                cast(Subscription, dict(row))
+                for row in self.execute_named(
+                    "get_auto_sub_posts_for_user",
+                    {"user_id": user_config["user_id"]},
+                ).fetchall()
+                + self.execute_named(
+                    "get_auto_sub_threads_for_user",
+                    {"user_id": user_config["user_id"]},
+                ).fetchall()
+            ]
+        return user_configs
 
     def store_user_configs(self, user_configs: List[RawUserConfig]) -> None:
         # Overwrite all current configs
