@@ -6,7 +6,7 @@ from apscheduler.triggers.cron import CronTrigger
 
 from notifier.config.local import read_local_config
 from notifier.database.drivers import DatabaseDriver
-from notifier.tasks import notification_channels, notify_active_channels
+from notifier.notify import notification_channels, notify_active_channels
 from notifier.types import LocalConfig
 
 
