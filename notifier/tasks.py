@@ -4,7 +4,8 @@ from typing import List, Optional, cast
 import keyring
 import pycron
 
-from notifier.config.tool import get_global_config, read_local_config
+from notifier.config.local import read_local_config
+from notifier.config.remote import get_global_config
 from notifier.config.user import get_user_config
 from notifier.database.drivers.base import BaseDatabaseDriver
 from notifier.digest import Digester
