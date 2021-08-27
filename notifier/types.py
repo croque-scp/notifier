@@ -37,10 +37,13 @@ class SupportedWikiConfig(TypedDict):
     secure: IsSecure
 
 
+GlobalOverrideAction = Union[Literal["mute"], Literal["mute_thread"]]
+
+
 class GlobalOverrideConfig(TypedDict):
     """A single remote override config."""
 
-    action: str
+    action: GlobalOverrideAction
     category_id_is: Optional[str]
     thread_id_is: Optional[str]
     thread_title_matches: Optional[str]
