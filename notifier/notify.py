@@ -193,13 +193,19 @@ def override_applies_to_post(
     """
     # All conditions of the override must be true for the override to
     # apply. So, return False if any of them are false, and True otherwise.
-    if isinstance(override["category_id_is"], str):
+    if "category_id_is" in override and isinstance(
+        override["category_id_is"], str
+    ):
         if override["category_id_is"] != post["category_id"]:
             return False
-    if isinstance(override["thread_id_is"], str):
+    if "thread_id_is" in override and isinstance(
+        override["thread_id_is"], str
+    ):
         if override["thread_id_is"] != post["thread_id"]:
             return False
-    if isinstance(override["thread_title_matches"], str):
+    if "thread_title_matches" in override and isinstance(
+        override["thread_title_matches"], str
+    ):
         try:
             match = re.search(
                 override["thread_title_matches"], post["thread_title"]

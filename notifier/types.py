@@ -40,7 +40,7 @@ class SupportedWikiConfig(TypedDict):
 GlobalOverrideAction = Union[Literal["mute"], Literal["mute_thread"]]
 
 
-class GlobalOverrideConfig(TypedDict):
+class GlobalOverrideConfig(TypedDict, total=False):
     """A single remote override config."""
 
     action: GlobalOverrideAction
