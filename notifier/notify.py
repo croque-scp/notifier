@@ -3,7 +3,6 @@ import time
 from typing import List, Optional, cast
 
 import keyring
-import pycron
 
 from notifier.config.local import read_local_config
 from notifier.config.remote import get_global_config
@@ -12,6 +11,7 @@ from notifier.database.drivers.base import BaseDatabaseDriver
 from notifier.digest import Digester
 from notifier.emailer import Emailer
 from notifier.newposts import get_new_posts
+from notifier.timing import channel_is_now
 from notifier.types import (
     EmailAddresses,
     GlobalOverrideConfig,
@@ -45,7 +45,7 @@ def notify_active_channels(
     active_channels = [
         frequency
         for frequency, crontab in notification_channels.items()
-        if pycron.is_now(crontab)
+        if channel_is_now(crontab)
     ]
     # If there are no active channels, which shouldn't happen, there is
     # nothing to do
