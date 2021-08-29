@@ -44,6 +44,9 @@ WHERE
     OR parent_post.user_id = :user_id
   )
 
+  -- Select only posts in non-deleted threads
+  AND thread.is_deleted = 0
+
   -- Remove replies to posts unsubscribed from
   AND NOT EXISTS (
     SELECT NULL FROM

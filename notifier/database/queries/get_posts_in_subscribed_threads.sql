@@ -47,6 +47,9 @@ WHERE
     )
   )
 
+  -- Select only posts in non-deleted threads
+  AND thread.is_deleted = 0
+
   -- Remove posts in threads unsubscribed from
   AND NOT EXISTS (
     SELECT NULL FROM
