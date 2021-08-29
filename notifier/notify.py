@@ -1,6 +1,6 @@
 import re
 import time
-from typing import List, Optional, cast
+from typing import Iterable, List, Optional, cast
 
 import keyring
 
@@ -16,6 +16,7 @@ from notifier.types import (
     EmailAddresses,
     GlobalOverrideConfig,
     GlobalOverridesConfig,
+    LocalConfig,
     NewPostsInfo,
     PostInfo,
 )
@@ -31,9 +32,7 @@ notification_channels = {
 }
 
 
-def notify_active_channels(
-    local_config_path: str, database: BaseDatabaseDriver
-):
+def notify(local_config_path: str, database: BaseDatabaseDriver):
     """Main task executor. Should be called as often as the most frequent
     notification digest.
 
@@ -68,6 +67,19 @@ def notify_active_channels(
     if not wikidot_password:
         raise ValueError("Wikidot password improperly configured")
     connection.login(config["wikidot_username"], wikidot_password)
+    notify_active_channels(
+        active_channels, current_timestamp, config, database, connection
+    )
+
+
+def notify_active_channels(
+    active_channels: Iterable[str],
+    current_timestamp: int,
+    config: LocalConfig,
+    database: BaseDatabaseDriver,
+    connection: Connection,
+):
+    """Prepare and send notifications to all activated channels."""
     for channel in active_channels:
         # Should this be asynchronous + parallel?
         notify_channel(
