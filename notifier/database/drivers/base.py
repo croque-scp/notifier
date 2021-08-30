@@ -158,7 +158,7 @@ class BaseDatabaseDriver(ABC):
     def store_thread(
         self,
         wiki_id: str,
-        category: Tuple[str, str],
+        category: Tuple[Optional[str], Optional[str]],
         thread: Tuple[str, str, Optional[str], int],
     ) -> None:
         """Store a thread. Doesn't matter if the thread or category is

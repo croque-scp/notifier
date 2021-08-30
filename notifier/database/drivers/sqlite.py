@@ -210,14 +210,15 @@ class SqliteDriver(DatabaseWithSqlFileCache, BaseDatabaseDriver):
     def store_thread(
         self,
         wiki_id: str,
-        category: Tuple[str, str],
+        category: Tuple[Optional[str], Optional[str]],
         thread: Tuple[str, str, Optional[str], int],
     ) -> None:
         thread_id, thread_title, creator_username, created_timestamp = thread
         category_id, category_name = category
-        self.execute_named(
-            "store_category", {"id": category_id, "name": category_name}
-        )
+        if category_id is not None and category_name is not None:
+            self.execute_named(
+                "store_category", {"id": category_id, "name": category_name}
+            )
         self.execute_named(
             "store_thread",
             {
