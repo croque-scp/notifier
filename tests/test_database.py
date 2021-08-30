@@ -44,20 +44,11 @@ def sample_database():
     )
     db.conn.executemany("INSERT INTO wiki VALUES (?, ?, ?)", sample_wikis)
     db.conn.executemany(
-        """
-        INSERT INTO thread (
-            id,
-            title,
-            wiki_id,
-            category_id,
-            creator_username,
-            created_timestamp
-        ) VALUES (?, ?, ?, ?, ?, ?)
-        """,
+        "INSERT INTO thread VALUES (?, ?, ?, ?, ?, ?, 0)",
         sample_threads,
     )
     db.conn.executemany(
-        "INSERT INTO post VALUES (?, ?, ?, ?, ?, ?, ?, ?)", sample_posts
+        "INSERT INTO post VALUES (?, ?, ?, ?, ?, ?, ?, ?, 0)", sample_posts
     )
     db.conn.commit()
     return db
