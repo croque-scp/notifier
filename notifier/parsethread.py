@@ -113,7 +113,7 @@ def get_post_parent_id(post_container: Tag) -> Optional[str]:
     # that container is the ID of the parent post
     parent_element = cast(Tag, post_container.parent)
     parent_post_id = None
-    if parent_element["class"] == "post-container":
+    if "post-container" in parent_element.get_attribute_list("class"):
         parent_container_id = parent_element.get_attribute_list("id")[0]
         parent_post_id = "post-" + parent_container_id.lstrip("fpc-")
     return parent_post_id
