@@ -61,7 +61,7 @@ def parse_thread_page(thread_id: str, thread_page: Tag) -> List[RawPost]:
         parent_post_id = get_post_parent_id(post_container)
         # Move to the post itself, to avoid deep searches accidentally
         # hitting replies
-        post = cast(Tag, post_container.contents[0])
+        post = cast(Tag, post_container.find(class_="post"))
         post_id = post.get_attribute_list("id")[0]
         # The post author and timestamp are kept in a .info - jump here to
         # avoid accidentally picking up users and timestamps from the post
