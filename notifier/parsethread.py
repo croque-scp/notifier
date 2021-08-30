@@ -76,7 +76,7 @@ def parse_thread_page(thread_id: str, thread_page: Tag) -> List[RawPost]:
         if posted_timestamp is None:
             print(f"Couldn't read timestamp for {thread_id}/{post_id}")
             continue
-        post_title = cast(Tag, post.find(class_="title")).get_text()
+        post_title = cast(Tag, post.find(class_="title")).get_text().strip()
         post_snippet = make_post_snippet(post)
         raw_posts.append(
             {
@@ -95,7 +95,7 @@ def parse_thread_page(thread_id: str, thread_page: Tag) -> List[RawPost]:
 
 def make_post_snippet(post: Tag) -> str:
     """Truncate a post's text contents to elicit a snippet."""
-    contents = cast(Tag, post.find(class_="content")).get_text()
+    contents = cast(Tag, post.find(class_="content")).get_text().strip()
     if len(contents) >= 80:
         contents = contents[:75].strip() + "..."
     return contents
