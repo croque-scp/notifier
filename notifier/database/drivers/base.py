@@ -93,6 +93,11 @@ class BaseDatabaseDriver(ABC):
         present in the cache."""
 
     @abstractmethod
+    def mark_thread_as_deleted(self, thread_id: str) -> None:
+        """Marks a thread as deleted, preventing its posts from appearing
+        in notifications."""
+
+    @abstractmethod
     def get_new_posts_for_user(
         self, user_id: str, timestamp_range: Tuple[int, int]
     ) -> NewPostsInfo:

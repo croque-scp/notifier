@@ -88,6 +88,9 @@ class SqliteDriver(DatabaseWithSqlFileCache, BaseDatabaseDriver):
             )
         ]
 
+    def mark_thread_as_deleted(self, thread_id: str) -> None:
+        self.execute_named("mark_thread_as_deleted", {"id": thread_id})
+
     def get_new_posts_for_user(
         self, user_id: str, timestamp_range: Tuple[int, int]
     ) -> NewPostsInfo:
