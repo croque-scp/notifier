@@ -27,6 +27,11 @@ listpages_div_wrap = f"""
 """
 
 
+class ThreadNotExists(Exception):
+    """Indicates that a thread does not exist, meaning (if it was known to
+    exist before) that it was deleted."""
+
+
 class Connection:
     """Connection to Wikidot facilitating communications with it."""
 
@@ -83,6 +88,8 @@ class Connection:
             data=dict(moduleName=module_name, wikidot_token7=token7, **kwargs),
             cookies={"wikidot_token7": token7},
         ).json()
+        if response["status"] == "no_thread":
+            raise ThreadNotExists
         if response["status"] != "ok":
             print(response)
             raise RuntimeError(response.get("message") or response["status"])
