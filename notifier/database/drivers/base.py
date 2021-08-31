@@ -98,6 +98,11 @@ class BaseDatabaseDriver(ABC):
         in notifications."""
 
     @abstractmethod
+    def mark_post_as_deleted(self, post_id: str) -> None:
+        """Marks a post as deleted, preventing it from appearing in
+        notifications. Also mark its children as deleted, recursively."""
+
+    @abstractmethod
     def get_new_posts_for_user(
         self, user_id: str, timestamp_range: Tuple[int, int]
     ) -> NewPostsInfo:

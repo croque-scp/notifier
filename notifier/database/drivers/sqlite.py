@@ -91,6 +91,14 @@ class SqliteDriver(DatabaseWithSqlFileCache, BaseDatabaseDriver):
     def mark_thread_as_deleted(self, thread_id: str) -> None:
         self.execute_named("mark_thread_as_deleted", {"id": thread_id})
 
+    def mark_post_as_deleted(self, post_id: str) -> None:
+        self.execute_named("mark_post_as_deleted", {"id": post_id})
+        # Find any children of this post and delete them, too
+        for child in self.execute_named(
+            "get_post_children", {"id": post_id}
+        ).fetchall():
+            self.mark_post_as_deleted(child["id"])
+
     def get_new_posts_for_user(
         self, user_id: str, timestamp_range: Tuple[int, int]
     ) -> NewPostsInfo:
