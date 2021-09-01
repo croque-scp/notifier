@@ -8,10 +8,11 @@ from notifier.config.local import read_local_config
 from notifier.config.remote import get_global_config
 from notifier.config.user import get_user_config
 from notifier.database.drivers.base import BaseDatabaseDriver
+from notifier.deletions import clear_deleted_posts
 from notifier.digest import Digester
 from notifier.emailer import Emailer
 from notifier.newposts import get_new_posts
-from notifier.timing import channel_is_now
+from notifier.timing import channel_is_now, channel_will_be_next
 from notifier.types import (
     EmailAddresses,
     GlobalOverrideConfig,
@@ -70,6 +71,11 @@ def notify(local_config_path: str, database: BaseDatabaseDriver):
     notify_active_channels(
         active_channels, current_timestamp, config, database, connection
     )
+
+    # Notifications have been sent, so perform time-insensitive maintenance
+    for frequency in ["weekly", "monthly"]:
+        if channel_will_be_next(notification_channels[frequency]):
+            clear_deleted_posts(frequency, database, connection)
 
 
 def notify_active_channels(
