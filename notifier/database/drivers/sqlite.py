@@ -1,7 +1,9 @@
 import json
 import sqlite3
+from contextlib import AbstractContextManager
 from sqlite3.dbapi2 import Cursor
-from typing import Iterable, List, Optional, Tuple, cast
+from types import TracebackType
+from typing import Iterable, List, Optional, Tuple, Type, Union, cast
 
 from notifier.database.drivers.base import (
     BaseDatabaseDriver,
@@ -23,12 +25,18 @@ sqlite3.enable_callback_tracebacks(True)
 class SqliteDriver(DatabaseWithSqlFileCache, BaseDatabaseDriver):
     """Database powered by SQLite."""
 
+    default_isolation_level = "DEFERRED"
+
     def __init__(self, location=":memory:"):
         super().__init__()
-        self.conn = sqlite3.connect(location)
+        self.conn = sqlite3.connect(
+            location, isolation_level=self.default_isolation_level
+        )
         self.conn.row_factory = sqlite3.Row
         self.execute_named("enable_foreign_keys")
         self.create_tables()
+
+        self.explict_transaction = ExplicitTransaction(self)
 
     def execute_named(
         self, query_name: str, params: Iterable = None
@@ -253,3 +261,31 @@ class SqliteDriver(DatabaseWithSqlFileCache, BaseDatabaseDriver):
                 "username": post["username"],
             },
         )
+
+
+class ExplicitTransaction(AbstractContextManager):
+    """Context manager for an explicit transaction, bypassing sqlite3's
+    automatic implicit transactions.
+
+    Any error will cause pending changes to be rolled back; otherwise,
+    changes will be committed at the end of the context.
+    """
+
+    def __init__(self, db: SqliteDriver):
+        self.db = db
+
+    def __enter__(self):
+        self.db.conn.isolation_level = None
+        self.db.conn.execute("BEGIN IMMEDIATE TRANSACTION")
+
+    def __exit__(
+        self,
+        exc_type: Union[Type[BaseException], None],
+        exc_value: Union[BaseException, None],
+        traceback: Union[TracebackType, None],
+    ) -> None:
+        if exc_type is None:
+            self.db.conn.execute("COMMIT TRANSACTION")
+        else:
+            self.db.conn.execute("ROLLBACK TRANSACTION")
+        self.db.conn.isolation_level = self.db.default_isolation_level
