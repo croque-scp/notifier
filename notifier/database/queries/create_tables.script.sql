@@ -41,7 +41,8 @@ CREATE TABLE IF NOT EXISTS thread (
   wiki_id TEXT NOT NULL,
   category_id TEXT,
   creator_username TEXT,
-  created_timestamp INTEGER NOT NULL
+  created_timestamp INTEGER NOT NULL,
+  is_deleted INTEGER NOT NULL CHECK (is_deleted IN (0, 1)) DEFAULT 0
 );
 
 CREATE TABLE IF NOT EXISTS post (
@@ -52,5 +53,6 @@ CREATE TABLE IF NOT EXISTS post (
   title TEXT NOT NULL,
   snippet TEXT NOT NULL,
   user_id TEXT NOT NULL,
-  username TEXT NOT NULL
+  username TEXT NOT NULL,
+  is_deleted INTEGER NOT NULL CHECK (is_deleted IN (0, 1)) DEFAULT 0
 );

@@ -44,10 +44,11 @@ def sample_database():
     )
     db.conn.executemany("INSERT INTO wiki VALUES (?, ?, ?)", sample_wikis)
     db.conn.executemany(
-        "INSERT INTO thread VALUES (?, ?, ?, ?, ?, ?)", sample_threads
+        "INSERT INTO thread VALUES (?, ?, ?, ?, ?, ?, 0)",
+        sample_threads,
     )
     db.conn.executemany(
-        "INSERT INTO post VALUES (?, ?, ?, ?, ?, ?, ?, ?)", sample_posts
+        "INSERT INTO post VALUES (?, ?, ?, ?, ?, ?, ?, ?, 0)", sample_posts
     )
     db.conn.commit()
     return db
@@ -126,3 +127,12 @@ def test_respect_ignored_thread(thread_posts):
 def test_new_threads(sample_database: BaseDatabaseDriver):
     """Test that the utility for checking if threads exists works."""
     assert sample_database.find_new_threads(["t-1", "t-2", "t-99"]) == ["t-99"]
+
+
+def test_deleted_thread(sample_database: BaseDatabaseDriver):
+    """Test that marking a thread as deleted works and that it then does
+    not appear in notifications."""
+    sample_database.mark_thread_as_deleted("t-1")
+    posts = sample_database.get_new_posts_for_user("1", (0, 100))
+    assert "t-1" not in [reply["thread_id"] for reply in posts["post_replies"]]
+    assert "t-1" not in [post["thread_id"] for post in posts["thread_posts"]]

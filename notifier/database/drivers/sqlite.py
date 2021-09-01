@@ -88,6 +88,17 @@ class SqliteDriver(DatabaseWithSqlFileCache, BaseDatabaseDriver):
             )
         ]
 
+    def mark_thread_as_deleted(self, thread_id: str) -> None:
+        self.execute_named("mark_thread_as_deleted", {"id": thread_id})
+
+    def mark_post_as_deleted(self, post_id: str) -> None:
+        self.execute_named("mark_post_as_deleted", {"id": post_id})
+        # Find any children of this post and delete them, too
+        for child in self.execute_named(
+            "get_post_children", {"id": post_id}
+        ).fetchall():
+            self.mark_post_as_deleted(child["id"])
+
     def get_new_posts_for_user(
         self, user_id: str, timestamp_range: Tuple[int, int]
     ) -> NewPostsInfo:
@@ -207,14 +218,15 @@ class SqliteDriver(DatabaseWithSqlFileCache, BaseDatabaseDriver):
     def store_thread(
         self,
         wiki_id: str,
-        category: Tuple[str, str],
+        category: Tuple[Optional[str], Optional[str]],
         thread: Tuple[str, str, Optional[str], int],
     ) -> None:
         thread_id, thread_title, creator_username, created_timestamp = thread
         category_id, category_name = category
-        self.execute_named(
-            "store_category", {"id": category_id, "name": category_name}
-        )
+        if category_id is not None and category_name is not None:
+            self.execute_named(
+                "store_category", {"id": category_id, "name": category_name}
+            )
         self.execute_named(
             "store_thread",
             {

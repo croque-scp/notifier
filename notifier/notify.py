@@ -1,21 +1,23 @@
 import re
 import time
-from typing import List, Optional, cast
+from typing import Iterable, List, Optional, cast
 
 import keyring
-import pycron
 
 from notifier.config.local import read_local_config
 from notifier.config.remote import get_global_config
 from notifier.config.user import get_user_config
 from notifier.database.drivers.base import BaseDatabaseDriver
+from notifier.deletions import clear_deleted_posts
 from notifier.digest import Digester
 from notifier.emailer import Emailer
 from notifier.newposts import get_new_posts
+from notifier.timing import channel_is_now, channel_will_be_next
 from notifier.types import (
     EmailAddresses,
     GlobalOverrideConfig,
     GlobalOverridesConfig,
+    LocalConfig,
     NewPostsInfo,
     PostInfo,
 )
@@ -31,9 +33,7 @@ notification_channels = {
 }
 
 
-def notify_active_channels(
-    local_config_path: str, database: BaseDatabaseDriver
-):
+def notify(local_config_path: str, database: BaseDatabaseDriver):
     """Main task executor. Should be called as often as the most frequent
     notification digest.
 
@@ -45,7 +45,7 @@ def notify_active_channels(
     active_channels = [
         frequency
         for frequency, crontab in notification_channels.items()
-        if pycron.is_now(crontab)
+        if channel_is_now(crontab)
     ]
     # If there are no active channels, which shouldn't happen, there is
     # nothing to do
@@ -68,6 +68,24 @@ def notify_active_channels(
     if not wikidot_password:
         raise ValueError("Wikidot password improperly configured")
     connection.login(config["wikidot_username"], wikidot_password)
+    notify_active_channels(
+        active_channels, current_timestamp, config, database, connection
+    )
+
+    # Notifications have been sent, so perform time-insensitive maintenance
+    for frequency in ["weekly", "monthly"]:
+        if channel_will_be_next(notification_channels[frequency]):
+            clear_deleted_posts(frequency, database, connection)
+
+
+def notify_active_channels(
+    active_channels: Iterable[str],
+    current_timestamp: int,
+    config: LocalConfig,
+    database: BaseDatabaseDriver,
+    connection: Connection,
+):
+    """Prepare and send notifications to all activated channels."""
     for channel in active_channels:
         # Should this be asynchronous + parallel?
         notify_channel(

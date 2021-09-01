@@ -93,6 +93,16 @@ class BaseDatabaseDriver(ABC):
         present in the cache."""
 
     @abstractmethod
+    def mark_thread_as_deleted(self, thread_id: str) -> None:
+        """Marks a thread as deleted, preventing its posts from appearing
+        in notifications."""
+
+    @abstractmethod
+    def mark_post_as_deleted(self, post_id: str) -> None:
+        """Marks a post as deleted, preventing it from appearing in
+        notifications. Also mark its children as deleted, recursively."""
+
+    @abstractmethod
     def get_new_posts_for_user(
         self, user_id: str, timestamp_range: Tuple[int, int]
     ) -> NewPostsInfo:
@@ -153,7 +163,7 @@ class BaseDatabaseDriver(ABC):
     def store_thread(
         self,
         wiki_id: str,
-        category: Tuple[str, str],
+        category: Tuple[Optional[str], Optional[str]],
         thread: Tuple[str, str, Optional[str], int],
     ) -> None:
         """Store a thread. Doesn't matter if the thread or category is
