@@ -36,7 +36,7 @@ class SqliteDriver(DatabaseWithSqlFileCache, BaseDatabaseDriver):
         self.execute_named("enable_foreign_keys")
         self.create_tables()
 
-        self.explict_transaction = ExplicitTransaction(self)
+        self.explicit_transaction = ExplicitTransaction(self)
 
     def execute_named(
         self, query_name: str, params: Iterable = None
@@ -74,16 +74,16 @@ class SqliteDriver(DatabaseWithSqlFileCache, BaseDatabaseDriver):
         self, global_overrides: GlobalOverridesConfig
     ) -> None:
         # Overwrite all current overrides
-        self.execute_named("delete_overrides")
-        for wiki_id, overrides in global_overrides.items():
-            self.execute_named(
-                "store_global_override",
-                {
-                    "wiki_id": wiki_id,
-                    "override_settings_json": json.dumps(overrides),
-                },
-            )
-        self.conn.commit()
+        with self.explicit_transaction:
+            self.execute_named("delete_overrides")
+            for wiki_id, overrides in global_overrides.items():
+                self.execute_named(
+                    "store_global_override",
+                    {
+                        "wiki_id": wiki_id,
+                        "override_settings_json": json.dumps(overrides),
+                    },
+                )
 
     def find_new_threads(self, thread_ids: Iterable[str]) -> List[str]:
         return [
@@ -161,24 +161,25 @@ class SqliteDriver(DatabaseWithSqlFileCache, BaseDatabaseDriver):
 
     def store_user_configs(self, user_configs: List[RawUserConfig]) -> None:
         # Overwrite all current configs
-        self.execute_named("delete_user_configs")
-        self.execute_named("delete_manual_subs")
-        for user_config in user_configs:
-            self.execute_named(
-                "store_user_config",
-                {
-                    "user_id": user_config["user_id"],
-                    "username": user_config["username"],
-                    "frequency": user_config["frequency"],
-                    "language": user_config["language"],
-                    "delivery": user_config["delivery"],
-                },
-            )
-            for subscription in (
-                user_config["subscriptions"] + user_config["unsubscriptions"]
-            ):
-                self.store_manual_sub(user_config["user_id"], subscription)
-        self.conn.commit()
+        with self.explicit_transaction:
+            self.execute_named("delete_user_configs")
+            self.execute_named("delete_manual_subs")
+            for user_config in user_configs:
+                self.execute_named(
+                    "store_user_config",
+                    {
+                        "user_id": user_config["user_id"],
+                        "username": user_config["username"],
+                        "frequency": user_config["frequency"],
+                        "language": user_config["language"],
+                        "delivery": user_config["delivery"],
+                    },
+                )
+                for subscription in (
+                    user_config["subscriptions"]
+                    + user_config["unsubscriptions"]
+                ):
+                    self.store_manual_sub(user_config["user_id"], subscription)
 
     def store_manual_sub(
         self, user_id: str, subscription: Subscription
@@ -210,18 +211,18 @@ class SqliteDriver(DatabaseWithSqlFileCache, BaseDatabaseDriver):
 
     def store_supported_wikis(self, wikis: List[SupportedWikiConfig]) -> None:
         # Destroy all existing wikis in preparation for overwrite
-        self.execute_named("delete_wikis")
-        # Add each new wiki
-        for wiki in wikis:
-            self.execute_named(
-                "add_wiki",
-                {
-                    "wiki_id": wiki["id"],
-                    "wiki_name": wiki["name"],
-                    "wiki_secure": wiki["secure"],
-                },
-            )
-        self.conn.commit()
+        with self.explicit_transaction:
+            self.execute_named("delete_wikis")
+            # Add each new wiki
+            for wiki in wikis:
+                self.execute_named(
+                    "add_wiki",
+                    {
+                        "wiki_id": wiki["id"],
+                        "wiki_name": wiki["name"],
+                        "wiki_secure": wiki["secure"],
+                    },
+                )
 
     def store_thread(
         self,
