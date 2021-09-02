@@ -1,4 +1,7 @@
 # notifier
+
+[![tests](https://github.com/croque-scp/notifier/actions/workflows/tests.yml/badge.svg)](https://github.com/croque-scp/notifier/actions/workflows/tests.yml)
+
 Wikidot notifications
 
 # Usage
