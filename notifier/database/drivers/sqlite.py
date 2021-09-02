@@ -1,7 +1,9 @@
 import json
 import sqlite3
+from contextlib import AbstractContextManager
 from sqlite3.dbapi2 import Cursor
-from typing import Iterable, List, Optional, Tuple, cast
+from types import TracebackType
+from typing import Iterable, List, Optional, Tuple, Type, Union, cast
 
 from notifier.database.drivers.base import (
     BaseDatabaseDriver,
@@ -23,12 +25,18 @@ sqlite3.enable_callback_tracebacks(True)
 class SqliteDriver(DatabaseWithSqlFileCache, BaseDatabaseDriver):
     """Database powered by SQLite."""
 
+    default_isolation_level = "DEFERRED"
+
     def __init__(self, location=":memory:"):
         super().__init__()
-        self.conn = sqlite3.connect(location)
+        self.conn = sqlite3.connect(
+            location, isolation_level=self.default_isolation_level
+        )
         self.conn.row_factory = sqlite3.Row
         self.execute_named("enable_foreign_keys")
         self.create_tables()
+
+        self.explicit_transaction = ExplicitTransaction(self)
 
     def execute_named(
         self, query_name: str, params: Iterable = None
@@ -66,16 +74,16 @@ class SqliteDriver(DatabaseWithSqlFileCache, BaseDatabaseDriver):
         self, global_overrides: GlobalOverridesConfig
     ) -> None:
         # Overwrite all current overrides
-        self.execute_named("delete_overrides")
-        for wiki_id, overrides in global_overrides.items():
-            self.execute_named(
-                "store_global_override",
-                {
-                    "wiki_id": wiki_id,
-                    "override_settings_json": json.dumps(overrides),
-                },
-            )
-        self.conn.commit()
+        with self.explicit_transaction:
+            self.execute_named("delete_overrides")
+            for wiki_id, overrides in global_overrides.items():
+                self.execute_named(
+                    "store_global_override",
+                    {
+                        "wiki_id": wiki_id,
+                        "override_settings_json": json.dumps(overrides),
+                    },
+                )
 
     def find_new_threads(self, thread_ids: Iterable[str]) -> List[str]:
         return [
@@ -153,24 +161,25 @@ class SqliteDriver(DatabaseWithSqlFileCache, BaseDatabaseDriver):
 
     def store_user_configs(self, user_configs: List[RawUserConfig]) -> None:
         # Overwrite all current configs
-        self.execute_named("delete_user_configs")
-        self.execute_named("delete_manual_subs")
-        for user_config in user_configs:
-            self.execute_named(
-                "store_user_config",
-                {
-                    "user_id": user_config["user_id"],
-                    "username": user_config["username"],
-                    "frequency": user_config["frequency"],
-                    "language": user_config["language"],
-                    "delivery": user_config["delivery"],
-                },
-            )
-            for subscription in (
-                user_config["subscriptions"] + user_config["unsubscriptions"]
-            ):
-                self.store_manual_sub(user_config["user_id"], subscription)
-        self.conn.commit()
+        with self.explicit_transaction:
+            self.execute_named("delete_user_configs")
+            self.execute_named("delete_manual_subs")
+            for user_config in user_configs:
+                self.execute_named(
+                    "store_user_config",
+                    {
+                        "user_id": user_config["user_id"],
+                        "username": user_config["username"],
+                        "frequency": user_config["frequency"],
+                        "language": user_config["language"],
+                        "delivery": user_config["delivery"],
+                    },
+                )
+                for subscription in (
+                    user_config["subscriptions"]
+                    + user_config["unsubscriptions"]
+                ):
+                    self.store_manual_sub(user_config["user_id"], subscription)
 
     def store_manual_sub(
         self, user_id: str, subscription: Subscription
@@ -202,18 +211,18 @@ class SqliteDriver(DatabaseWithSqlFileCache, BaseDatabaseDriver):
 
     def store_supported_wikis(self, wikis: List[SupportedWikiConfig]) -> None:
         # Destroy all existing wikis in preparation for overwrite
-        self.execute_named("delete_wikis")
-        # Add each new wiki
-        for wiki in wikis:
-            self.execute_named(
-                "add_wiki",
-                {
-                    "wiki_id": wiki["id"],
-                    "wiki_name": wiki["name"],
-                    "wiki_secure": wiki["secure"],
-                },
-            )
-        self.conn.commit()
+        with self.explicit_transaction:
+            self.execute_named("delete_wikis")
+            # Add each new wiki
+            for wiki in wikis:
+                self.execute_named(
+                    "add_wiki",
+                    {
+                        "wiki_id": wiki["id"],
+                        "wiki_name": wiki["name"],
+                        "wiki_secure": wiki["secure"],
+                    },
+                )
 
     def store_thread(
         self,
@@ -253,3 +262,31 @@ class SqliteDriver(DatabaseWithSqlFileCache, BaseDatabaseDriver):
                 "username": post["username"],
             },
         )
+
+
+class ExplicitTransaction(AbstractContextManager):
+    """Context manager for an explicit transaction, bypassing sqlite3's
+    automatic implicit transactions.
+
+    Any error will cause pending changes to be rolled back; otherwise,
+    changes will be committed at the end of the context.
+    """
+
+    def __init__(self, db: SqliteDriver):
+        self.db = db
+
+    def __enter__(self):
+        self.db.conn.isolation_level = None
+        self.db.conn.execute("BEGIN IMMEDIATE TRANSACTION")
+
+    def __exit__(
+        self,
+        exc_type: Union[Type[BaseException], None],
+        exc_value: Union[BaseException, None],
+        traceback: Union[TracebackType, None],
+    ) -> None:
+        if exc_type is None:
+            self.db.conn.execute("COMMIT TRANSACTION")
+        else:
+            self.db.conn.execute("ROLLBACK TRANSACTION")
+        self.db.conn.isolation_level = self.db.default_isolation_level

@@ -1,56 +1,88 @@
+from typing import Any, List, Tuple
+
 import pytest
 
 from notifier.database.drivers import DatabaseDriver
 from notifier.database.drivers.base import BaseDatabaseDriver
+from notifier.types import (
+    RawPost,
+    RawUserConfig,
+    Subscription,
+    SupportedWikiConfig,
+)
+
+
+def construct(keys: List[str], all_values: List[Tuple[Any, ...]]):
+    """pass"""
+    return [dict(zip(keys, values)) for values in all_values]
 
 
 @pytest.fixture(scope="module")
-def sample_database():
+def sample_database() -> BaseDatabaseDriver:
     """Create a sample database with some fake interactions for testing."""
     db = DatabaseDriver()
-    sample_user_configs = [("1", "MyUsername", "hourly", "en", "pm")]
-    sample_manual_subs = [
-        ("1", "t-1", None, 1),
-        ("1", "t-3", "p-32", 1),
-        ("1", "t-4", None, -1),
-    ]
-    sample_wikis = [("my-wiki", "My Wiki", 1)]
+    subs: List[Subscription] = construct(
+        ["thread_id", "post_id", "sub"],
+        [("t-1", None, 1), ("t-3", "p-32", 1)],
+    )
+    unsubs: List[Subscription] = construct(
+        ["thread_id", "post_id", "sub"],
+        [("t-4", None, -1)],
+    )
+    sample_user_configs: List[RawUserConfig] = construct(
+        [
+            "user_id",
+            "username",
+            "frequency",
+            "language",
+            "delivery",
+            "subscriptions",
+            "unsubscriptions",
+        ],
+        [("1", "MyUsername", "hourly", "en", "pm", subs, unsubs)],
+    )
+    sample_wikis: List[SupportedWikiConfig] = construct(
+        ["id", "name", "secure"], [("my-wiki", "My Wiki", 1)]
+    )
     sample_threads = [
-        ("t-1", "Thread 1", "my-wiki", None, None, 10),
-        ("t-2", "Thread 2", "my-wiki", None, None, 13),
-        ("t-3", "Thread 3", "my-wiki", None, None, 16),
-        ("t-4", "Thread 4", "my-wiki", None, None, 50),
+        ("my-wiki", (None, None), ("t-1", "Thread 1", "MyUsername", 10)),
+        ("my-wiki", (None, None), ("t-2", "Thread 2", "MyUsername", 13)),
+        ("my-wiki", (None, None), ("t-3", "Thread 3", "AUsername", 16)),
+        ("my-wiki", (None, None), ("t-4", "Thread 4", "MyUsername", 50)),
     ]
-    sample_posts = [
-        ("p-11", "t-1", None, 10, "Post 11", "", "1", "MyUsername"),
-        ("p-12", "t-1", None, 20, "Post 12", "", "2", "AUsername"),
-        ("p-111", "t-1", "p-11", 30, "Post 111", "", "2", "AUsername"),
-        ("p-21", "t-2", None, 13, "Post 21", "", "1", "MyUsername"),
-        ("p-211", "t-2", "p-21", 17, "Post 211", "", "2", "AUsername"),
-        ("p-212", "t-2", "p-21", 20, "Post 212", "", "3", "BUsername"),
-        ("p-2121", "t-2", "p-212", 23, "Post 2121", "", "1", "MyUsername"),
-        ("p-31", "t-3", None, 16, "Post 31", "", "2", "AUsername"),
-        ("p-32", "t-3", None, 21, "Post 32", "", "3", "BUsername"),
-        ("p-321", "t-3", "p-32", 31, "Post 321", "", "2", "AUsername"),
-        ("p-41", "t-4", None, 50, "Post 41", "", "1", "MyUsername"),
-        ("p-411", "t-4", "p-41", 60, "Post 411", "", "3", "BUsername"),
-        ("p-42", "t-4", None, 65, "Post 42", "", "3", "BUsername"),
-    ]
-    db.conn.executemany(
-        "INSERT INTO user_config VALUES (?, ?, ?, ?, ?)", sample_user_configs
+    sample_posts: List[RawPost] = construct(
+        [
+            "id",
+            "thread_id",
+            "parent_post_id",
+            "posted_timestamp",
+            "title",
+            "snippet",
+            "user_id",
+            "username",
+        ],
+        [
+            ("p-11", "t-1", None, 10, "Post 11", "", "1", "MyUsername"),
+            ("p-12", "t-1", None, 20, "Post 12", "", "2", "AUsername"),
+            ("p-111", "t-1", "p-11", 30, "Post 111", "", "2", "AUsername"),
+            ("p-21", "t-2", None, 13, "Post 21", "", "1", "MyUsername"),
+            ("p-211", "t-2", "p-21", 17, "Post 211", "", "2", "AUsername"),
+            ("p-212", "t-2", "p-21", 20, "Post 212", "", "3", "BUsername"),
+            ("p-2121", "t-2", "p-212", 23, "Post 2121", "", "1", "MyUsername"),
+            ("p-31", "t-3", None, 16, "Post 31", "", "2", "AUsername"),
+            ("p-32", "t-3", None, 21, "Post 32", "", "3", "BUsername"),
+            ("p-321", "t-3", "p-32", 31, "Post 321", "", "2", "AUsername"),
+            ("p-41", "t-4", None, 50, "Post 41", "", "1", "MyUsername"),
+            ("p-411", "t-4", "p-41", 60, "Post 411", "", "3", "BUsername"),
+            ("p-42", "t-4", None, 65, "Post 42", "", "3", "BUsername"),
+        ],
     )
-    db.conn.executemany(
-        "INSERT INTO manual_sub VALUES (?, ?, ?, ?)", sample_manual_subs
-    )
-    db.conn.executemany("INSERT INTO wiki VALUES (?, ?, ?)", sample_wikis)
-    db.conn.executemany(
-        "INSERT INTO thread VALUES (?, ?, ?, ?, ?, ?, 0)",
-        sample_threads,
-    )
-    db.conn.executemany(
-        "INSERT INTO post VALUES (?, ?, ?, ?, ?, ?, ?, ?, 0)", sample_posts
-    )
-    db.conn.commit()
+    db.store_user_configs(sample_user_configs)
+    db.store_supported_wikis(sample_wikis)
+    for thread in sample_threads:
+        db.store_thread(*thread)
+    for post in sample_posts:
+        db.store_post(post)
     return db
 
 
