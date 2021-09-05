@@ -53,6 +53,7 @@ def notify(
     getting data for new posts) and then triggers the relevant notification
     schedules.
     """
+    print("Checking active channels...")
     # Check which notification channels should be activated
     active_channels = [
         frequency
@@ -64,25 +65,39 @@ def notify(
     if len(active_channels) == 0:
         print("No active channels")
         return
+    print(f"{len(active_channels)} active channels")
+
     connection = Connection(config, database.get_supported_wikis())
+
+    print("Getting remote config...")
     get_global_config(config, database, connection)
+    print("Getting user config...")
     get_user_config(config, database, connection)
+
     # Refresh the connection to add any newly-configured wikis
     connection = Connection(config, database.get_supported_wikis())
+
+    print("Getting new posts...")
     get_new_posts(database, connection)
+
     # Record the 'current' timestamp immediately after downloading posts
     current_timestamp = int(time.time())
     # Get the password from keyring for login
     wikidot_password = auth["wikidot"]["password"]
     connection.login(config["wikidot_username"], wikidot_password)
+
+    print("Notifying...")
     notify_active_channels(
         active_channels, current_timestamp, config, auth, database, connection
     )
 
+    print("Cleaning up...")
     # Notifications have been sent, so perform time-insensitive maintenance
     for frequency in ["weekly", "monthly"]:
         if channel_will_be_next(notification_channels[frequency]):
             clear_deleted_posts(frequency, database, connection)
+
+    print_time_until_next()
 
 
 def notify_active_channels(
