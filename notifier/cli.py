@@ -6,7 +6,11 @@ from apscheduler.triggers.cron import CronTrigger
 
 from notifier.config.local import read_local_auth, read_local_config
 from notifier.database.utils import resolve_driver_from_config
-from notifier.notify import notification_channels, notify_active_channels
+from notifier.notify import (
+    notification_channels,
+    notify,
+    print_time_until_next,
+)
 from notifier.types import AuthConfig, LocalConfig
 
 
@@ -24,10 +28,12 @@ def cli():
 
     # Schedule the task
     scheduler.add_job(
-        notify_active_channels,
+        notify,
         CronTrigger.from_crontab(notification_channels["hourly"]),
         args=(config, auth, database),
     )
+
+    print_time_until_next()
 
     # Let's go
     scheduler.start()

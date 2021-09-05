@@ -1,5 +1,6 @@
 import re
 import time
+from datetime import datetime, timedelta
 from typing import Iterable, List, Optional, cast
 
 from notifier.config.remote import get_global_config
@@ -29,6 +30,17 @@ notification_channels = {
     "weekly": "0 0 * * 0",
     "monthly": "0 0 1 * *",
 }
+
+
+def print_time_until_next():
+    """Print the current time and the time until the next notification.
+
+    Assumes that notifications occur on the hour, every hour.
+    """
+    now = datetime.now()
+    print(f"The current time is {now}.")
+    then = now.replace(microsecond=0, second=0, minute=0) + timedelta(hours=1)
+    print(f"The next notification will be at {then}, in {then - now}.")
 
 
 def notify(
