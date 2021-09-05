@@ -109,6 +109,8 @@ def notify_active_channels(
     connection: Connection,
 ):
     """Prepare and send notifications to all activated channels."""
+    digester = Digester(config["path"]["lang"])
+    emailer = Emailer(config["gmail_username"], auth["yagmail"]["password"])
     for channel in active_channels:
         # Should this be asynchronous + parallel?
         notify_channel(
@@ -116,10 +118,8 @@ def notify_active_channels(
             current_timestamp,
             database=database,
             connection=connection,
-            digester=Digester(config["path"]["lang"]),
-            emailer=Emailer(
-                config["gmail_username"], auth["yagmail"]["password"]
-            ),
+            digester=digester,
+            emailer=emailer,
         )
 
 
