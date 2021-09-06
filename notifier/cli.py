@@ -1,4 +1,5 @@
 import argparse
+import logging
 from typing import Tuple
 
 from apscheduler.schedulers.blocking import BlockingScheduler
@@ -12,6 +13,8 @@ from notifier.notify import (
     print_time_until_next,
 )
 from notifier.types import AuthConfig, LocalConfig
+
+logger = logging.getLogger(__name__)
 
 
 def cli():
