@@ -490,6 +490,18 @@ mccabe = ">=0.6,<0.7"
 toml = ">=0.7.1"
 
 [[package]]
+name = "pymysql"
+version = "1.0.2"
+description = "Pure Python MySQL Driver"
+category = "main"
+optional = false
+python-versions = ">=3.6"
+
+[package.extras]
+ed25519 = ["PyNaCl (>=1.4.0)"]
+rsa = ["cryptography"]
+
+[[package]]
 name = "pyparsing"
 version = "2.4.7"
 description = "Python parsing module"
@@ -629,6 +641,14 @@ optional = false
 python-versions = "*"
 
 [[package]]
+name = "types-pymysql"
+version = "1.0.2"
+description = "Typing stubs for PyMySQL"
+category = "main"
+optional = false
+python-versions = "*"
+
+[[package]]
 name = "types-requests"
 version = "2.25.0"
 description = "Typing stubs for requests"
@@ -678,7 +698,7 @@ python-versions = "*"
 
 [[package]]
 name = "yagmail"
-version = "0.14.256"
+version = "0.14.260"
 description = "Yet Another GMAIL client"
 category = "main"
 optional = false
@@ -706,7 +726,7 @@ testing = ["pytest (>=4.6)", "pytest-checkdocs (>=2.4)", "pytest-flake8", "pytes
 [metadata]
 lock-version = "1.1"
 python-versions = "^3.8"
-content-hash = "5659924af63947e8db6c351cc17fad4bbed9f83c260587d5e175dac1aecc43e7"
+content-hash = "ee9b29cd409b8766cb99afdbfa50242741ee59f96e70b5e68e335b2b69824a8e"
 
 [metadata.files]
 appdirs = [
@@ -1056,6 +1076,10 @@ pylint = [
     {file = "pylint-2.9.6-py3-none-any.whl", hash = "sha256:2e1a0eb2e8ab41d6b5dbada87f066492bb1557b12b76c47c2ee8aa8a11186594"},
     {file = "pylint-2.9.6.tar.gz", hash = "sha256:8b838c8983ee1904b2de66cce9d0b96649a91901350e956d78f289c3bc87b48e"},
 ]
+pymysql = [
+    {file = "PyMySQL-1.0.2-py3-none-any.whl", hash = "sha256:41fc3a0c5013d5f039639442321185532e3e2c8924687abe6537de157d403641"},
+    {file = "PyMySQL-1.0.2.tar.gz", hash = "sha256:816927a350f38d56072aeca5dfb10221fe1dc653745853d30a216637f5d7ad36"},
+]
 pyparsing = [
     {file = "pyparsing-2.4.7-py2.py3-none-any.whl", hash = "sha256:ef9d7589ef3c200abe66653d3f1ab1033c3c419ae9b9bdb1240a85b024efc88b"},
     {file = "pyparsing-2.4.7.tar.gz", hash = "sha256:c203ec8783bf771a155b207279b9bccb8dea02d8f0c9e5f8ead507bc3246ecc1"},
@@ -1150,6 +1174,10 @@ types-beautifulsoup4 = [
     {file = "types-beautifulsoup4-4.9.1.tar.gz", hash = "sha256:8217c59aa27243936bce597b06b5d50d89229d50a02197b44c4ac487c4009a48"},
     {file = "types_beautifulsoup4-4.9.1-py3-none-any.whl", hash = "sha256:7d9a17e91337325eef2967d6cb5f0dd5047c274532f84d2430da45d5f65b1783"},
 ]
+types-pymysql = [
+    {file = "types-PyMySQL-1.0.2.tar.gz", hash = "sha256:8a814d8391934009a0e1a3a344c9295e6a7fda76a6df0c469b0a13f0ae6e79df"},
+    {file = "types_PyMySQL-1.0.2-py3-none-any.whl", hash = "sha256:19ebd2d3e1c16fb4ae76c74cedbed7e76a0861e7457865477f40732ca84c393d"},
+]
 types-requests = [
     {file = "types-requests-2.25.0.tar.gz", hash = "sha256:ee0d0c507210141b7d5b8639cc43eaa726084178775db2a5fb06fbf85c185808"},
     {file = "types_requests-2.25.0-py3-none-any.whl", hash = "sha256:fa5c1e5e832ff6193507d8da7e1159281383908ee193a2f4b37bc08140b51844"},
@@ -1171,8 +1199,8 @@ wrapt = [
     {file = "wrapt-1.12.1.tar.gz", hash = "sha256:b62ffa81fb85f4332a4f609cab4ac40709470da05643a082ec1eb88e6d9b97d7"},
 ]
 yagmail = [
-    {file = "yagmail-0.14.256-py2.py3-none-any.whl", hash = "sha256:30dc2bc9d84fe56897df34adcd63fadf1d8dc2505d54c3bad9ba101915fabb1b"},
-    {file = "yagmail-0.14.256.tar.gz", hash = "sha256:88f20899a193025fcdc6c93d2781abbcd2f029d99e6242f67d5fbb15e1ebc366"},
+    {file = "yagmail-0.14.260-py2.py3-none-any.whl", hash = "sha256:55a22e14a0cfd2464d1bd2065bbcd3e74f14cda3ea74c325254ad5cf5e31cbcf"},
+    {file = "yagmail-0.14.260.tar.gz", hash = "sha256:8be7fee1324ec6fab4ab28d79042a0eec731a40d3b7897e11fcef6e7815a6a11"},
 ]
 zipp = [
     {file = "zipp-3.5.0-py3-none-any.whl", hash = "sha256:957cfda87797e389580cb8b9e3870841ca991e2125350677b2ca83a0e99390a3"},
