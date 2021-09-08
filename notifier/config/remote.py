@@ -4,7 +4,8 @@ import requests
 import tomlkit
 from tomlkit.exceptions import TOMLKitError
 
-from notifier.database.drivers.base import BaseDatabaseDriver, try_cache
+from notifier.database.drivers.base import BaseDatabaseDriver
+from notifier.database.utils import try_cache
 from notifier.types import (
     GlobalOverridesConfig,
     LocalConfig,

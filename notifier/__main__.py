@@ -5,7 +5,7 @@ from apscheduler.schedulers.blocking import BlockingScheduler
 from apscheduler.triggers.cron import CronTrigger
 
 from notifier.config.local import read_local_config
-from notifier.database.drivers import DatabaseDriver
+from notifier.database.utils import resolve_driver_from_config
 from notifier.notify import notification_channels, notify_active_channels
 from notifier.types import LocalConfig
 
@@ -37,6 +37,7 @@ def check_authentication(config: LocalConfig) -> None:
 if __name__ == "__main__":
     # Get config location
     local_config_path = read_command_line_arguments()
+    config = read_local_config(local_config_path)
 
     # Check that authentication has been set up
     check_authentication(read_local_config(local_config_path))
@@ -45,6 +46,7 @@ if __name__ == "__main__":
     scheduler = BlockingScheduler()
 
     # Database stores forum posts and caches subscriptions
+    DatabaseDriver = resolve_driver_from_config(config["database_driver"])
     database = DatabaseDriver("./postbox.db")
 
     # Schedule the task

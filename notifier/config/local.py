@@ -5,6 +5,7 @@ from typing import Any, cast
 import tomlkit
 from typing_extensions import TypeGuard
 
+from notifier.database.utils import resolve_driver_from_config
 from notifier.types import LocalConfig
 
 
@@ -32,6 +33,11 @@ def read_local_config(config_path: str) -> LocalConfig:
         assert_key(config, "wiki_config_category", str)
         assert_key(config, "overrides_url", str)
         assert_key(config, "gmail_username", str)
+        assert_key(config, "database_driver", str)
+        try:
+            resolve_driver_from_config(config["database_driver"])
+        except (ImportError, AttributeError) as error:
+            raise ValueError("database_driver in config is invalid") from error
         assert_key(config, "path", dict)
         assert_key(config["path"], "lang", str)
         config["path"]["lang"] = replace_path_alias(config["path"]["lang"])
