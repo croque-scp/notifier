@@ -75,7 +75,7 @@ must be entered in order for it to be able to work.
 Run tests:
 
 ```shell
-poetry run pytest
+poetry run pytest --notifier-config path_to_config_file
 ```
 
 Produce a sample digest and print it to stdout, where `[lang]` is the code

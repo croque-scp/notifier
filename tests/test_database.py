@@ -2,9 +2,10 @@ from typing import Any, List, Tuple
 
 import pytest
 
-from notifier.database.drivers import DatabaseDriver
 from notifier.database.drivers.base import BaseDatabaseDriver
+from notifier.database.utils import resolve_driver_from_config
 from notifier.types import (
+    LocalConfig,
     RawPost,
     RawUserConfig,
     Subscription,
@@ -18,9 +19,9 @@ def construct(keys: List[str], all_values: List[Tuple[Any, ...]]):
 
 
 @pytest.fixture(scope="module")
-def sample_database() -> BaseDatabaseDriver:
+def sample_database(notifier_config: LocalConfig) -> BaseDatabaseDriver:
     """Create a sample database with some fake interactions for testing."""
-    db = DatabaseDriver()
+    db = resolve_driver_from_config(notifier_config["database_driver"])()
     subs: List[Subscription] = construct(
         ["thread_id", "post_id", "sub"],
         [("t-1", None, 1), ("t-3", "p-32", 1)],

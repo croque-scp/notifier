@@ -39,4 +39,4 @@ jobs:
           key: venv-${{ runner.os }}-${{ hashFiles('**/poetry.lock') }}
       - if: steps.cached-poetry-dependencies.outputs.cache-hit != 'true'
         run: poetry install --no-interaction
-      - run: poetry run pytest
+      - run: poetry run pytest --notifier-config config.toml
