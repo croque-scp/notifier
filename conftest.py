@@ -9,5 +9,9 @@ def pytest_addoption(parser: Parser):
 
 
 def pytest_generate_tests(metafunc: Metafunc):
-    if config := metafunc.config.getoption("notifier_config"):
-        metafunc.parametrize("notifier_config", read_local_config(config))
+    if (
+        config := metafunc.config.getoption("notifier_config")
+    ) and "notifier_config" in metafunc.fixturenames:
+        metafunc.parametrize(
+            "notifier_config", [read_local_config(config)], scope="module"
+        )
