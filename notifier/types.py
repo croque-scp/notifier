@@ -27,6 +27,7 @@ class LocalConfig(TypedDict):
     overrides_url: str
     gmail_username: str
     database_driver: str
+    database_name: str
     path: LocalConfigPaths
 
 

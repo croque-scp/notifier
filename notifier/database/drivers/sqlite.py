@@ -27,10 +27,12 @@ class SqliteDriver(DatabaseWithSqlFileCache, BaseDatabaseDriver):
 
     default_isolation_level = "DEFERRED"
 
-    def __init__(self, location=":memory:"):
+    def __init__(self, database_name=":memory:"):
         super().__init__()
+        if database_name != ":memory:" and "/" not in database_name:
+            database_name = f"./{database_name}.db"
         self.conn = sqlite3.connect(
-            location, isolation_level=self.default_isolation_level
+            database_name, isolation_level=self.default_isolation_level
         )
         self.conn.row_factory = sqlite3.Row
         self.execute_named("enable_foreign_keys")

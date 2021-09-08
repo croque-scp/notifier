@@ -18,7 +18,7 @@ class BaseDatabaseDriver(ABC):
     any implementations."""
 
     @abstractmethod
-    def __init__(self):
+    def __init__(self, database_name: str):
         pass
 
     @abstractmethod
@@ -143,8 +143,8 @@ class DatabaseWithSqlFileCache(BaseDatabaseDriver, ABC):
 
     builtin_queries_dir = Path(__file__).parent.parent / "queries"
 
-    def __init__(self):
-        super().__init__()
+    def __init__(self, *args):
+        super().__init__(*args)
         self.clear_query_file_cache()
 
     def clear_query_file_cache(self):

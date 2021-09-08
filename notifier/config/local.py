@@ -38,6 +38,7 @@ def read_local_config(config_path: str) -> LocalConfig:
             resolve_driver_from_config(config["database_driver"])
         except (ImportError, AttributeError) as error:
             raise ValueError("database_driver in config is invalid") from error
+        assert_key(config, "database_name", str)
         assert_key(config, "path", dict)
         assert_key(config["path"], "lang", str)
         config["path"]["lang"] = replace_path_alias(config["path"]["lang"])

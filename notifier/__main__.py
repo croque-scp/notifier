@@ -47,7 +47,7 @@ if __name__ == "__main__":
 
     # Database stores forum posts and caches subscriptions
     DatabaseDriver = resolve_driver_from_config(config["database_driver"])
-    database = DatabaseDriver("./postbox.db")
+    database = DatabaseDriver(config["database_name"])
 
     # Schedule the task
     scheduler.add_job(

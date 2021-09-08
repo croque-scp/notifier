@@ -5,6 +5,7 @@ wiki_config_category = "wiki"
 overrides_url = "https://notifications.wdfiles.com/local--code/overrides/1"
 gmail_username = "wikidotnotifier@gmail.com"
 database_driver = "notifier.database.drivers.sqlite.SqliteDriver"
+database_name = "wikidot_notifier"
 
 [path]
 # Paths:
