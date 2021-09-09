@@ -6,64 +6,75 @@
 -- that user does not have a notification config, for example.
 --
 -- VARCHAR limits where appropriate have been selected to match the maximum
--- length of the corresponding value permitted by Wikidot.
+-- length of the corresponding value permitted by Wikidot. Category,
+-- thread, post and user IDs have been arbitrarily given a limit of 20
+-- characters.
 --
 
 CREATE TABLE IF NOT EXISTS user_config (
-  user_id VARCHAR(20) NOT NULL PRIMARY KEY,
-  username VARCHAR(20) NOT NULL,
+  PRIMARY KEY (user_id),
+  user_id   VARCHAR(20) NOT NULL,
+  username  VARCHAR(20) NOT NULL,
   frequency VARCHAR(10) NOT NULL,
-  language VARCHAR(5) NOT NULL,
-  delivery VARCHAR(5) NOT NULL
+  language  VARCHAR(5)  NOT NULL,
+  delivery  VARCHAR(5)  NOT NULL
 );
 
 CREATE TABLE IF NOT EXISTS user_last_notified (
-  user_id VARCHAR(20) NOT NULL PRIMARY KEY,
+  PRIMARY KEY (user_id),
+  user_id            VARCHAR(20)  NOT NULL,
   notified_timestamp INT UNSIGNED NOT NULL
 );
 
 CREATE TABLE manual_sub (
-  user_id VARCHAR(20) NOT NULL REFERENCES user_config (user_id),
+  user_id   VARCHAR(20) NOT NULL,
   thread_id VARCHAR(20) NOT NULL,
-  post_id VARCHAR(20),
-  sub TINYINT NOT NULL CHECK (sub IN (-1, 1)),
+  post_id   VARCHAR(20),
+  sub       TINYINT     NOT NULL CHECK (sub IN (-1, 1)),
+  FOREIGN KEY (user_id) REFERENCES user_config (user_id),
   UNIQUE (user_id, thread_id, post_id, sub)
 );
 
 CREATE TABLE IF NOT EXISTS global_override (
-  wiki_id VARCHAR(50) NOT NULL,
+  wiki_id                VARCHAR(50)   NOT NULL,
   override_settings_json VARCHAR(2000) NOT NULL
 );
 
 CREATE TABLE IF NOT EXISTS wiki (
-  id VARCHAR(50) NOT NULL PRIMARY KEY,
-  name VARCHAR(200) NOT NULL,
-  secure TINYINT(1) NOT NULL CHECK (secure IN (0, 1))
+  PRIMARY KEY (id),
+  id     VARCHAR(50)  NOT NULL,
+  name   VARCHAR(200) NOT NULL,
+  secure TINYINT(1)   NOT NULL CHECK (secure IN (0, 1))
 );
 
 CREATE TABLE IF NOT EXISTS category (
-  id VARCHAR(20) NOT NULL PRIMARY KEY,
+  PRIMARY KEY (id),
+  id   VARCHAR(20)  NOT NULL,
   name VARCHAR(200) NOT NULL
 );
 
 CREATE TABLE IF NOT EXISTS thread (
-  id VARCHAR(20) NOT NULL PRIMARY KEY,
-  title VARCHAR(200) NOT NULL,
-  wiki_id VARCHAR(50) NOT NULL,
-  category_id VARCHAR(200),
-  creator_username VARCHAR(20),
+  PRIMARY KEY (id),
+  id                VARCHAR(20)  NOT NULL,
+  title             VARCHAR(200) NOT NULL,
+  wiki_id           VARCHAR(50)  NOT NULL,
+  category_id       VARCHAR(200),
+  creator_username  VARCHAR(20),
   created_timestamp INT UNSIGNED NOT NULL,
-  is_deleted TINYINT(1) NOT NULL CHECK (is_deleted IN (0, 1)) DEFAULT 0
+  is_deleted        TINYINT(1)   NOT NULL CHECK (is_deleted IN (0, 1)) DEFAULT 0
 );
 
 CREATE TABLE IF NOT EXISTS post (
-  id VARCHAR(20) NOT NULL PRIMARY KEY,
-  thread_id VARCHAR(20) NOT NULL REFERENCES thread (id),
-  parent_post_id VARCHAR(20) REFERENCES post (id),
+  PRIMARY KEY (id),
+  id               VARCHAR(20)  NOT NULL,
+  thread_id        VARCHAR(20)  NOT NULL,
+  parent_post_id   VARCHAR(20),
   posted_timestamp INT UNSIGNED NOT NULL,
-  title VARCHAR(200) NOT NULL,
-  snippet VARCHAR(200) NOT NULL,
-  user_id VARCHAR(20) NOT NULL,
-  username VARCHAR(20) NOT NULL,
-  is_deleted TINYINT(1) NOT NULL CHECK (is_deleted IN (0, 1)) DEFAULT 0
+  title            VARCHAR(200) NOT NULL,
+  snippet          VARCHAR(200) NOT NULL,
+  user_id          VARCHAR(20)  NOT NULL,
+  username         VARCHAR(20)  NOT NULL,
+  is_deleted       TINYINT(1)   NOT NULL CHECK (is_deleted IN (0, 1)) DEFAULT 0,
+  FOREIGN KEY (thread_id)      REFERENCES thread (id),
+  FOREIGN KEY (parent_post_id) REFERENCES post (id)
 );
