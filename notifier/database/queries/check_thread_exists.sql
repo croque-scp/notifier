@@ -4,5 +4,5 @@ SELECT EXISTS (
   FROM
     thread
   WHERE
-    id = :id
+    id = %(id)s
 )

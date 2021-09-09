@@ -11,6 +11,6 @@ WHERE
       first_post.thread_id
     HAVING
       MIN(first_post.posted_timestamp)
-      AND first_post.user_id = :user_id
+      AND first_post.user_id = %(user_id)s
       AND first_post.thread_id = post.thread_id
   )

@@ -28,7 +28,7 @@ WHERE
       SELECT NULL FROM
         manual_sub
       WHERE
-        manual_sub.user_id = :user_id
+        manual_sub.user_id = %(user_id)s
         AND manual_sub.thread_id = thread.id
         AND manual_sub.post_id IS NULL
         AND manual_sub.sub = 1
@@ -42,7 +42,7 @@ WHERE
         first_post.thread_id
       HAVING
         MIN(first_post.posted_timestamp)
-        AND first_post.user_id = :user_id
+        AND first_post.user_id = %(user_id)s
         AND first_post.thread_id = post.thread_id
     )
   )
@@ -58,17 +58,17 @@ WHERE
     SELECT NULL FROM
       manual_sub
     WHERE
-      manual_sub.user_id = :user_id
+      manual_sub.user_id = %(user_id)s
       AND manual_sub.thread_id = thread.id
       AND manual_sub.post_id IS NULL
       AND manual_sub.sub = -1
   )
 
   -- Remove posts not posted in the current frequency channel
-  AND post.posted_timestamp BETWEEN :lower_timestamp AND :upper_timestamp
+  AND post.posted_timestamp BETWEEN %(lower_timestamp)s AND %(upper_timestamp)s
 
   -- Remove posts made by the user
-  AND post.user_id <> :user_id
+  AND post.user_id <> %(user_id)s
 
   -- Remove posts the user already responded to
   AND NOT EXISTS (
@@ -76,7 +76,7 @@ WHERE
       post AS child_post
     WHERE
       child_post.parent_post_id = post.id
-      AND child_post.user_id = :user_id
+      AND child_post.user_id = %(user_id)s
   )
 ORDER BY
   wiki.id,

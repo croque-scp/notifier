@@ -3,4 +3,4 @@ SELECT
 FROM
   post
 WHERE
-  post.user_id = :user_id
+  post.user_id = %(user_id)s
