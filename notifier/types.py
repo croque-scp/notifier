@@ -17,6 +17,13 @@ class LocalConfigPaths(TypedDict):
     lang: str
 
 
+class DatabaseConfig(TypedDict):
+    """Configuration for the database."""
+
+    driver: str
+    database_name: str
+
+
 class LocalConfig(TypedDict):
     """Contents of the local config file."""
 
@@ -26,8 +33,7 @@ class LocalConfig(TypedDict):
     wiki_config_category: str
     overrides_url: str
     gmail_username: str
-    database_driver: str
-    database_name: str
+    database: DatabaseConfig
     path: LocalConfigPaths
 
 

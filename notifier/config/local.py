@@ -27,21 +27,29 @@ def read_local_config(config_path: str) -> LocalConfig:
             raise KeyError(f"Missing {key} in config")
 
     def is_complete_config(config: dict) -> TypeGuard[LocalConfig]:
+        """Check that the config contains all required keys."""
+        # Main config
         assert_key(config, "wikidot_username", str)
         assert_key(config, "config_wiki", str)
         assert_key(config, "user_config_category", str)
         assert_key(config, "wiki_config_category", str)
         assert_key(config, "overrides_url", str)
         assert_key(config, "gmail_username", str)
-        assert_key(config, "database_driver", str)
+
+        # Database section
+        assert_key(config, "database", dict)
+        assert_key(config["database"], "driver", str)
+        assert_key(config["database"], "database_name", str)
         try:
-            resolve_driver_from_config(config["database_driver"])
+            resolve_driver_from_config(config["database"]["driver"])
         except (ImportError, AttributeError) as error:
             raise ValueError("database_driver in config is invalid") from error
-        assert_key(config, "database_name", str)
+
+        # Paths section
         assert_key(config, "path", dict)
         assert_key(config["path"], "lang", str)
         config["path"]["lang"] = replace_path_alias(config["path"]["lang"])
+
         return True
 
     if is_complete_config(config):

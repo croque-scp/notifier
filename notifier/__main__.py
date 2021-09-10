@@ -46,8 +46,8 @@ if __name__ == "__main__":
     scheduler = BlockingScheduler()
 
     # Database stores forum posts and caches subscriptions
-    DatabaseDriver = resolve_driver_from_config(config["database_driver"])
-    database = DatabaseDriver(config["database_name"])
+    DatabaseDriver = resolve_driver_from_config(config["database"]["driver"])
+    database = DatabaseDriver(config["database"]["database_name"])
 
     # Schedule the task
     scheduler.add_job(
