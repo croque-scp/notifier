@@ -2,8 +2,6 @@ import re
 import time
 from typing import Iterable, List, Optional, cast
 
-import keyring
-
 from notifier.config.local import read_local_config
 from notifier.config.remote import get_global_config
 from notifier.config.user import get_user_config
@@ -12,6 +10,7 @@ from notifier.deletions import clear_deleted_posts
 from notifier.digest import Digester
 from notifier.emailer import Emailer
 from notifier.newposts import get_new_posts
+from notifier.secretgetter import get_secret
 from notifier.timing import channel_is_now, channel_will_be_next
 from notifier.types import (
     EmailAddresses,
@@ -62,9 +61,7 @@ def notify(local_config_path: str, database: BaseDatabaseDriver):
     # Record the 'current' timestamp immediately after downloading posts
     current_timestamp = int(time.time())
     # Get the password from keyring for login
-    wikidot_password = keyring.get_password(
-        "wikidot", config["wikidot_username"]
-    )
+    wikidot_password = get_secret("wikidot", config["wikidot_username"])
     if not wikidot_password:
         raise ValueError("Wikidot password improperly configured")
     connection.login(config["wikidot_username"], wikidot_password)

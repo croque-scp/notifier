@@ -1,12 +1,12 @@
 import sys
 
-import keyring
 from apscheduler.schedulers.blocking import BlockingScheduler
 from apscheduler.triggers.cron import CronTrigger
 
 from notifier.config.local import read_local_config
 from notifier.database.utils import resolve_driver_from_config
 from notifier.notify import notification_channels, notify_active_channels
+from notifier.secretgetter import get_secret
 from notifier.types import LocalConfig
 
 
@@ -28,9 +28,9 @@ def read_command_line_arguments() -> str:
 
 def check_authentication(config: LocalConfig) -> None:
     """Verifies that the Wikidot and gmail passwords have been provided."""
-    if not keyring.get_password("wikidot", config["wikidot_username"]):
+    if not get_secret("wikidot", config["wikidot_username"]):
         raise ValueError("Wikidot account password is not configured")
-    if not keyring.get_password("yagmail", config["gmail_username"]):
+    if not get_secret("yagmail", config["gmail_username"]):
         raise ValueError("gmail account password is not configured")
 
 
