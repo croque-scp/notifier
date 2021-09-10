@@ -31,7 +31,7 @@ CREATE TABLE manual_sub (
   thread_id VARCHAR(20) NOT NULL,
   post_id   VARCHAR(20),
   sub       TINYINT     NOT NULL CHECK (sub IN (-1, 1)),
-  FOREIGN KEY (user_id) REFERENCES user_config (user_id),
+  FOREIGN KEY (user_id) REFERENCES user_config (user_id) ON DELETE CASCADE,
   UNIQUE (user_id, thread_id, post_id, sub)
 );
 

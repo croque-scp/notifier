@@ -165,7 +165,6 @@ class SqliteDriver(DatabaseWithSqlFileCache, BaseDatabaseDriver):
         # Overwrite all current configs
         with self.explicit_transaction:
             self.execute_named("delete_user_configs")
-            self.execute_named("delete_manual_subs")
             for user_config in user_configs:
                 self.execute_named(
                     "store_user_config",

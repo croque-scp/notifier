@@ -1,1 +1,0 @@
-DELETE FROM manual_sub

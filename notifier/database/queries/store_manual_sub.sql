@@ -1,4 +1,4 @@
-INSERT INTO
+INSERT IGNORE INTO
   manual_sub
   (user_id, thread_id, post_id, sub)
 VALUES
