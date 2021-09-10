@@ -1,4 +1,6 @@
+from abc import ABC
 from importlib import import_module
+from pathlib import Path
 from typing import Any, Callable, Tuple, Type
 
 from notifier.database.drivers.base import BaseDatabaseDriver
@@ -73,3 +75,53 @@ def try_cache(
         print(f"Failure: {error}")
     if value != do_not_store:
         store(value)
+
+
+class BaseDatabaseWithSqlFileCache(ABC):
+    """Utilities for a database to read its SQL commands directly from the
+    filesystem, caching those commands between batches of queries.
+
+    This is so that the SQL commands can be safely edited between queries
+    with no downtime.
+
+    Execute clear_query_file_cache to clear the cache and force the next
+    call to each query to re-read from the filesystem.
+    """
+
+    builtin_queries_dir = Path(__file__).parent.parent / "queries"
+
+    def __init__(self):
+        self.clear_query_file_cache()
+
+    def clear_query_file_cache(self):
+        """Clears the cache of query files, causing subsequent calls to
+        them to re-read the query from the filesystem."""
+        self.query_cache = {}
+
+    def read_query_file(self, query_name: str) -> None:
+        """Reads the contents of a query file from the filesystem and
+        caches it."""
+        try:
+            query_path = next(
+                path
+                for path in self.builtin_queries_dir.iterdir()
+                if path.name.split(".")[0] == query_name
+            )
+        except StopIteration as stop:
+            raise ValueError(f"Query {query_name} does not exist") from stop
+        with query_path.open() as file:
+            query = file.read()
+        self.query_cache[query_name] = {
+            "script": query_path.name.endswith(".script.sql"),
+            "query": query,
+        }
+
+    def cache_named_query(self, query_name: str) -> None:
+        """Reads an SQL query from the source and puts it to the cache,
+        unless it is already present.
+
+        :param query_name: The name of the query to execute, which must
+        have a corresponding SQL file.
+        """
+        if query_name not in self.query_cache:
+            self.read_query_file(query_name)

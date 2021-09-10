@@ -7,7 +7,7 @@ from typing import Iterable, List, Optional, Tuple, Type, Union, cast
 
 from notifier.database.drivers.base import (
     BaseDatabaseDriver,
-    DatabaseWithSqlFileCache,
+    BaseDatabaseWithSqlFileCache,
 )
 from notifier.types import (
     CachedUserConfig,
@@ -22,7 +22,7 @@ from notifier.types import (
 sqlite3.enable_callback_tracebacks(True)
 
 
-class SqliteDriver(DatabaseWithSqlFileCache, BaseDatabaseDriver):
+class SqliteDriver(BaseDatabaseWithSqlFileCache, BaseDatabaseDriver):
     """Database powered by SQLite."""
 
     default_isolation_level = "DEFERRED"
@@ -263,31 +263,3 @@ class SqliteDriver(DatabaseWithSqlFileCache, BaseDatabaseDriver):
                 "username": post["username"],
             },
         )
-
-
-class ExplicitTransaction(AbstractContextManager):
-    """Context manager for an explicit transaction, bypassing sqlite3's
-    automatic implicit transactions.
-
-    Any error will cause pending changes to be rolled back; otherwise,
-    changes will be committed at the end of the context.
-    """
-
-    def __init__(self, db: SqliteDriver):
-        self.db = db
-
-    def __enter__(self):
-        self.db.conn.isolation_level = None
-        self.db.conn.execute("BEGIN IMMEDIATE TRANSACTION")
-
-    def __exit__(
-        self,
-        exc_type: Union[Type[BaseException], None],
-        exc_value: Union[BaseException, None],
-        traceback: Union[TracebackType, None],
-    ) -> None:
-        if exc_type is None:
-            self.db.conn.execute("COMMIT TRANSACTION")
-        else:
-            self.db.conn.execute("ROLLBACK TRANSACTION")
-        self.db.conn.isolation_level = self.db.default_isolation_level
