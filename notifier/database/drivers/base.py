@@ -78,16 +78,6 @@ class BaseDatabaseDriver(ABC):
         """
 
     @abstractmethod
-    def store_manual_sub(
-        self, user_id: str, subscription: Subscription
-    ) -> None:
-        """Caches a single user subscription configuration.
-
-        :param user_id: The numeric Wikidot ID of the user, as text.
-        :param thread_id: Data for the subscription.
-        """
-
-    @abstractmethod
     def store_user_last_notified(
         self, user_id: str, last_notified_timestamp: int
     ) -> None:
