@@ -3,6 +3,7 @@ from contextlib import contextmanager
 from typing import Iterable, Iterator, List, Optional, Tuple, Type, Union, cast
 
 import pymysql
+from pymysql.constants.CLIENT import MULTI_STATEMENTS
 from pymysql.cursors import SSDictCursor
 
 from notifier.database.drivers.base import BaseDatabaseDriver
@@ -42,8 +43,15 @@ class MySqlDriver(BaseDatabaseDriver, BaseDatabaseWithSqlFileCache):
             user=mysql_username,
             password=mysql_password,
             database=None if database_name == ":memory:" else database_name,
+            # Cursor is accessible like a dict, and is unbuffered (i.e.
+            # retrieves rows from the server one-by-one, using less
+            # memory). However, any pending data must be purged from the
+            # connection (by calling cursor.close) before it can be reused.
             cursorclass=SSDictCursor,
+            # Autocommit except during explicit transactions
             autocommit=True,
+            # Enable 'executescript'-like functionality for all statements
+            client_flag=MULTI_STATEMENTS,
         )
 
     @contextmanager
@@ -63,6 +71,26 @@ class MySqlDriver(BaseDatabaseDriver, BaseDatabaseWithSqlFileCache):
             raise
         finally:
             cursor.close()
+
+    def execute_named(
+        self, query_name: str, params: Iterable = None
+    ) -> SSDictCursor:
+        """Execute a named query against the database. The query is read
+        either from file or the cache.
+
+        :param query_name: The name of the query to execute, which must
+        have a corresponding SQL file.
+        :param params: SQL parameters to pass to the query.
+        :returns: The resultant cursor of the query.
+        """
+        self.cache_named_query(query_name)
+        query = self.query_cache[query_name]["query"]
+        cursor = self.conn.cursor()
+        if self.query_cache[query_name]["script"]:
+            if params is not None:
+                raise ValueError("Script does not accept params")
+            return cursor.execute(query)
+        return cursor.execute(query, {} if params is None else params)
 
 
 def __instantiate():
