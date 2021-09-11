@@ -1,7 +1,6 @@
 import json
-from contextlib import AbstractContextManager
-from types import TracebackType
-from typing import Iterable, List, Optional, Tuple, Type, Union, cast
+from contextlib import contextmanager
+from typing import Iterable, Iterator, List, Optional, Tuple, Type, Union, cast
 
 import pymysql
 from pymysql.cursors import SSDictCursor
@@ -47,32 +46,23 @@ class MySqlDriver(BaseDatabaseDriver, BaseDatabaseWithSqlFileCache):
             autocommit=True,
         )
 
-        self.transaction = Transaction(self)
+    @contextmanager
+    def transaction(self) -> Iterator[SSDictCursor]:
+        """Context manager for an explicit transaction.
 
-
-class Transaction(AbstractContextManager):
-    """Context manager for an explicit transaction.
-
-    Any error will cause pending changes to be rolled back; otherwise,
-    changes will be committed at the end of the context.
-    """
-
-    def __init__(self, db: MySqlDriver):
-        self.db = db
-
-    def __enter__(self):
-        self.db.conn.begin()
-
-    def __exit__(
-        self,
-        exc_type: Union[Type[BaseException], None],
-        exc_value: Union[BaseException, None],
-        traceback: Union[TracebackType, None],
-    ) -> None:
-        if exc_type is None:
-            self.db.conn.commit()
-        else:
-            self.db.conn.rollback()
+        Any error will cause pending changes to be rolled back; otherwise,
+        changes will be committed at the end of the context.
+        """
+        cursor = self.conn.cursor()
+        self.conn.begin()
+        try:
+            yield cursor
+            self.conn.commit()
+        except:
+            self.conn.rollback()
+            raise
+        finally:
+            cursor.close()
 
 
 def __instantiate():
