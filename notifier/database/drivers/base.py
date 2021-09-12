@@ -16,7 +16,7 @@ class BaseDatabaseDriver(ABC):
     any implementations."""
 
     @abstractmethod
-    def __init__(self, database_name: str):
+    def __init__(self, database_name: str, **kwargs):
         """Sets up and connects to the database."""
 
     @abstractmethod

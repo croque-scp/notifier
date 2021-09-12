@@ -2,7 +2,6 @@ import re
 import time
 from typing import Iterable, List, Optional, cast
 
-from notifier.config.local import read_local_config
 from notifier.config.remote import get_global_config
 from notifier.config.user import get_user_config
 from notifier.database.drivers.base import BaseDatabaseDriver
@@ -10,9 +9,9 @@ from notifier.deletions import clear_deleted_posts
 from notifier.digest import Digester
 from notifier.emailer import Emailer
 from notifier.newposts import get_new_posts
-from notifier.secretgetter import get_secret
 from notifier.timing import channel_is_now, channel_will_be_next
 from notifier.types import (
+    AuthConfig,
     EmailAddresses,
     GlobalOverrideConfig,
     GlobalOverridesConfig,
@@ -32,7 +31,9 @@ notification_channels = {
 }
 
 
-def notify(local_config_path: str, database: BaseDatabaseDriver):
+def notify(
+    config: LocalConfig, auth: AuthConfig, database: BaseDatabaseDriver
+):
     """Main task executor. Should be called as often as the most frequent
     notification digest.
 
@@ -51,7 +52,6 @@ def notify(local_config_path: str, database: BaseDatabaseDriver):
     if len(active_channels) == 0:
         print("No active channels")
         return
-    config = read_local_config(local_config_path)
     connection = Connection(config, database.get_supported_wikis())
     get_global_config(config, database, connection)
     get_user_config(config, database, connection)
@@ -61,9 +61,7 @@ def notify(local_config_path: str, database: BaseDatabaseDriver):
     # Record the 'current' timestamp immediately after downloading posts
     current_timestamp = int(time.time())
     # Get the password from keyring for login
-    wikidot_password = get_secret("wikidot", config["wikidot_username"])
-    if not wikidot_password:
-        raise ValueError("Wikidot password improperly configured")
+    wikidot_password = auth["wikidot"]["password"]
     connection.login(config["wikidot_username"], wikidot_password)
     notify_active_channels(
         active_channels, current_timestamp, config, database, connection

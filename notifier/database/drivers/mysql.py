@@ -8,7 +8,6 @@ from pymysql.cursors import DictCursor
 
 from notifier.database.drivers.base import BaseDatabaseDriver
 from notifier.database.utils import BaseDatabaseWithSqlFileCache
-from notifier.secretgetter import get_secret
 from notifier.types import (
     CachedUserConfig,
     GlobalOverridesConfig,
@@ -25,27 +24,18 @@ from notifier.types import (
 class MySqlDriver(BaseDatabaseDriver, BaseDatabaseWithSqlFileCache):
     """Database powered by MySQL."""
 
-    def __init__(self, database_name: str):
+    def __init__(
+        self, database_name: str, *, host: str, username: str, password: str
+    ):
 
         BaseDatabaseDriver.__init__(self, database_name)
         BaseDatabaseWithSqlFileCache.__init__(self)
 
-        # Parameters for the connection are kept as secrets
-        mysql_host = get_secret("mysql", "notifier_host")
-        if not mysql_host:
-            raise ValueError("MySQL host address is not configured")
-        mysql_username = get_secret("mysql", "notifier_username")
-        if not mysql_username:
-            raise ValueError("MySQL username is not configured")
-        mysql_password = get_secret("mysql", "notifier")
-        if not mysql_password:
-            raise ValueError("MySQL password is not configured")
-
         self.conn = pymysql.connect(
-            host=mysql_host,
-            user=mysql_username,
-            password=mysql_password,
-            database=None if database_name == ":memory:" else database_name,
+            host=host,
+            user=username,
+            password=password,
+            database=database_name,
             # Cursor is accessible like a dict (buffered)
             cursorclass=DictCursor,
             # Autocommit except during explicit transactions
@@ -332,4 +322,4 @@ class MySqlDriver(BaseDatabaseDriver, BaseDatabaseWithSqlFileCache):
 
 def __instantiate():
     """Raises a typing error if the driver has missing methods."""
-    MySqlDriver("")
+    MySqlDriver("", host="", username="", password="")

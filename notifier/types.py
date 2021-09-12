@@ -1,4 +1,4 @@
-from typing import Dict, List, Literal, Optional, TypedDict, Union
+from typing import Any, Dict, List, Literal, Optional, TypedDict, Union
 
 IsSecure = Union[Literal[0], Literal[1]]
 
@@ -44,6 +44,8 @@ class SupportedWikiConfig(TypedDict):
     name: str
     secure: IsSecure
 
+
+AuthConfig = Dict[str, Any]
 
 GlobalOverrideAction = Union[Literal["mute"], Literal["mute_thread"]]
 
