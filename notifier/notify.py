@@ -2,9 +2,6 @@ import re
 import time
 from typing import Iterable, List, Optional, cast
 
-import keyring
-
-from notifier.config.local import read_local_config
 from notifier.config.remote import get_global_config
 from notifier.config.user import get_user_config
 from notifier.database.drivers.base import BaseDatabaseDriver
@@ -14,6 +11,7 @@ from notifier.emailer import Emailer
 from notifier.newposts import get_new_posts
 from notifier.timing import channel_is_now, channel_will_be_next
 from notifier.types import (
+    AuthConfig,
     EmailAddresses,
     GlobalOverrideConfig,
     GlobalOverridesConfig,
@@ -33,7 +31,9 @@ notification_channels = {
 }
 
 
-def notify(local_config_path: str, database: BaseDatabaseDriver):
+def notify(
+    config: LocalConfig, auth: AuthConfig, database: BaseDatabaseDriver
+):
     """Main task executor. Should be called as often as the most frequent
     notification digest.
 
@@ -52,7 +52,6 @@ def notify(local_config_path: str, database: BaseDatabaseDriver):
     if len(active_channels) == 0:
         print("No active channels")
         return
-    config = read_local_config(local_config_path)
     connection = Connection(config, database.get_supported_wikis())
     get_global_config(config, database, connection)
     get_user_config(config, database, connection)
@@ -62,14 +61,10 @@ def notify(local_config_path: str, database: BaseDatabaseDriver):
     # Record the 'current' timestamp immediately after downloading posts
     current_timestamp = int(time.time())
     # Get the password from keyring for login
-    wikidot_password = keyring.get_password(
-        "wikidot", config["wikidot_username"]
-    )
-    if not wikidot_password:
-        raise ValueError("Wikidot password improperly configured")
+    wikidot_password = auth["wikidot"]["password"]
     connection.login(config["wikidot_username"], wikidot_password)
     notify_active_channels(
-        active_channels, current_timestamp, config, database, connection
+        active_channels, current_timestamp, config, auth, database, connection
     )
 
     # Notifications have been sent, so perform time-insensitive maintenance
@@ -82,6 +77,7 @@ def notify_active_channels(
     active_channels: Iterable[str],
     current_timestamp: int,
     config: LocalConfig,
+    auth: AuthConfig,
     database: BaseDatabaseDriver,
     connection: Connection,
 ):
@@ -94,7 +90,9 @@ def notify_active_channels(
             database=database,
             connection=connection,
             digester=Digester(config["path"]["lang"]),
-            emailer=Emailer(config["gmail_username"]),
+            emailer=Emailer(
+                config["gmail_username"], auth["yagmail"]["password"]
+            ),
         )
 
 

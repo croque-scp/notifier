@@ -1,4 +1,4 @@
-INSERT OR REPLACE INTO
+REPLACE INTO
   post
   (
     id,
@@ -12,12 +12,12 @@ INSERT OR REPLACE INTO
   )
 VALUES
   (
-    :id,
-    :thread_id,
-    :parent_post_id,
-    :posted_timestamp,
-    :title,
-    :snippet,
-    :user_id,
-    :username
+    %(id)s,
+    %(thread_id)s,
+    %(parent_post_id)s,
+    %(posted_timestamp)s,
+    %(title)s,
+    %(snippet)s,
+    %(user_id)s,
+    %(username)s
   )

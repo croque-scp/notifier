@@ -27,42 +27,61 @@ poetry install
 
 ## Authentication
 
-notifier requires authentication in order to access its Wikidot account and
-its gmail account. [keyring](https://github.com/jaraco/keyring) is used for
-securely storing passwords.
+In addition to the config file based on the one provided in this
+repository, notifier requires an additional authentication file to provide
+passwords etc. for the various services it requires.
 
-You may wish to set up keyring's backend yourself. notifier comes with
-[keyrings.cryptfile](https://pypi.org/project/keyrings.cryptfile/)
-installed by default.
+The authentication file should take the following form, as a TOML document:
 
-To set the authentication, open a Python shell:
+```toml
+[wikidot]
+password = "<Wikidot password>"
 
-```shell
-poetry run python3
+[yagmail]
+password = "<Gmail password for username in config file>"
+
+[mysql]
+host = "<IP of MySQL server>"
+username = "<username for MySQL connection>"
+password = "<password for MySQL connection>"
 ```
 
-Then in the Python shell execute the following:
+## Database setup
 
-```python
-import keyring
-keyring.set_password("yagmail", GMAIL_USERNAME, GMAIL_PASSWORD)
-keyring.set_password("wikidot", WIKIDOT_USERNAME, WIKIDOT_PASSWORD)
+If using the MySQL database driver, MySQL will need to be installed, and a
+MySQL server will need to be running somewhere.
+
+A new user will need to be created for the notifier, replacing the
+placeholders with the MySQL-specific credentials supplied above:
+
+```sql
+CREATE USER '<username>'@'<host>' IDENTIFIED BY '<password>';
 ```
 
-You may be required to set a keyring password. Make sure you keep a record
-of it.
+Create the database, with the database's name matching the name in the
+config file (default: `wikidot_notifier`), and grant the new user access to
+it:
 
-The usernames must be the same as those defined in the config file.
+```sql
+CREATE DATABASE `<name>` CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_bin;
+GRANT ALL PRIVILEGES ON `<name>`.* TO '<username>'@'<host>';
+```
 
-Authentication only needs to be performed once. It will need to be
-re-performed if the passwords change or when e.g. moving to a new host.
+In order to run tests, a test database will also need to be created. The
+name of this database is the same as the configured name, with "_test"
+appended:
+
+```sql
+CREATE DATABASE `<name>_test` CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_bin;
+GRANT ALL PRIVILEGES ON `<name>_test`.* TO '<username>'@'<host>';
+```
 
 ## Execution
 
-To start the task runner:
+To start the notifier:
 
 ```shell
-poetry run python3 -m notifier path_to_config_file
+poetry run python3 -m notifier path_to_config_file path_to_auth_file
 ```
 
 The standard config file is `config.toml`.
@@ -71,12 +90,6 @@ Note that the script will immediately ask for the keyring password, which
 must be entered in order for it to be able to work.
 
 # Development
-
-Run tests:
-
-```shell
-poetry run pytest
-```
 
 Produce a sample digest and print it to stdout, where `[lang]` is the code
 of any supported language and `[method]` is either `pm` or `email`:
@@ -97,3 +110,17 @@ Typecheck:
 ```shell
 poetry run mypy notifier
 ```
+
+## Testing
+
+Run tests:
+
+```shell
+poetry run pytest --notifier-config path_to_config_file --notifier-auth path_to_auth_file
+```
+
+"_test" will be appended to whatever database name is configured, as
+described above. Database tests (`tests/test_database.py`) require that
+this database already exist.
+
+I recommend using a MySQL server on localhost for tests.

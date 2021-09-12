@@ -1,0 +1,10 @@
+[wikidot]
+password = ""
+
+[yagmail]
+password = ""
+
+[mysql]
+host = "localhost"
+username = "root"
+password = "root"

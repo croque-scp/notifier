@@ -3,4 +3,4 @@ UPDATE
 SET
   is_deleted = 1
 WHERE
-  id = :id
+  id = %(id)s

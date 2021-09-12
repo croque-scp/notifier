@@ -4,7 +4,8 @@ from typing import List, Tuple, Union
 import tomlkit
 from tomlkit.exceptions import TOMLKitError
 
-from notifier.database.drivers.base import BaseDatabaseDriver, try_cache
+from notifier.database.drivers.base import BaseDatabaseDriver
+from notifier.database.utils import try_cache
 from notifier.types import (
     LocalConfig,
     RawUserConfig,
@@ -48,7 +49,7 @@ def fetch_user_configs(
     """Fetches a list of user configurations from the configuration wiki.
 
     User configurations are stored on the dedicated Wikidot site. They are
-    cached in the SQLite database.
+    cached in the database.
     """
     configs: List[RawUserConfig] = []
     for config_soup in connection.listpages(

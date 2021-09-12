@@ -3,4 +3,4 @@ SELECT
 FROM
   manual_sub
 WHERE
-  user_id = :user_id
+  user_id = %(user_id)s

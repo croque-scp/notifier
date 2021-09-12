@@ -1,66 +1,108 @@
 import json
-import sqlite3
-from contextlib import AbstractContextManager
-from sqlite3.dbapi2 import Cursor
-from types import TracebackType
-from typing import Iterable, List, Optional, Tuple, Type, Union, cast
+from contextlib import contextmanager
+from typing import Iterable, Iterator, List, Optional, Tuple, cast
 
-from notifier.database.drivers.base import (
-    BaseDatabaseDriver,
-    DatabaseWithSqlFileCache,
-)
+import pymysql
+from pymysql.constants.CLIENT import MULTI_STATEMENTS
+from pymysql.cursors import DictCursor
+
+from notifier.database.drivers.base import BaseDatabaseDriver
+from notifier.database.utils import BaseDatabaseWithSqlFileCache
 from notifier.types import (
     CachedUserConfig,
     GlobalOverridesConfig,
     NewPostsInfo,
+    PostReplyInfo,
     RawPost,
     RawUserConfig,
     Subscription,
     SupportedWikiConfig,
+    ThreadPostInfo,
 )
 
-sqlite3.enable_callback_tracebacks(True)
 
+class MySqlDriver(BaseDatabaseDriver, BaseDatabaseWithSqlFileCache):
+    """Database powered by MySQL."""
 
-class SqliteDriver(DatabaseWithSqlFileCache, BaseDatabaseDriver):
-    """Database powered by SQLite."""
+    def __init__(
+        self, database_name: str, *, host: str, username: str, password: str
+    ):
 
-    default_isolation_level = "DEFERRED"
+        BaseDatabaseDriver.__init__(self, database_name)
+        BaseDatabaseWithSqlFileCache.__init__(self)
 
-    def __init__(self, location=":memory:"):
-        super().__init__()
-        self.conn = sqlite3.connect(
-            location, isolation_level=self.default_isolation_level
+        self.conn = pymysql.connect(
+            host=host,
+            user=username,
+            password=password,
+            database=database_name,
+            # Cursor is accessible like a dict (buffered)
+            cursorclass=DictCursor,
+            # Autocommit except during explicit transactions
+            autocommit=True,
+            # Enable 'executescript'-like functionality for all statements
+            client_flag=MULTI_STATEMENTS,
         )
-        self.conn.row_factory = sqlite3.Row
-        self.execute_named("enable_foreign_keys")
+
         self.create_tables()
 
-        self.explicit_transaction = ExplicitTransaction(self)
+    @contextmanager
+    def transaction(self) -> Iterator[DictCursor]:
+        """Context manager for an explicit transaction.
+
+        Any error will cause pending changes to be rolled back; otherwise,
+        changes will be committed at the end of the context.
+        """
+        cursor = self.conn.cursor()
+        self.conn.begin()
+        try:
+            yield cursor
+            self.conn.commit()
+        except:
+            self.conn.rollback()
+            raise
+        finally:
+            cursor.close()
 
     def execute_named(
-        self, query_name: str, params: Iterable = None
-    ) -> Cursor:
+        self,
+        query_name: str,
+        params: Iterable = None,
+        cursor: DictCursor = None,
+    ) -> DictCursor:
         """Execute a named query against the database. The query is read
         either from file or the cache.
 
         :param query_name: The name of the query to execute, which must
         have a corresponding SQL file.
         :param params: SQL parameters to pass to the query.
+        :param cursor: A cursor to use for the query. If not specified, a
+        new one will be created. The cursor will be returned.
         :returns: The resultant cursor of the query.
         """
         self.cache_named_query(query_name)
         query = self.query_cache[query_name]["query"]
-        if self.query_cache[query_name]["script"]:
-            if params is not None:
-                raise ValueError("Script does not accept params")
-            return self.conn.executescript(query)
-        if params is None:
-            params = {}
-        return self.conn.execute(query, params)
+        if cursor is None:
+            cursor = self.conn.cursor()
+        if self.query_cache[query_name]["script"] and params is not None:
+            raise ValueError("Script does not accept params")
+        cursor.execute(query, {} if params is None else params)
+        return cursor
+
+    def scrub_database(self, database_name: str):
+        if not database_name.endswith("_test"):
+            raise RuntimeError("Don't scrub the production database")
+        with self.transaction() as cursor:
+            self.execute_named("_scrub", {"db_name": database_name}, cursor)
+            scrubs = [row["scrub"] for row in cursor.fetchall()]
+            for scrub in scrubs:
+                cursor.execute(scrub)
+        print(f"Dropped {len(scrubs)} tables")
+        self.create_tables()
 
     def create_tables(self):
-        self.execute_named("create_tables")
+        with self.transaction() as cursor:
+            self.execute_named("create_tables", None, cursor)
 
     def get_global_overrides(self) -> GlobalOverridesConfig:
         rows = self.execute_named("get_global_overrides").fetchall()
@@ -74,26 +116,34 @@ class SqliteDriver(DatabaseWithSqlFileCache, BaseDatabaseDriver):
         self, global_overrides: GlobalOverridesConfig
     ) -> None:
         # Overwrite all current overrides
-        with self.explicit_transaction:
-            self.execute_named("delete_overrides")
+        with self.transaction() as cursor:
+            self.execute_named("delete_overrides", None, cursor)
             for wiki_id, overrides in global_overrides.items():
+                overrides_json = json.dumps(overrides)
+                # DB limits this field to 2000 characters
+                if len(overrides_json) > 2000:
+                    print(f"Warning: Override for {wiki_id} above limit")
+                    continue
                 self.execute_named(
                     "store_global_override",
                     {
                         "wiki_id": wiki_id,
                         "override_settings_json": json.dumps(overrides),
                     },
+                    cursor,
                 )
 
     def find_new_threads(self, thread_ids: Iterable[str]) -> List[str]:
         return [
             thread_id
             for thread_id in thread_ids
-            if not bool(
-                self.execute_named(
+            if (
+                row := self.execute_named(
                     "check_thread_exists", {"id": thread_id}
-                ).fetchone()[0]
+                ).fetchone()
             )
+            is None
+            or not row["thread_exists"]
         ]
 
     def mark_thread_as_deleted(self, thread_id: str) -> None:
@@ -116,12 +166,22 @@ class SqliteDriver(DatabaseWithSqlFileCache, BaseDatabaseDriver):
             "upper_timestamp": upper_timestamp,
             "lower_timestamp": lower_timestamp,
         }
-        thread_posts = self.execute_named(
-            "get_posts_in_subscribed_threads", criterion
-        ).fetchall()
-        post_replies = self.execute_named(
-            "get_replies_to_subscribed_posts", criterion
-        ).fetchall()
+        thread_posts = cast(
+            List[ThreadPostInfo],
+            list(
+                self.execute_named(
+                    "get_posts_in_subscribed_threads", criterion
+                ).fetchall()
+            ),
+        )
+        post_replies = cast(
+            List[PostReplyInfo],
+            list(
+                self.execute_named(
+                    "get_replies_to_subscribed_posts", criterion
+                ).fetchall()
+            ),
+        )
         # Remove duplicate posts - keep the ones that are post replies
         post_replies_ids = [post["id"] for post in post_replies]
         thread_posts = [
@@ -160,10 +220,9 @@ class SqliteDriver(DatabaseWithSqlFileCache, BaseDatabaseDriver):
         return user_configs
 
     def store_user_configs(self, user_configs: List[RawUserConfig]) -> None:
-        # Overwrite all current configs
-        with self.explicit_transaction:
-            self.execute_named("delete_user_configs")
-            self.execute_named("delete_manual_subs")
+        with self.transaction() as cursor:
+            # Overwrite all current configs
+            self.execute_named("delete_user_configs", None, cursor)
             for user_config in user_configs:
                 self.execute_named(
                     "store_user_config",
@@ -174,25 +233,22 @@ class SqliteDriver(DatabaseWithSqlFileCache, BaseDatabaseDriver):
                         "language": user_config["language"],
                         "delivery": user_config["delivery"],
                     },
+                    cursor,
                 )
                 for subscription in (
                     user_config["subscriptions"]
                     + user_config["unsubscriptions"]
                 ):
-                    self.store_manual_sub(user_config["user_id"], subscription)
-
-    def store_manual_sub(
-        self, user_id: str, subscription: Subscription
-    ) -> None:
-        self.execute_named(
-            "store_manual_sub",
-            {
-                "user_id": user_id,
-                "thread_id": subscription["thread_id"],
-                "post_id": subscription.get("post_id"),
-                "sub": subscription["sub"],
-            },
-        )
+                    self.execute_named(
+                        "store_manual_sub",
+                        {
+                            "user_id": user_config["user_id"],
+                            "thread_id": subscription["thread_id"],
+                            "post_id": subscription.get("post_id"),
+                            "sub": subscription["sub"],
+                        },
+                        cursor,
+                    )
 
     def store_user_last_notified(
         self, user_id: str, last_notified_timestamp: int
@@ -207,13 +263,12 @@ class SqliteDriver(DatabaseWithSqlFileCache, BaseDatabaseDriver):
 
     def get_supported_wikis(self) -> List[SupportedWikiConfig]:
         wikis = self.execute_named("get_supported_wikis").fetchall()
-        return wikis
+        return cast(List[SupportedWikiConfig], list(wikis))
 
     def store_supported_wikis(self, wikis: List[SupportedWikiConfig]) -> None:
         # Destroy all existing wikis in preparation for overwrite
-        with self.explicit_transaction:
-            self.execute_named("delete_wikis")
-            # Add each new wiki
+        with self.transaction() as cursor:
+            self.execute_named("delete_wikis", None, cursor)
             for wiki in wikis:
                 self.execute_named(
                     "add_wiki",
@@ -222,6 +277,7 @@ class SqliteDriver(DatabaseWithSqlFileCache, BaseDatabaseDriver):
                         "wiki_name": wiki["name"],
                         "wiki_secure": wiki["secure"],
                     },
+                    cursor,
                 )
 
     def store_thread(
@@ -264,29 +320,6 @@ class SqliteDriver(DatabaseWithSqlFileCache, BaseDatabaseDriver):
         )
 
 
-class ExplicitTransaction(AbstractContextManager):
-    """Context manager for an explicit transaction, bypassing sqlite3's
-    automatic implicit transactions.
-
-    Any error will cause pending changes to be rolled back; otherwise,
-    changes will be committed at the end of the context.
-    """
-
-    def __init__(self, db: SqliteDriver):
-        self.db = db
-
-    def __enter__(self):
-        self.db.conn.isolation_level = None
-        self.db.conn.execute("BEGIN IMMEDIATE TRANSACTION")
-
-    def __exit__(
-        self,
-        exc_type: Union[Type[BaseException], None],
-        exc_value: Union[BaseException, None],
-        traceback: Union[TracebackType, None],
-    ) -> None:
-        if exc_type is None:
-            self.db.conn.execute("COMMIT TRANSACTION")
-        else:
-            self.db.conn.execute("ROLLBACK TRANSACTION")
-        self.db.conn.isolation_level = self.db.default_isolation_level
+def __instantiate():
+    """Raises a typing error if the driver has missing methods."""
+    MySqlDriver("", host="", username="", password="")

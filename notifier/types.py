@@ -1,4 +1,4 @@
-from typing import Dict, List, Literal, Optional, TypedDict, Union
+from typing import Any, Dict, List, Literal, Optional, TypedDict, Union
 
 IsSecure = Union[Literal[0], Literal[1]]
 
@@ -17,6 +17,13 @@ class LocalConfigPaths(TypedDict):
     lang: str
 
 
+class DatabaseConfig(TypedDict):
+    """Configuration for the database."""
+
+    driver: str
+    database_name: str
+
+
 class LocalConfig(TypedDict):
     """Contents of the local config file."""
 
@@ -26,6 +33,7 @@ class LocalConfig(TypedDict):
     wiki_config_category: str
     overrides_url: str
     gmail_username: str
+    database: DatabaseConfig
     path: LocalConfigPaths
 
 
@@ -36,6 +44,8 @@ class SupportedWikiConfig(TypedDict):
     name: str
     secure: IsSecure
 
+
+AuthConfig = Dict[str, Any]
 
 GlobalOverrideAction = Union[Literal["mute"], Literal["mute_thread"]]
 

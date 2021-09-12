@@ -3,4 +3,4 @@ SELECT
 FROM
   post
 WHERE
-  parent_post_id = :id
+  parent_post_id = %(id)s

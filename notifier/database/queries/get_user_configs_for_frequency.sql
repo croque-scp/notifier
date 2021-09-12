@@ -10,4 +10,4 @@ FROM
   LEFT JOIN
   user_last_notified ON user_config.user_id = user_last_notified.user_id
 WHERE
-  user_config.frequency = :frequency
+  user_config.frequency = %(frequency)s
