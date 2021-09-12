@@ -3,8 +3,10 @@ from typing import Any, List, Tuple
 import pytest
 
 from notifier.database.drivers.base import BaseDatabaseDriver
+from notifier.database.drivers.mysql import MySqlDriver
 from notifier.database.utils import resolve_driver_from_config
 from notifier.types import (
+    AuthConfig,
     LocalConfig,
     RawPost,
     RawUserConfig,
@@ -19,11 +21,20 @@ def construct(keys: List[str], all_values: List[Tuple[Any, ...]]):
 
 
 @pytest.fixture(scope="module")
-def sample_database(notifier_config: LocalConfig) -> BaseDatabaseDriver:
+def sample_database(
+    notifier_config: LocalConfig, notifier_auth: AuthConfig
+) -> MySqlDriver:
     """Create a sample database with some fake interactions for testing."""
     Driver = resolve_driver_from_config(notifier_config["database"]["driver"])
+    if Driver is not MySqlDriver:
+        raise RuntimeError("Tests assume MySqlDriver")
     db_name = notifier_config["database"]["database_name"] + "_test"
-    db = Driver(db_name)
+    db = MySqlDriver(
+        db_name,
+        host=notifier_auth["mysql"]["host"],
+        username=notifier_auth["mysql"]["username"],
+        password=notifier_auth["mysql"]["password"],
+    )
     db.scrub_database(db_name)
     subs: List[Subscription] = construct(
         ["thread_id", "post_id", "sub"],
