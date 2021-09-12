@@ -15,9 +15,7 @@ pycron = "^3.0.0"
 feedparser = "^6.0.8"
 emoji = "^1.4.2"
 yagmail = {extras = ["all"], version = "^0.14.256"}
-keyring = "^23.1.0"
 SecretStorage = "^3.3.1"
-"keyrings.cryptfile" = "^1.3.8"
 PyMySQL = "^1.0.2"
 types-PyMySQL = "^1.0.2"
 
