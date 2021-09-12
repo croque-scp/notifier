@@ -1,4 +1,5 @@
 import json
+import logging
 from contextlib import contextmanager
 from typing import Iterable, Iterator, List, Optional, Tuple, cast
 
@@ -19,6 +20,8 @@ from notifier.types import (
     SupportedWikiConfig,
     ThreadPostInfo,
 )
+
+logger = logging.getLogger(__name__)
 
 
 class MySqlDriver(BaseDatabaseDriver, BaseDatabaseWithSqlFileCache):
@@ -97,7 +100,7 @@ class MySqlDriver(BaseDatabaseDriver, BaseDatabaseWithSqlFileCache):
             scrubs = [row["scrub"] for row in cursor.fetchall()]
             for scrub in scrubs:
                 cursor.execute(scrub)
-        print(f"Dropped {len(scrubs)} tables")
+        logger.info("Dropped tables %s", {"count": len(scrubs)})
         self.create_tables()
 
     def create_tables(self):
@@ -121,8 +124,16 @@ class MySqlDriver(BaseDatabaseDriver, BaseDatabaseWithSqlFileCache):
             for wiki_id, overrides in global_overrides.items():
                 overrides_json = json.dumps(overrides)
                 # DB limits this field to 2000 characters
+                if len(overrides_json) > 1500:
+                    logger.warning(
+                        "Override string length near limit %s",
+                        {"wiki_id": wiki_id, "length": len(overrides_json)},
+                    )
                 if len(overrides_json) > 2000:
-                    print(f"Warning: Override for {wiki_id} above limit")
+                    logger.warning(
+                        "Override string length above limit %s",
+                        {"wiki_id": wiki_id, "length": len(overrides_json)},
+                    )
                     continue
                 self.execute_named(
                     "store_global_override",

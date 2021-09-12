@@ -1,3 +1,4 @@
+import logging
 from typing import List
 
 import requests
@@ -12,6 +13,8 @@ from notifier.types import (
     SupportedWikiConfig,
 )
 from notifier.wikiconnection import Connection
+
+logger = logging.getLogger(__name__)
 
 # For ease of parsing, configurations are coerced to TOML format
 wiki_config_listpages_body = '''
@@ -46,8 +49,8 @@ def fetch_global_overrides(local_config: LocalConfig) -> GlobalOverridesConfig:
     config = {}
     try:
         config = parse_raw_overrides_config(raw_config)
-    except (TOMLKitError, AssertionError):
-        print("Couldn't parse global overrides config")
+    except (TOMLKitError, AssertionError) as error:
+        logger.error("Couldn't parse global overrides config", exc_info=error)
     return config
 
 
@@ -76,8 +79,15 @@ def fetch_supported_wikis(
         raw_config = config_soup.get_text()
         try:
             configs.append(parse_raw_wiki_config(raw_config))
-        except (TOMLKitError, AssertionError):
-            print("Couldn't parse wiki:", raw_config.split("\n")[0])
+        except (TOMLKitError, AssertionError) as error:
+            logger.error(
+                "Could not parse wiki config %s",
+                {
+                    "raw_config": raw_config,
+                    "first_line": next(filter(bool, raw_config.split("\n"))),
+                },
+                exc_info=error,
+            )
             continue
     return configs
 
