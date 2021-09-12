@@ -1,4 +1,4 @@
-INSERT OR REPLACE INTO
+REPLACE INTO
   user_last_notified
   (user_id, notified_timestamp)
 VALUES

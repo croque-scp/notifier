@@ -1,4 +1,4 @@
-INSERT OR REPLACE INTO
+REPLACE INTO
   post
   (
     id,

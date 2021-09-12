@@ -147,10 +147,13 @@ class MySqlDriver(BaseDatabaseDriver, BaseDatabaseWithSqlFileCache):
         return [
             thread_id
             for thread_id in thread_ids
-            if self.execute_named(
-                "check_thread_exists", {"id": thread_id}
-            ).rowcount
-            >= 1
+            if (
+                row := self.execute_named(
+                    "check_thread_exists", {"id": thread_id}
+                ).fetchone()
+            )
+            is None
+            or not row["thread_exists"]
         ]
 
     def mark_thread_as_deleted(self, thread_id: str) -> None:

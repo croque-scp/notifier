@@ -26,7 +26,7 @@ CREATE TABLE IF NOT EXISTS user_last_notified (
   notified_timestamp INT UNSIGNED NOT NULL
 );
 
-CREATE TABLE manual_sub (
+CREATE TABLE IF NOT EXISTS manual_sub (
   user_id   VARCHAR(20) NOT NULL,
   thread_id VARCHAR(20) NOT NULL,
   post_id   VARCHAR(20),

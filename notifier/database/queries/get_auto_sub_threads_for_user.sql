@@ -8,7 +8,8 @@ WHERE
     SELECT NULL FROM
       post AS first_post
     GROUP BY
-      first_post.thread_id
+      first_post.thread_id,
+      first_post.user_id
     HAVING
       MIN(first_post.posted_timestamp)
       AND first_post.user_id = %(user_id)s
