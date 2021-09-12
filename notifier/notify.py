@@ -64,7 +64,7 @@ def notify(
     wikidot_password = auth["wikidot"]["password"]
     connection.login(config["wikidot_username"], wikidot_password)
     notify_active_channels(
-        active_channels, current_timestamp, config, database, connection
+        active_channels, current_timestamp, config, auth, database, connection
     )
 
     # Notifications have been sent, so perform time-insensitive maintenance
@@ -77,6 +77,7 @@ def notify_active_channels(
     active_channels: Iterable[str],
     current_timestamp: int,
     config: LocalConfig,
+    auth: AuthConfig,
     database: BaseDatabaseDriver,
     connection: Connection,
 ):
@@ -89,7 +90,9 @@ def notify_active_channels(
             database=database,
             connection=connection,
             digester=Digester(config["path"]["lang"]),
-            emailer=Emailer(config["gmail_username"]),
+            emailer=Emailer(
+                config["gmail_username"], auth["yagmail"]["password"]
+            ),
         )
 
 
