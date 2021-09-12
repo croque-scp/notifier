@@ -1,3 +1,4 @@
+import logging
 from typing import Iterable, Iterator, List, Optional, Union, cast
 
 import requests
@@ -17,6 +18,8 @@ from notifier.types import (
     SupportedWikiConfig,
     WikidotResponse,
 )
+
+logger = logging.getLogger(__name__)
 
 listpages_div_class = "listpages-div-wrap"
 
@@ -91,7 +94,16 @@ class Connection:
         if response["status"] == "no_thread":
             raise ThreadNotExists
         if response["status"] != "ok":
-            print(response)
+            logger.error(
+                "Bad response from Wikidot %s",
+                {
+                    "wiki_id": wiki_id,
+                    "secure": secure,
+                    "module_name": module_name,
+                    "request_kwargs": kwargs,
+                    "response": response,
+                },
+            )
             raise RuntimeError(response.get("message") or response["status"])
         return response
 
@@ -230,7 +242,7 @@ class Connection:
 
     def login(self, username: str, password: str) -> None:
         """Log in to a Wikidot account."""
-        print("Logging in...")
+        logger.info("Logging in...")
         self.post(
             "https://www.wikidot.com/default--flow/login__LoginPopupScreen",
             data=dict(

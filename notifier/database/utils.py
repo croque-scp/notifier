@@ -1,9 +1,12 @@
+import logging
 from abc import ABC
 from importlib import import_module
 from pathlib import Path
 from typing import Any, Callable, Tuple, Type
 
 from notifier.database.drivers.base import BaseDatabaseDriver
+
+logger = logging.getLogger(__name__)
 
 
 def resolve_driver_from_config(driver_path: str) -> Type[BaseDatabaseDriver]:
@@ -71,8 +74,11 @@ def try_cache(
     try:
         value = get()
     except catch as error:
-        print(f"{get.__name__} failed; will use value from cache")
-        print(f"Failure: {error}")
+        logger.error(
+            "try_cache failed; using value from cache %s",
+            {"get": get.__name__},
+            exc_info=error,
+        )
     if value != do_not_store:
         store(value)
 

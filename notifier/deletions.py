@@ -1,9 +1,12 @@
+import logging
 import time
 from typing import List, Set, Tuple, cast
 
 from notifier.database.drivers.base import BaseDatabaseDriver
 from notifier.types import RawPost
 from notifier.wikiconnection import Connection, ThreadNotExists
+
+logger = logging.getLogger(__name__)
 
 # A strict thread ID contains the ID of its wiki
 StrictThreadId = Tuple[str, str]
@@ -23,21 +26,32 @@ def clear_deleted_posts(
     If no users were about to be notified about a thread, there is no point
     bothering to look up whether it still exists or not.
     """
-    print(f"Clearing deleted posts from the {frequency} channel")
+    logger.info(
+        "Checking for deleted posts to clear %s", {"channel": frequency}
+    )
     posts = find_posts_to_check(frequency, database)
-    print(
-        f"Found {len(posts)} posts to check"
-        f" in {len(set(post[1] for post in posts))} threads"
+    logger.info(
+        "Found posts to check %s",
+        {
+            "post_count": len(posts),
+            "thread_count": len(set(post[1] for post in posts)),
+        },
     )
     deleted_threads, deleted_posts = delete_posts(posts, database, connection)
-    print(
-        f"Deleted {len(deleted_threads)} threads"
-        f" in {len(set(d[0] for d in deleted_threads))} wikis"
+    logger.info(
+        "Deleted threads %s",
+        {
+            "thread_count": len(deleted_threads),
+            "wiki_count": len(set(d[0] for d in deleted_threads)),
+        },
     )
-    print(
-        f"Deleted {len(deleted_posts)} posts"
-        f" in {len(set(d[1] for d in deleted_posts))} threads"
-        f" in {len(set(d[0] for d in deleted_posts))} wikis"
+    logger.info(
+        "Deleted posts %s",
+        {
+            "post_count": len(deleted_posts),
+            "thread_count": len(set(d[1] for d in deleted_posts)),
+            "wiki_count": len(set(d[0] for d in deleted_posts)),
+        },
     )
 
 

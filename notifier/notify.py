@@ -1,3 +1,4 @@
+import logging
 import re
 import time
 from datetime import datetime, timedelta
@@ -21,6 +22,8 @@ from notifier.types import (
     PostInfo,
 )
 from notifier.wikiconnection import Connection
+
+logger = logging.getLogger(__name__)
 
 # Notification channels with frequency names mapping to the crontab of that
 # frequency.
@@ -53,7 +56,7 @@ def notify(
     getting data for new posts) and then triggers the relevant notification
     schedules.
     """
-    print("Checking active channels...")
+    logger.info("Checking active channels...")
     # Check which notification channels should be activated
     active_channels = [
         frequency
@@ -63,21 +66,21 @@ def notify(
     # If there are no active channels, which shouldn't happen, there is
     # nothing to do
     if len(active_channels) == 0:
-        print("No active channels")
+        logger.warning("No active channels; aborting")
         return
-    print(f"{len(active_channels)} active channels")
+    logger.info("%s active channels", len(active_channels))
 
     connection = Connection(config, database.get_supported_wikis())
 
-    print("Getting remote config...")
+    logger.info("Getting remote config...")
     get_global_config(config, database, connection)
-    print("Getting user config...")
+    logger.info("Getting user config...")
     get_user_config(config, database, connection)
 
     # Refresh the connection to add any newly-configured wikis
     connection = Connection(config, database.get_supported_wikis())
 
-    print("Getting new posts...")
+    logger.info("Getting new posts...")
     get_new_posts(database, connection)
 
     # Record the 'current' timestamp immediately after downloading posts
@@ -86,12 +89,12 @@ def notify(
     wikidot_password = auth["wikidot"]["password"]
     connection.login(config["wikidot_username"], wikidot_password)
 
-    print("Notifying...")
+    logger.info("Notifying...")
     notify_active_channels(
         active_channels, current_timestamp, config, auth, database, connection
     )
 
-    print("Cleaning up...")
+    logger.info("Cleaning up...")
     # Notifications have been sent, so perform time-insensitive maintenance
     for frequency in ["weekly", "monthly"]:
         if channel_will_be_next(notification_channels[frequency]):
@@ -134,12 +137,17 @@ def notify_channel(
     addresses: Optional[EmailAddresses] = None,
 ):
     """Execute this task's responsibilities."""
-    print(f"Executing {channel} notification channel")
+    logger.info("Activating channel %s", {"channel": channel})
     # Get config sans subscriptions for users who would be notified
     user_configs = database.get_user_configs(channel)
-    print(f"{len(user_configs)} users for {channel} channel")
+    logger.debug(
+        "Found users for channel %s",
+        {"user_count": len(user_configs), "channel": channel},
+    )
     # Notify each user on this frequency channel
+    notified_users = 0
     for user in user_configs:
+        logger.debug("Making digest for user %s", user)
         # Get new posts for this user
         posts = database.get_new_posts_for_user(
             user["user_id"],
@@ -147,13 +155,24 @@ def notify_channel(
         )
         apply_overrides(posts, database.get_global_overrides())
         post_count = len(posts["thread_posts"]) + len(posts["post_replies"])
-        print(
-            "[{}] Notifying {} about {} posts via {}".format(
-                channel, user["username"], post_count, user["delivery"]
-            )
+        logger.debug(
+            "Found posts for notification %s",
+            {
+                "username": user["username"],
+                "post_count": post_count,
+                "channel": channel,
+            },
         )
         if post_count == 0:
             # Nothing to notify this user about
+            logger.debug(
+                "Aborting notification %s",
+                {
+                    "user": user["username"],
+                    "channel": channel,
+                    "reason": "no posts",
+                },
+            )
             continue
         # Extract the 'last notification time' that will be recorded -
         # it is the timestamp of the most recent post this user is
@@ -169,22 +188,43 @@ def notify_channel(
         subject, body = digester.for_user(user, posts)
         # Send the digests via PM to PM-subscribed users
         if user["delivery"] == "pm":
+            logger.debug(
+                "Sending notification %s",
+                {"user": user["username"], "via": "pm", "channel": channel},
+            )
             connection.send_message(user["user_id"], subject, body)
         # Send the digests via email to email-subscribed users
         if user["delivery"] == "email":
             if addresses is None:
                 # Only get the contacts when there is actually a user who
                 # needs to be emailed
+                logger.info("Retrieving email contacts")
                 addresses = connection.get_contacts()
+                logger.debug(
+                    "Retrieved email contacts %s",
+                    {"address_count": len(addresses)},
+                )
             try:
+                logger.debug("Using cached email contacts")
                 address = addresses[user["username"]]
             except KeyError:
                 # This user requested to be notified via email but
                 # hasn't added the notification account as a contact,
                 # meaning their email address is unknown
-                print(f"{user['username']} is not a back-contact")
+                logger.warning(
+                    "Aborting notification %s",
+                    {
+                        "user": user["username"],
+                        "channel": channel,
+                        "reason": "not a back-contact",
+                    },
+                )
                 # They'll have to fix this themselves
                 continue
+            logger.debug(
+                "Sending notification %s",
+                {"user": user["username"], "via": "email", "channel": channel},
+            )
             emailer.send(address, subject, body)
         # Immediately after sending the notification, record the user's
         # last notification time
@@ -193,7 +233,19 @@ def notify_channel(
         database.store_user_last_notified(
             user["user_id"], last_notified_timestamp
         )
-    print(f"Notified {len(user_configs)} users in {channel} channel")
+        logger.debug(
+            "Recorded notification %s",
+            {
+                "username": user["username"],
+                "recorded_timestamp": last_notified_timestamp,
+                "channel": channel,
+            },
+        )
+        notified_users += 1
+    logger.info(
+        "Finished notifying channel %s",
+        {"channel": channel, "users_notified_count": notified_users},
+    )
 
 
 def apply_overrides(

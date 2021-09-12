@@ -1,3 +1,4 @@
+import logging
 import re
 from typing import List, Tuple, Union
 
@@ -13,6 +14,9 @@ from notifier.types import (
     SubscriptionCardinality,
 )
 from notifier.wikiconnection import Connection
+
+logger = logging.getLogger(__name__)
+
 
 # For ease of parsing, configurations are coerced to TOML format
 user_config_listpages_body = '''
@@ -60,17 +64,31 @@ def fetch_user_configs(
         raw_config = config_soup.get_text()
         try:
             config, slug = parse_raw_user_config(raw_config)
-        except (TOMLKitError, AssertionError):
+        except (TOMLKitError, AssertionError) as error:
             # If the parse fails, the user was probably trying code
             # injection or something - discard it
-            print("Couldn't parse user config:", raw_config.split("\n")[0])
+            logger.error(
+                "Could not parse user config %s",
+                {
+                    "raw_config": raw_config,
+                    "first_line": next(filter(bool, raw_config.split("\n"))),
+                },
+                exc_info=error,
+            )
             continue
         if (
             ":" not in slug
             or slug.split(":")[1].casefold() != config["username"].casefold()
         ):
             # Only accept configs for the user who created the page
-            print(f"Wrong slug {slug} for {config['username']}")
+            logger.warning(
+                "Skipping user config %s",
+                {
+                    "username": config["username"],
+                    "slug": slug,
+                    "reason": "wrong slug for username",
+                },
+            )
             continue
         configs.append(config)
     return configs

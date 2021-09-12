@@ -1,9 +1,12 @@
+import logging
 import re
 from typing import Iterable, List, Optional, Tuple, cast
 
 from bs4.element import Tag
 
 from notifier.types import RawPost, RawThreadMeta
+
+logger = logging.getLogger(__name__)
 
 
 def parse_thread_meta(thread: Tag) -> RawThreadMeta:
@@ -74,7 +77,14 @@ def parse_thread_page(thread_id: str, thread_page: Tag) -> List[RawPost]:
             continue
         posted_timestamp = get_timestamp_from_post_info(post_info)
         if posted_timestamp is None:
-            print(f"Couldn't read timestamp for {thread_id}/{post_id}")
+            logger.warning(
+                "Skipping caching post %s",
+                {
+                    "thread_id": thread_id,
+                    "post_id": post_id,
+                    "reason": "could not parse timestamp",
+                },
+            )
             continue
         post_title = cast(Tag, post.find(class_="title")).get_text().strip()
         post_snippet = make_post_snippet(post)
