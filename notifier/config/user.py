@@ -49,7 +49,7 @@ def fetch_user_configs(
     """Fetches a list of user configurations from the configuration wiki.
 
     User configurations are stored on the dedicated Wikidot site. They are
-    cached in the SQLite database.
+    cached in the database.
     """
     configs: List[RawUserConfig] = []
     for config_soup in connection.listpages(
