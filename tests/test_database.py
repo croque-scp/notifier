@@ -22,7 +22,9 @@ def construct(keys: List[str], all_values: List[Tuple[Any, ...]]):
 def sample_database(notifier_config: LocalConfig) -> BaseDatabaseDriver:
     """Create a sample database with some fake interactions for testing."""
     Driver = resolve_driver_from_config(notifier_config["database"]["driver"])
-    db = Driver(":memory:")
+    db_name = notifier_config["database"]["database_name"] + "_test"
+    db = Driver(db_name)
+    db.scrub_database(db_name)
     subs: List[Subscription] = construct(
         ["thread_id", "post_id", "sub"],
         [("t-1", None, 1), ("t-3", "p-32", 1)],

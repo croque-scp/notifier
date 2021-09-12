@@ -7,7 +7,6 @@ from notifier.types import (
     NewPostsInfo,
     RawPost,
     RawUserConfig,
-    Subscription,
     SupportedWikiConfig,
 )
 
@@ -18,7 +17,12 @@ class BaseDatabaseDriver(ABC):
 
     @abstractmethod
     def __init__(self, database_name: str):
-        pass
+        """Sets up and connects to the database."""
+
+    @abstractmethod
+    def scrub_database(self, database_name: str):
+        """Purges all information from the database. Should only ever be
+        used to clear the test database."""
 
     @abstractmethod
     def create_tables(self) -> None:

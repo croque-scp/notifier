@@ -88,7 +88,7 @@ class BaseDatabaseWithSqlFileCache(ABC):
     call to each query to re-read from the filesystem.
     """
 
-    builtin_queries_dir = Path(__file__).parent.parent / "queries"
+    builtin_queries_dir = Path(__file__).parent / "queries"
 
     def __init__(self):
         self.clear_query_file_cache()

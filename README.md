@@ -69,12 +69,6 @@ re-performed if the passwords change or when e.g. moving to a new host.
 
 ## Database setup
 
-### SQLite
-
-If using the SQLite database driver, no database setup is necessary.
-
-### MySQL
-
 If using the MySQL database driver, MySQL will need to be installed, and a
 MySQL server will need to be running somewhere.
 
@@ -94,10 +88,14 @@ CREATE DATABASE `<name>` CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_bin;
 GRANT ALL PRIVILEGES ON `<name>`.* TO '<username>'@'<host>';
 ```
 
-### Other drivers
+In order to run tests, a test database will also need to be created. The
+name of this database is the same as the configured name, with "_test"
+appended:
 
-If using another driver (e.g. a custom one), ensure that it is set up
-correctly.
+```sql
+CREATE DATABASE `<name>_test` CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_bin;
+GRANT ALL PRIVILEGES ON `<name>_test`.* TO '<username>'@'<host>';
+```
 
 ## Execution
 

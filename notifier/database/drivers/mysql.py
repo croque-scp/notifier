@@ -25,7 +25,8 @@ from notifier.types import (
 class MySqlDriver(BaseDatabaseDriver, BaseDatabaseWithSqlFileCache):
     """Database powered by MySQL."""
 
-    def __init__(self, database_name=":memory:"):
+    def __init__(self, database_name: str):
+
         BaseDatabaseDriver.__init__(self, database_name)
         BaseDatabaseWithSqlFileCache.__init__(self)
 
@@ -52,6 +53,8 @@ class MySqlDriver(BaseDatabaseDriver, BaseDatabaseWithSqlFileCache):
             # Enable 'executescript'-like functionality for all statements
             client_flag=MULTI_STATEMENTS,
         )
+
+        self.create_tables()
 
     @contextmanager
     def transaction(self) -> Iterator[DictCursor]:
@@ -95,6 +98,17 @@ class MySqlDriver(BaseDatabaseDriver, BaseDatabaseWithSqlFileCache):
             raise ValueError("Script does not accept params")
         cursor.execute(query, {} if params is None else params)
         return cursor
+
+    def scrub_database(self, database_name: str):
+        if not database_name.endswith("_test"):
+            raise RuntimeError("Don't scrub the production database")
+        with self.transaction() as cursor:
+            self.execute_named("_scrub", {"db_name": database_name}, cursor)
+            scrubs = [row["scrub"] for row in cursor.fetchall()]
+            for scrub in scrubs:
+                cursor.execute(scrub)
+        print(f"Dropped {len(scrubs)} tables")
+        self.create_tables()
 
     def create_tables(self):
         with self.transaction() as cursor:
@@ -315,4 +329,4 @@ class MySqlDriver(BaseDatabaseDriver, BaseDatabaseWithSqlFileCache):
 
 def __instantiate():
     """Raises a typing error if the driver has missing methods."""
-    MySqlDriver()
+    MySqlDriver("")
