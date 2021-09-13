@@ -1,3 +1,4 @@
+import logging
 from typing import Iterable, Iterator, List, Optional, Union, cast
 
 import requests
@@ -17,6 +18,8 @@ from notifier.types import (
     SupportedWikiConfig,
     WikidotResponse,
 )
+
+logger = logging.getLogger(__name__)
 
 listpages_div_class = "listpages-div-wrap"
 
@@ -91,7 +94,16 @@ class Connection:
         if response["status"] == "no_thread":
             raise ThreadNotExists
         if response["status"] != "ok":
-            print(response)
+            logger.error(
+                "Bad response from Wikidot %s",
+                {
+                    "wiki_id": wiki_id,
+                    "secure": secure,
+                    "module_name": module_name,
+                    "request_kwargs": kwargs,
+                    "response": response,
+                },
+            )
             raise RuntimeError(response.get("message") or response["status"])
         return response
 
@@ -193,6 +205,7 @@ class Connection:
         contains all posts from the thread (the first post is the thread
         starter).
         """
+
         if post_id is None:
             thread_pages = (
                 BeautifulSoup(page["body"], "html.parser")
@@ -201,7 +214,7 @@ class Connection:
                     "forum/ForumViewThreadModule",
                     index_key="pageNo",
                     starting_index=1,
-                    t=thread_id,
+                    t=thread_id.lstrip("t-"),
                 )
             )
             # I know that at least one page exists, so the call to `next` will
@@ -220,8 +233,8 @@ class Connection:
                 self.module(
                     wiki_id,
                     "forum/ForumViewThreadModule",
-                    t=thread_id,
-                    postId=post_id,
+                    t=thread_id.lstrip("t-"),
+                    postId=post_id.lstrip("post-"),
                 )["body"],
                 "html.parser",
             )
@@ -230,7 +243,7 @@ class Connection:
 
     def login(self, username: str, password: str) -> None:
         """Log in to a Wikidot account."""
-        print("Logging in...")
+        logger.info("Logging in...")
         self.post(
             "https://www.wikidot.com/default--flow/login__LoginPopupScreen",
             data=dict(

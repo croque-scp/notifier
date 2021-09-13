@@ -1,9 +1,12 @@
+import logging
 import re
 from typing import Iterable, List, Optional, Tuple, cast
 
 from bs4.element import Tag
 
 from notifier.types import RawPost, RawThreadMeta
+
+logger = logging.getLogger(__name__)
 
 
 def parse_thread_meta(thread: Tag) -> RawThreadMeta:
@@ -69,13 +72,30 @@ def parse_thread_page(thread_id: str, thread_page: Tag) -> List[RawPost]:
         post_info = cast(Tag, post.find(class_="info"))
         post_author_nametag = cast(Tag, post_info.find(class_="printuser"))
         author_id, author_name = get_user_from_nametag(post_author_nametag)
-        # Handling deleted/anonymous users is out of scope for now
-        if author_id is None or author_name is None:
-            continue
+
+        # Handle deleted/anonymous users by setting their info to an empty
+        # string, and deal with it down the line
+        if author_id is None:
+            author_id = ""
+        if author_name is None:
+            # Wikidot accepts 'Anonymous' as a null value to [[user]] syntax
+            author_name = "Anonymous"
+
         posted_timestamp = get_timestamp_from_post_info(post_info)
         if posted_timestamp is None:
-            print(f"Couldn't read timestamp for {thread_id}/{post_id}")
-            continue
+            logger.warning(
+                "Could not parse timestamp for post %s",
+                {
+                    "thread_id": thread_id,
+                    "post_id": post_id,
+                    "reason": "could not parse timestamp",
+                },
+            )
+            # Set the timestamp to 0 so it will never appear in a
+            # notification, however, it must still be recorded to preserve
+            # parent post relationships
+            posted_timestamp = 0
+
         post_title = cast(Tag, post.find(class_="title")).get_text().strip()
         post_snippet = make_post_snippet(post)
         raw_posts.append(
@@ -128,6 +148,7 @@ def get_user_from_nametag(nametag: Tag) -> Tuple[Optional[str], Optional[str]]:
     - .printuser.anonymous for anonymous users with no ID but an IP
     - .printuser with contents "Wikidot" for attributions to system
     - .printuser for a user link without an avatar
+    - .printuser.avatarhover can also be a guest account
 
     Returns a tuple of user ID, username; either of which may be None.
     """
@@ -135,11 +156,12 @@ def get_user_from_nametag(nametag: Tag) -> Tuple[Optional[str], Optional[str]]:
     if "avatarhover" in classes:
         user_id = None
         # Get user ID from JavaScript click event handler
-        match = re.search(
-            r"[0-9]+", nametag.contents[0].get_attribute_list("onclick")[0]
-        )
-        if match:
-            user_id = match[0]
+        click_handler = nametag.contents[0].get_attribute_list("onclick")[0]
+        if click_handler is not None:
+            # Click handler is not present for guest accounts
+            match = re.search(r"[0-9]+", click_handler)
+            if match:
+                user_id = match[0]
         username = nametag.get_text()
         return user_id, username
     if "deleted" in classes:

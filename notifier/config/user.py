@@ -1,5 +1,6 @@
+import logging
 import re
-from typing import List, Tuple, Union
+from typing import List, Tuple, Union, cast
 
 import tomlkit
 from tomlkit.exceptions import TOMLKitError
@@ -14,10 +15,13 @@ from notifier.types import (
 )
 from notifier.wikiconnection import Connection
 
+logger = logging.getLogger(__name__)
+
+
 # For ease of parsing, configurations are coerced to TOML format
 user_config_listpages_body = '''
-slug = "%%fullname%%"
-username = "%%created_by_unix%%"
+slug = """%%fullname%%"""
+username = """%%created_by%%"""
 user_id = "%%created_by_id%%"
 frequency = "%%form_raw{frequency}%%"
 language = "%%form_raw{language}%%"
@@ -60,17 +64,31 @@ def fetch_user_configs(
         raw_config = config_soup.get_text()
         try:
             config, slug = parse_raw_user_config(raw_config)
-        except (TOMLKitError, AssertionError):
+        except (TOMLKitError, AssertionError) as error:
             # If the parse fails, the user was probably trying code
             # injection or something - discard it
-            print("Couldn't parse user config:", raw_config.split("\n")[0])
+            logger.error(
+                "Could not parse user config %s",
+                {
+                    "raw_config": raw_config,
+                    "first_line": next(filter(bool, raw_config.split("\n"))),
+                },
+                exc_info=error,
+            )
             continue
         if (
             ":" not in slug
             or slug.split(":")[1].casefold() != config["username"].casefold()
         ):
             # Only accept configs for the user who created the page
-            print(f"Wrong slug {slug} for {config['username']}")
+            logger.warning(
+                "Skipping user config %s",
+                {
+                    "username": config["username"],
+                    "slug": slug,
+                    "reason": "wrong slug for username",
+                },
+            )
             continue
         configs.append(config)
     return configs
@@ -79,19 +97,18 @@ def fetch_user_configs(
 def parse_raw_user_config(raw_config: str) -> Tuple[RawUserConfig, str]:
     """Parses a raw user config string to a suitable format, also returning
     the config slug."""
-    config = tomlkit.parse(raw_config)
-    assert isinstance(config, dict)
+    config = dict(tomlkit.parse(raw_config))
     slug = config.pop("slug", "")
     assert isinstance(slug, str)
     assert "username" in config
     assert "user_id" in config
     config["subscriptions"] = parse_subscriptions(
-        config.get("subscriptions", []), 1
+        config.get("subscriptions", ""), 1
     )
     config["unsubscriptions"] = parse_subscriptions(
-        config.get("unsubscriptions", []), -1
+        config.get("unsubscriptions", ""), -1
     )
-    return config, slug
+    return cast(RawUserConfig, config), slug
 
 
 def parse_subscriptions(

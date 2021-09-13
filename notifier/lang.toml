@@ -7,8 +7,6 @@ body = """
 
 {wikis}
 
-{footer}
-
 {outro}
 """
 wiki = """
@@ -57,9 +55,11 @@ post = """
 [[/li]]
 """
 date = """[[date {timestamp} format="%d %b %Y %H:%M:%S|agohover"]]"""
-footer = """
+outro = """
 [[=]]
 + :open_mailbox_with_lowered_flag:
+
+{unsub_footer}
 [[/=]]
 """
 
@@ -95,9 +95,7 @@ Croquembouche]]) directly.
 
 -----
 """
-outro = """
-= Unsubscribe from these notifications: {unsubscribe}
-"""
+unsub_footer = "Unsubscribe from these notifications: {unsubscribe}"
 main_summary = "You have {summary} from {wiki_count} plural({wiki_count}|wiki|wikis)"
 summary = """|
 {notification_count} plural({notification_count}|notification|notifications)

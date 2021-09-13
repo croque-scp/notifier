@@ -1,7 +1,7 @@
 SELECT
-  thread_id, NULL AS post_id, 1 AS sub
+  id AS thread_id, NULL AS post_id, 1 AS sub
 FROM
-  posts
+  thread
 WHERE
   -- Get posts made by the user which are the first in the thread
   EXISTS (
@@ -13,5 +13,5 @@ WHERE
     HAVING
       MIN(first_post.posted_timestamp)
       AND first_post.user_id = %(user_id)s
-      AND first_post.thread_id = post.thread_id
+      AND first_post.thread_id = thread.id
   )

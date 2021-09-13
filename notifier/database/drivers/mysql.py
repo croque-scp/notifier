@@ -1,4 +1,5 @@
 import json
+import logging
 from contextlib import contextmanager
 from typing import Iterable, Iterator, List, Optional, Tuple, cast
 
@@ -19,6 +20,8 @@ from notifier.types import (
     SupportedWikiConfig,
     ThreadPostInfo,
 )
+
+logger = logging.getLogger(__name__)
 
 
 class MySqlDriver(BaseDatabaseDriver, BaseDatabaseWithSqlFileCache):
@@ -97,7 +100,7 @@ class MySqlDriver(BaseDatabaseDriver, BaseDatabaseWithSqlFileCache):
             scrubs = [row["scrub"] for row in cursor.fetchall()]
             for scrub in scrubs:
                 cursor.execute(scrub)
-        print(f"Dropped {len(scrubs)} tables")
+        logger.info("Dropped tables %s", {"count": len(scrubs)})
         self.create_tables()
 
     def create_tables(self):
@@ -121,8 +124,16 @@ class MySqlDriver(BaseDatabaseDriver, BaseDatabaseWithSqlFileCache):
             for wiki_id, overrides in global_overrides.items():
                 overrides_json = json.dumps(overrides)
                 # DB limits this field to 2000 characters
+                if len(overrides_json) > 1500:
+                    logger.warning(
+                        "Override string length near limit %s",
+                        {"wiki_id": wiki_id, "length": len(overrides_json)},
+                    )
                 if len(overrides_json) > 2000:
-                    print(f"Warning: Override for {wiki_id} above limit")
+                    logger.warning(
+                        "Override string length above limit %s",
+                        {"wiki_id": wiki_id, "length": len(overrides_json)},
+                    )
                     continue
                 self.execute_named(
                     "store_global_override",
@@ -132,6 +143,19 @@ class MySqlDriver(BaseDatabaseDriver, BaseDatabaseWithSqlFileCache):
                     },
                     cursor,
                 )
+
+    def find_new_posts(self, post_ids: Iterable[str]) -> List[str]:
+        return [
+            post_id
+            for post_id in post_ids
+            if (
+                row := self.execute_named(
+                    "check_post_exists", {"id": post_id}
+                ).fetchone()
+            )
+            is None
+            or not row["post_exists"]
+        ]
 
     def find_new_threads(self, thread_ids: Iterable[str]) -> List[str]:
         return [
@@ -199,6 +223,11 @@ class MySqlDriver(BaseDatabaseDriver, BaseDatabaseWithSqlFileCache):
             ).fetchall()
         ]
         for user_config in user_configs:
+            # The last notified timestamp can be NULL (originating from the
+            # LEFT JOIN) if the user has never been notified and thus does
+            # not have an entry in the user_last_notified table
+            if user_config["last_notified_timestamp"] is None:
+                user_config["last_notified_timestamp"] = 0
             user_config["manual_subs"] = [
                 cast(Subscription, dict(row))
                 for row in self.execute_named(

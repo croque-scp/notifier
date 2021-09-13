@@ -1,7 +1,5 @@
 SELECT EXISTS (
-  SELECT
-    1
-  FROM
+  SELECT NUll FROM
     thread
   WHERE
     id = %(id)s

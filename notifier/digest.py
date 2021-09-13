@@ -126,12 +126,13 @@ class Digester:
             auto_post_sub_count=auto_post_sub_count,
         )
         outro = lexicon["outro"].format(
-            unsubscribe=lexicon["unsubscribe"].format(site=lexicon["site"])
+            unsub_footer=lexicon["unsub_footer"].format(
+                unsubscribe=lexicon["unsubscribe"].format(site=lexicon["site"])
+            )
         )
         body = lexicon["body"].format(
             intro=intro,
             wikis="\n".join(make_wikis_digest(posts, lexicon)),
-            footer=lexicon["footer"],
             outro=outro,
         )
         body = finalise_digest(body)

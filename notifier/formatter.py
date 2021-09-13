@@ -43,6 +43,8 @@ replacements_to_html: ReplacementList = [
         r(r"^(\++) (.+)$"),
         lambda match: "<h{0}>{1}</h{0}>".format(len(match[1]), match[2]),
     ),
+    # Horizontal rules
+    (r(r"^-{3,}$"), "<hr>"),
     # Dashes
     ("--", "&mdash;"),
     # Bullets

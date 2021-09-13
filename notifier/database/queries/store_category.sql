@@ -1,4 +1,4 @@
-INSERT OR UPDATE INTO
+REPLACE INTO
   category
   (id, name)
 VALUES

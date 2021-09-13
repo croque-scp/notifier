@@ -78,16 +78,26 @@ GRANT ALL PRIVILEGES ON `<name>_test`.* TO '<username>'@'<host>';
 
 ## Execution
 
-To start the notifier:
+To start the notifier service:
 
 ```shell
 poetry run python3 -m notifier path_to_config_file path_to_auth_file
 ```
 
-The standard config file is `config.toml`.
+The config file that my notifier instance uses is `config.toml`. A sample
+auth file with dummy secrets, used for CI tests, can be found at
+`.github/auth.ci.toml`.
 
-Note that the script will immediately ask for the keyring password, which
-must be entered in order for it to be able to work.
+The service will run continuously and activate an automatically-determined
+set of notification channels each hour.
+
+To activate a channel or multiple channels immediately and once only, add
+the `--execute-now` switch followed by any of `hourly`, `daily`, `weekly`
+and `monthly`.
+
+To activate an automatically-determined set of channels immediately and
+once only, add the `--execute-now` switch with no parameter. Note that this
+must be run during the first minute of an hour to match any channels.
 
 # Development
 
