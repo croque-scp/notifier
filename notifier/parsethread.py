@@ -72,20 +72,30 @@ def parse_thread_page(thread_id: str, thread_page: Tag) -> List[RawPost]:
         post_info = cast(Tag, post.find(class_="info"))
         post_author_nametag = cast(Tag, post_info.find(class_="printuser"))
         author_id, author_name = get_user_from_nametag(post_author_nametag)
-        # Handling deleted/anonymous users is out of scope for now
-        if author_id is None or author_name is None:
-            continue
+
+        # Handle deleted/anonymous users by setting their info to an empty
+        # string, and deal with it down the line
+        if author_id is None:
+            author_id = ""
+        if author_name is None:
+            # Wikidot accepts 'Anonymous' as a null value to [[user]] syntax
+            author_name = "Anonymous"
+
         posted_timestamp = get_timestamp_from_post_info(post_info)
         if posted_timestamp is None:
             logger.warning(
-                "Skipping caching post %s",
+                "Could not parse timestamp for post %s",
                 {
                     "thread_id": thread_id,
                     "post_id": post_id,
                     "reason": "could not parse timestamp",
                 },
             )
-            continue
+            # Set the timestamp to 0 so it will never appear in a
+            # notification, however, it must still be recorded to preserve
+            # parent post relationships
+            posted_timestamp = 0
+
         post_title = cast(Tag, post.find(class_="title")).get_text().strip()
         post_snippet = make_post_snippet(post)
         raw_posts.append(
