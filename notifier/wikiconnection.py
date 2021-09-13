@@ -205,6 +205,13 @@ class Connection:
         contains all posts from the thread (the first post is the thread
         starter).
         """
+        # I store thread IDs as t-NNNNN and post IDs as post-NNNNN to match
+        # the URL format, but when it comes to requests, Wikidot wants just
+        # the numbers as strings
+        thread_id = thread_id.lstrip("t-")
+        if post_id is not None:
+            post_id = post_id.lstrip("post-")
+
         if post_id is None:
             thread_pages = (
                 BeautifulSoup(page["body"], "html.parser")
