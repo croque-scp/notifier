@@ -158,7 +158,14 @@ def notify_channel(
     # Notify each user on this frequency channel
     notified_users = 0
     for user in user_configs:
-        logger.debug("Making digest for user %s", user)
+        logger.debug(
+            "Making digest for user %s",
+            {
+                **user,
+                "manual_subs": len(user["manual_subs"]),
+                "auto_subs": len(user["auto_subs"]),
+            },
+        )
         # Get new posts for this user
         posts = database.get_new_posts_for_user(
             user["user_id"],
