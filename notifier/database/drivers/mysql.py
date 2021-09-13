@@ -144,6 +144,19 @@ class MySqlDriver(BaseDatabaseDriver, BaseDatabaseWithSqlFileCache):
                     cursor,
                 )
 
+    def find_new_posts(self, post_ids: Iterable[str]) -> List[str]:
+        return [
+            post_id
+            for post_id in post_ids
+            if (
+                row := self.execute_named(
+                    "check_post_exists", {"id": post_id}
+                ).fetchone()
+            )
+            is None
+            or not row["post_exists"]
+        ]
+
     def find_new_threads(self, thread_ids: Iterable[str]) -> List[str]:
         return [
             thread_id

@@ -41,6 +41,11 @@ class BaseDatabaseDriver(ABC):
         set for."""
 
     @abstractmethod
+    def find_new_posts(self, post_ids: Iterable[str]) -> List[str]:
+        """From a list of post IDs, return those that are not already
+        present in the cache."""
+
+    @abstractmethod
     def find_new_threads(self, thread_ids: Iterable[str]) -> List[str]:
         """From a list of thread IDs, return those that are not already
         present in the cache."""
