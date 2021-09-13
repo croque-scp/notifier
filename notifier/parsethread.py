@@ -138,6 +138,7 @@ def get_user_from_nametag(nametag: Tag) -> Tuple[Optional[str], Optional[str]]:
     - .printuser.anonymous for anonymous users with no ID but an IP
     - .printuser with contents "Wikidot" for attributions to system
     - .printuser for a user link without an avatar
+    - .printuser.avatarhover can also be a guest account
 
     Returns a tuple of user ID, username; either of which may be None.
     """
@@ -145,11 +146,12 @@ def get_user_from_nametag(nametag: Tag) -> Tuple[Optional[str], Optional[str]]:
     if "avatarhover" in classes:
         user_id = None
         # Get user ID from JavaScript click event handler
-        match = re.search(
-            r"[0-9]+", nametag.contents[0].get_attribute_list("onclick")[0]
-        )
-        if match:
-            user_id = match[0]
+        click_handler = nametag.contents[0].get_attribute_list("onclick")[0]
+        if click_handler is not None:
+            # Click handler is not present for guest accounts
+            match = re.search(r"[0-9]+", click_handler)
+            if match:
+                user_id = match[0]
         username = nametag.get_text()
         return user_id, username
     if "deleted" in classes:
