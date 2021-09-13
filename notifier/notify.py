@@ -34,8 +34,41 @@ notification_channels = {
 }
 
 
+def pick_channels_to_notify(force_channels: List[str] = None) -> List[str]:
+    """Choose a set of channels to notify.
+
+    :param force_channels: A list of channels to activate; or None, in
+    which case a set of channels will be picked based on the current time,
+    with the expectation that this function is called in the first minute
+    of the hour.
+    """
+    logger.info("Checking active channels...")
+    if force_channels is None or len(force_channels) == 0:
+        channels = [
+            frequency
+            for frequency, crontab in notification_channels.items()
+            if channel_is_now(crontab)
+        ]
+        logger.info(
+            "Activating channels based on current timestamp %s",
+            {"count": len(channels), "channels": channels},
+        )
+    else:
+        channels = [
+            c for c in force_channels if c in notification_channels.keys()
+        ]
+        logger.info(
+            "Activating channels chosen manually %s",
+            {"count": len(channels), "channels": channels},
+        )
+    return channels
+
+
 def notify(
-    config: LocalConfig, auth: AuthConfig, database: BaseDatabaseDriver
+    config: LocalConfig,
+    auth: AuthConfig,
+    active_channels: List[str],
+    database: BaseDatabaseDriver,
 ):
     """Main task executor. Should be called as often as the most frequent
     notification digest.
@@ -44,19 +77,11 @@ def notify(
     getting data for new posts) and then triggers the relevant notification
     schedules.
     """
-    logger.info("Checking active channels...")
-    # Check which notification channels should be activated
-    active_channels = [
-        frequency
-        for frequency, crontab in notification_channels.items()
-        if channel_is_now(crontab)
-    ]
     # If there are no active channels, which shouldn't happen, there is
     # nothing to do
     if len(active_channels) == 0:
         logger.warning("No active channels; aborting")
         return
-    logger.info("%s active channels", len(active_channels))
 
     connection = Connection(config, database.get_supported_wikis())
 
