@@ -205,12 +205,6 @@ class Connection:
         contains all posts from the thread (the first post is the thread
         starter).
         """
-        # I store thread IDs as t-NNNNN and post IDs as post-NNNNN to match
-        # the URL format, but when it comes to requests, Wikidot wants just
-        # the numbers as strings
-        thread_id = thread_id.lstrip("t-")
-        if post_id is not None:
-            post_id = post_id.lstrip("post-")
 
         if post_id is None:
             thread_pages = (
@@ -220,7 +214,7 @@ class Connection:
                     "forum/ForumViewThreadModule",
                     index_key="pageNo",
                     starting_index=1,
-                    t=thread_id,
+                    t=thread_id.lstrip("t-"),
                 )
             )
             # I know that at least one page exists, so the call to `next` will
@@ -239,8 +233,8 @@ class Connection:
                 self.module(
                     wiki_id,
                     "forum/ForumViewThreadModule",
-                    t=thread_id,
-                    postId=post_id,
+                    t=thread_id.lstrip("t-"),
+                    postId=post_id.lstrip("post-"),
                 )["body"],
                 "html.parser",
             )
