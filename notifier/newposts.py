@@ -42,7 +42,7 @@ def fetch_posts_with_context(
             "new_post_count": len(new_post_ids),
         },
     )
-    new_posts = [post for post in new_posts if post[1] not in new_post_ids]
+    new_posts = [post for post in new_posts if post[1] in new_post_ids]
 
     # Find which of these posts were made in new threads
     new_thread_ids = database.find_new_threads(
