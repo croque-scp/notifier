@@ -169,7 +169,7 @@ def notify_channel(
         # Get new posts for this user
         posts = database.get_new_posts_for_user(
             user["user_id"],
-            (user["last_notified_timestamp"], current_timestamp),
+            (user["last_notified_timestamp"] + 1, current_timestamp),
         )
         apply_overrides(posts, database.get_global_overrides())
         post_count = len(posts["thread_posts"]) + len(posts["post_replies"])

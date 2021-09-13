@@ -65,7 +65,7 @@ def find_posts_to_check(
     posts_to_check: Set[StrictPostId] = set()
     for user in users:
         posts = database.get_new_posts_for_user(
-            user["user_id"], (user["last_notified_timestamp"], now)
+            user["user_id"], (user["last_notified_timestamp"] + 1, now)
         )
         for post in posts["thread_posts"]:
             posts_to_check.add(
