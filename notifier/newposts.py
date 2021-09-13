@@ -128,6 +128,13 @@ def fetch_posts_with_context(
                 continue
             # Remaining posts are actually posts
             post = cast(RawPost, thread_or_post)
+            logger.debug(
+                "Storing post %s",
+                {
+                    "wiki_id": wiki_id,
+                    "post": post,
+                },
+            )
             database.store_post(post)
             # Mark each post as seen
             posts_already_seen.append(post["id"])
