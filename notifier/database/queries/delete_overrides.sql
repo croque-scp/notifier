@@ -1,1 +1,1 @@
-DELETE FROM global_overrides
+DELETE FROM global_override

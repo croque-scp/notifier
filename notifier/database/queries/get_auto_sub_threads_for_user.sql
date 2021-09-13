@@ -1,7 +1,7 @@
 SELECT
   thread_id, NULL AS post_id, 1 AS sub
 FROM
-  posts
+  post
 WHERE
   -- Get posts made by the user which are the first in the thread
   EXISTS (
