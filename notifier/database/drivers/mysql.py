@@ -223,6 +223,11 @@ class MySqlDriver(BaseDatabaseDriver, BaseDatabaseWithSqlFileCache):
             ).fetchall()
         ]
         for user_config in user_configs:
+            # The last notified timestamp can be NULL (originating from the
+            # LEFT JOIN) if the user has never been notified and thus does
+            # not have an entry in the user_last_notified table
+            if user_config["last_notified_timestamp"] is None:
+                user_config["last_notified_timestamp"] = 0
             user_config["manual_subs"] = [
                 cast(Subscription, dict(row))
                 for row in self.execute_named(
