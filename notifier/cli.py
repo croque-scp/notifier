@@ -7,7 +7,11 @@ from apscheduler.triggers.cron import CronTrigger
 
 from notifier.config.local import read_local_auth, read_local_config
 from notifier.database.utils import resolve_driver_from_config
-from notifier.notify import notification_channels, notify, pick_channels_to_notify
+from notifier.notify import (
+    notification_channels,
+    notify,
+    pick_channels_to_notify,
+)
 from notifier.types import AuthConfig, LocalConfig
 
 logger = logging.getLogger(__name__)
@@ -30,20 +34,19 @@ def cli():
         password=auth["mysql"]["password"],
     )
 
-    # Choose which channels to activate
-    channels = pick_channels_to_notify(execute_now)
-
     if execute_now is None:
         # Schedule the task
         scheduler.add_job(
-            notify,
+            lambda: notify(config, auth, pick_channels_to_notify(), database),
             CronTrigger.from_crontab(notification_channels["hourly"]),
-            args=(config, auth, channels, database),
         )
 
-        # Let's go
+        # Start the service
         scheduler.start()
     else:
+        # Choose which channels to activate
+        channels = pick_channels_to_notify(execute_now)
+
         # Run immediately and once only
         notify(config, auth, channels, database)
 
