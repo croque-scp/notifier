@@ -20,8 +20,8 @@ logger = logging.getLogger(__name__)
 
 # For ease of parsing, configurations are coerced to TOML format
 user_config_listpages_body = '''
-slug = "%%fullname%%"
-username = "%%created_by_unix%%"
+slug = """%%fullname%%"""
+username = """%%created_by%%"""
 user_id = "%%created_by_id%%"
 frequency = "%%form_raw{frequency}%%"
 language = "%%form_raw{language}%%"
