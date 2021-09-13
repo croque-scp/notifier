@@ -29,19 +29,26 @@ def fetch_posts_with_context(
     the posts in the cache."""
     # Get the list of new posts from the forum's RSS
     new_posts = fetch_new_posts_rss(wiki_id)
-    logger.debug(
-        "Found new posts in RSS %s",
-        {"wiki_id": wiki_id, "post_count": len(new_posts)},
-    )
+
     # Remove posts that are already recorded
     new_post_ids = database.find_new_posts(
         [new_post[1] for new_post in new_posts]
     )
+    logger.debug(
+        "Found posts in RSS %s",
+        {
+            "wiki_id": wiki_id,
+            "full_post_count": len(new_posts),
+            "new_post_count": len(new_post_ids),
+        },
+    )
     new_posts = [post for post in new_posts if post[1] not in new_post_ids]
+
     # Find which of these posts were made in new threads
     new_thread_ids = database.find_new_threads(
         [new_post[0] for new_post in new_posts]
     )
+
     # Make a list of thread pages to iterate over
     # The post ID being None indicates that the full thread will be
     # iterated; otherwise, only the page that contains the specific post
@@ -53,10 +60,12 @@ def fetch_posts_with_context(
     # Sort the list so that full threads will be crawled first, followed by
     # individual pages - this is to optimise deduplication
     threads_pages_to_get.sort(key=lambda page: page[1] is not None)
+
     # Record posts and full threads that have already been seen to as not
     # to duplicate any API calls
     posts_already_seen: List[str] = []
     full_threads_already_seen: List[str] = []
+
     # Download each of the new threads
     logger.debug(
         "Found new threads to download %s",
