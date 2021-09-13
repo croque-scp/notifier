@@ -1,6 +1,6 @@
 import logging
 import re
-from typing import List, Tuple, Union
+from typing import List, Tuple, Union, cast
 
 import tomlkit
 from tomlkit.exceptions import TOMLKitError
@@ -97,19 +97,18 @@ def fetch_user_configs(
 def parse_raw_user_config(raw_config: str) -> Tuple[RawUserConfig, str]:
     """Parses a raw user config string to a suitable format, also returning
     the config slug."""
-    config = tomlkit.parse(raw_config)
-    assert isinstance(config, dict)
+    config = dict(tomlkit.parse(raw_config))
     slug = config.pop("slug", "")
     assert isinstance(slug, str)
     assert "username" in config
     assert "user_id" in config
     config["subscriptions"] = parse_subscriptions(
-        config.get("subscriptions", []), 1
+        config.get("subscriptions", ""), 1
     )
     config["unsubscriptions"] = parse_subscriptions(
-        config.get("unsubscriptions", []), -1
+        config.get("unsubscriptions", ""), -1
     )
-    return config, slug
+    return cast(RawUserConfig, config), slug
 
 
 def parse_subscriptions(
