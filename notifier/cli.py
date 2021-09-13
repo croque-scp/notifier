@@ -27,7 +27,12 @@ def cli():
 
     # Database stores forum posts and caches subscriptions
     DatabaseDriver = resolve_driver_from_config(config["database"]["driver"])
-    database = DatabaseDriver(config["database"]["database_name"])
+    database = DatabaseDriver(
+        config["database"]["database_name"],
+        host=auth["mysql"]["host"],
+        username=auth["mysql"]["username"],
+        password=auth["mysql"]["password"],
+    )
 
     # Schedule the task
     scheduler.add_job(
