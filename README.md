@@ -31,20 +31,7 @@ In addition to the config file based on the one provided in this
 repository, notifier requires an additional authentication file to provide
 passwords etc. for the various services it requires.
 
-The authentication file should take the following form, as a TOML document:
-
-```toml
-[wikidot]
-password = "<Wikidot password>"
-
-[yagmail]
-password = "<Gmail password for username in config file>"
-
-[mysql]
-host = "<IP of MySQL server>"
-username = "<username for MySQL connection>"
-password = "<password for MySQL connection>"
-```
+See [docs/auth.md](/docs/auth.md) for more information.
 
 ## Database setup
 
