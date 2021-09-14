@@ -5,6 +5,7 @@ from typing import Any, cast
 import tomlkit
 from typing_extensions import TypeGuard
 
+from notifier.config.remote import AWS
 from notifier.database.utils import resolve_driver_from_config
 from notifier.types import AuthConfig, LocalConfig
 
@@ -68,6 +69,20 @@ def read_local_auth(auth_path: str) -> AuthConfig:
     """Reads the local auth file from the specified path."""
     with open(auth_path, "r") as auth_file:
         auth = cast(dict, tomlkit.parse(auth_file.read()))
+
+    # Merge local keys with any external keys
+    for external_source in auth.pop("external", []):
+        if external_source["source"] != "AWSSecretsManager":
+            raise ValueError(
+                "External auth other than AWSSecretsManager not supported"
+            )
+        auth.update(
+            AWS.get_secrets(
+                external_source["region_name"],
+                external_source["secret_name"],
+                external_source["use_keys"],
+            )
+        )
 
     def is_complete_auth(auth: dict) -> TypeGuard[AuthConfig]:
         assert_key = assert_key_for_scope("authentication file")

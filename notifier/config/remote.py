@@ -1,6 +1,8 @@
+import json
 import logging
-from typing import List
+from typing import Dict, List, Tuple
 
+import boto3
 import requests
 import tomlkit
 from tomlkit.exceptions import TOMLKitError
@@ -100,3 +102,38 @@ def parse_raw_wiki_config(raw_config: str) -> SupportedWikiConfig:
     assert "secure" in config
     assert config["secure"] in (0, 1)
     return config
+
+
+class AWS:
+    """Methods for interacting with AWS."""
+
+    session = None
+    client = None
+
+    @staticmethod
+    def _get_client(region_name: str):
+        """Makes or retrieves a connection client."""
+        if AWS.client is None:
+            AWS.session = boto3.session.Session()
+            AWS.client = AWS.session.client(
+                service_name="secretsmanager", region_name=region_name
+            )
+        return AWS.client
+
+    @staticmethod
+    def get_secrets(
+        region_name: str, secret_name: str, mapping: List[Tuple[str, str]]
+    ) -> Dict[str, str]:
+        """Retrieves secrets from Secrets Manager."""
+        secrets = json.loads(
+            AWS._get_client(region_name).get_secret_value(
+                SecretId=secret_name
+            )["SecretString"]
+        )
+        for key, _ in mapping:
+            if key not in secrets:
+                raise KeyError(f"Key {key} not found in secret {secret_name}")
+        return {
+            local_key: secrets[external_key]
+            for external_key, local_key in mapping
+        }
