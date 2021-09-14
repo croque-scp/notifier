@@ -72,16 +72,11 @@ def read_local_auth(auth_path: str) -> AuthConfig:
     def is_complete_auth(auth: dict) -> TypeGuard[AuthConfig]:
         assert_key = assert_key_for_scope("authentication file")
 
-        assert_key(auth, "wikidot", dict)
-        assert_key(auth["wikidot"], "password", str)
-
-        assert_key(auth, "yagmail", dict)
-        assert_key(auth["yagmail"], "password", str)
-
-        assert_key(auth, "mysql", dict)
-        assert_key(auth["mysql"], "host", str)
-        assert_key(auth["mysql"], "username", str)
-        assert_key(auth["mysql"], "password", str)
+        assert_key(auth, "wikidot_password", str)
+        assert_key(auth, "gmail_password", str)
+        assert_key(auth, "mysql_host", str)
+        assert_key(auth, "mysql_username", str)
+        assert_key(auth, "mysql_password", str)
 
         return True
 

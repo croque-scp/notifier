@@ -31,9 +31,9 @@ def sample_database(
     db_name = notifier_config["database"]["database_name"] + "_test"
     db = MySqlDriver(
         db_name,
-        host=notifier_auth["mysql"]["host"],
-        username=notifier_auth["mysql"]["username"],
-        password=notifier_auth["mysql"]["password"],
+        host=notifier_auth["mysql_host"],
+        username=notifier_auth["mysql_username"],
+        password=notifier_auth["mysql_password"],
     )
     db.scrub_database(db_name)
     subs: List[Subscription] = construct(

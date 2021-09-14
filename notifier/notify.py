@@ -99,7 +99,7 @@ def notify(
     # Record the 'current' timestamp immediately after downloading posts
     current_timestamp = int(time.time())
     # Get the password from keyring for login
-    wikidot_password = auth["wikidot"]["password"]
+    wikidot_password = auth["wikidot_password"]
     connection.login(config["wikidot_username"], wikidot_password)
 
     logger.info("Notifying...")
@@ -124,7 +124,7 @@ def notify_active_channels(
 ):
     """Prepare and send notifications to all activated channels."""
     digester = Digester(config["path"]["lang"])
-    emailer = Emailer(config["gmail_username"], auth["yagmail"]["password"])
+    emailer = Emailer(config["gmail_username"], auth["gmail_password"])
     for channel in active_channels:
         # Should this be asynchronous + parallel?
         notify_channel(

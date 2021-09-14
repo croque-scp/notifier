@@ -1,4 +1,4 @@
-from typing import Any, Dict, List, Literal, Optional, TypedDict, Union
+from typing import Dict, List, Literal, Optional, TypedDict, Union
 
 IsSecure = Union[Literal[0], Literal[1]]
 
@@ -45,7 +45,15 @@ class SupportedWikiConfig(TypedDict):
     secure: IsSecure
 
 
-AuthConfig = Dict[str, Any]
+class AuthConfig(TypedDict):
+    """Contents of the authentication config file, after processing."""
+
+    wikidot_password: str
+    gmail_password: str
+    mysql_host: str
+    mysql_username: str
+    mysql_password: str
+
 
 GlobalOverrideAction = Union[Literal["mute"], Literal["mute_thread"]]
 

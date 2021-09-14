@@ -29,9 +29,9 @@ def cli():
     DatabaseDriver = resolve_driver_from_config(config["database"]["driver"])
     database = DatabaseDriver(
         config["database"]["database_name"],
-        host=auth["mysql"]["host"],
-        username=auth["mysql"]["username"],
-        password=auth["mysql"]["password"],
+        host=auth["mysql_host"],
+        username=auth["mysql_username"],
+        password=auth["mysql_password"],
     )
 
     if execute_now is None:
