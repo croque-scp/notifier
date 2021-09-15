@@ -50,6 +50,8 @@ def cli():
         # Run immediately and once only
         notify(config, auth, channels, database)
 
+        print("Finished")
+
 
 def read_command_line_arguments() -> Tuple[
     LocalConfig, AuthConfig, Optional[List[str]]
