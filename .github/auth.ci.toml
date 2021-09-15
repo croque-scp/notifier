@@ -1,5 +1,5 @@
 wikidot_password = ""
 gmail_password = ""
-mysql_host = "localhost"
+mysql_host = "127.0.0.1"
 mysql_username = "root"
 mysql_password = "root"
