@@ -46,9 +46,13 @@ jobs:
       - name: Install Python dependencies
         if: steps.cached-poetry-dependencies.outputs.cache-hit != 'true'
         run: poetry install --no-interaction
-      - name: Start MySQL
-        run: |
-          sudo systemctl start mysql.service
-          mysql -uroot -proot -e 'CREATE DATABASE wikidot_notifier_test;'
+      - name: Setup MySQL
+        uses: mirromutth/mysql-action@v1.1
+        with:
+          character set server: utf8mb4
+          collation server: utf8mb4_bin
+          mysql version: '5.6.17'
+          mysql database: wikidot_notifier_test
+          mysql root password: root
       - name: Run tests
         run: poetry run pytest --notifier-config config.toml --notifier-auth .github/auth.ci.toml
