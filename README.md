@@ -42,9 +42,9 @@ v1.
 See [docs/database.md](/docs/database.md) for more information and
 instructions.
 
-## Execution
+## Local execution
 
-To start the notifier service:
+To start the notifier service locally:
 
 ```shell
 poetry run python3 -m notifier path_to_config_file path_to_auth_file
@@ -64,6 +64,13 @@ and `monthly`.
 To activate an automatically-determined set of channels immediately and
 once only, add the `--execute-now` switch with no parameter. Note that this
 must be run during the first minute of an hour to match any channels.
+
+## Remote deployment
+
+The notifier service is not intended to be executed locally, but to be
+deployed to the cloud using AWS Lambda.
+
+See [docs/deployment.md](/docs/deployment.md) for more information and instructions.
 
 # Development
 
