@@ -4,15 +4,8 @@ region_name = "eu-west-2"
 secret_name = "WikidotNotifier/auth"
 use_keys = [
   ["wikidot_password", "wikidot_password"],
-  ["gmail_password", "gmail_password"]
-]
-
-[[external]]
-source = "AWSSecretsManager"
-region_name = "eu-west-2"
-secret_name = "rds-db-credentials/cluster-XNTVNP4D6GSLZCQ75Z5DDRKDC4/wikidot_notifier"
-use_keys = [
-  ["host", "mysql_host"],
-  ["username", "mysql_username"],
-  ["password", "mysql_password"]
+  ["gmail_password", "gmail_password"],
+  ["mysql_host", "mysql_host"],
+  ["mysql_username", "mysql_username"],
+  ["mysql_password", "mysql_password"]
 ]
