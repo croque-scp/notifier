@@ -44,7 +44,7 @@ CREATE TABLE IF NOT EXISTS wiki (
   PRIMARY KEY (id),
   id     VARCHAR(50)  NOT NULL,
   name   VARCHAR(200) NOT NULL,
-  secure TINYINT(1)   NOT NULL CHECK (secure IN (0, 1))
+  secure TINYINT(1)   NOT NULL
 );
 
 CREATE TABLE IF NOT EXISTS category (
@@ -61,7 +61,7 @@ CREATE TABLE IF NOT EXISTS thread (
   category_id       VARCHAR(200),
   creator_username  VARCHAR(20),
   created_timestamp INT UNSIGNED NOT NULL,
-  is_deleted        TINYINT(1)   NOT NULL CHECK (is_deleted IN (0, 1)) DEFAULT 0
+  is_deleted        TINYINT(1)   NOT NULL DEFAULT 0
 );
 
 CREATE TABLE IF NOT EXISTS post (
@@ -74,7 +74,7 @@ CREATE TABLE IF NOT EXISTS post (
   snippet          VARCHAR(200) NOT NULL,
   user_id          VARCHAR(20)  NOT NULL,
   username         VARCHAR(20)  NOT NULL,
-  is_deleted       TINYINT(1)   NOT NULL CHECK (is_deleted IN (0, 1)) DEFAULT 0,
+  is_deleted       TINYINT(1)   NOT NULL DEFAULT 0,
   FOREIGN KEY (thread_id)      REFERENCES thread (id),
   FOREIGN KEY (parent_post_id) REFERENCES post (id)
 );

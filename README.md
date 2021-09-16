@@ -31,37 +31,16 @@ In addition to the config file based on the one provided in this
 repository, notifier requires an additional authentication file to provide
 passwords etc. for the various services it requires.
 
-See [docs/auth.md](/docs/auth.md) for more information.
+See [docs/auth.md](/docs/auth.md) for more information and instructions.
 
 ## Database setup
 
-If using the MySQL database driver, MySQL will need to be installed, and a
-MySQL server will need to be running somewhere.
+For local development and testing, notifier requires a database to be set
+up on a version of MySQL that is compatible with Amazon Aurora Serverless
+v1.
 
-A new user will need to be created for the notifier, replacing the
-placeholders with the MySQL-specific credentials supplied above:
-
-```sql
-CREATE USER '<username>'@'<host>' IDENTIFIED BY '<password>';
-```
-
-Create the database, with the database's name matching the name in the
-config file (default: `wikidot_notifier`), and grant the new user access to
-it:
-
-```sql
-CREATE DATABASE `<name>` CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_bin;
-GRANT ALL PRIVILEGES ON `<name>`.* TO '<username>'@'<host>';
-```
-
-In order to run tests, a test database will also need to be created. The
-name of this database is the same as the configured name, with "_test"
-appended:
-
-```sql
-CREATE DATABASE `<name>_test` CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_bin;
-GRANT ALL PRIVILEGES ON `<name>_test`.* TO '<username>'@'<host>';
-```
+See [docs/database.md](/docs/database.md) for more information and
+instructions.
 
 ## Execution
 
