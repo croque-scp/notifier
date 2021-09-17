@@ -38,6 +38,7 @@ def lambda_handler(event, context):
     main(
         read_local_config(local_config_path),
         read_local_auth(local_auth_path),
+        [],
     )
     logger.info("Lambda finished")
     return 0
