@@ -1,3 +1,4 @@
+import logging
 from typing import List
 
 from apscheduler.schedulers.blocking import BlockingScheduler
@@ -10,6 +11,8 @@ from notifier.notify import (
     pick_channels_to_notify,
 )
 from notifier.types import AuthConfig, LocalConfig
+
+logger = logging.getLogger(__name__)
 
 
 def main(config: LocalConfig, auth: AuthConfig, execute_now: List[str] = None):
@@ -25,6 +28,8 @@ def main(config: LocalConfig, auth: AuthConfig, execute_now: List[str] = None):
     )
 
     if execute_now is None:
+        logger.info("Starting in scheduled mode")
+
         # Scheduler is responsible for executing tasks at the right times
         scheduler = BlockingScheduler()
 
@@ -37,6 +42,8 @@ def main(config: LocalConfig, auth: AuthConfig, execute_now: List[str] = None):
         # Start the service
         scheduler.start()
     else:
+        logger.info("Starting in instant execution mode")
+
         # Choose which channels to activate
         channels = pick_channels_to_notify(execute_now)
 
