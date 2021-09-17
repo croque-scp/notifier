@@ -17,7 +17,6 @@ logging.basicConfig(
 )
 
 logger = logging.getLogger(__name__)
-logger.setLevel(logging.DEBUG)
 
 
 def lambda_handler(event, context):
@@ -28,6 +27,7 @@ def lambda_handler(event, context):
     must be set in the EventBridge event as a JSON constant.
     """
     logger.info("Starting Lambda")
+    print("Handler received event:", event)
     del context
     if not isinstance(event, list):
         raise ValueError("Event should be a list of configs")
