@@ -322,6 +322,10 @@ Create the trigger, then find it in the EventBridge console, and edit it:
 ]
 ```
 
+- Under *Retry policy*, set the number of retry attempts to 0.
+  - It would be pointless to retry the Lambda, because by then the time
+    would have changed, and no channels would be activated.
+
 While you're still setting everything up, and especially if you already
 uploaded the code, you may wish to disable the event to stop the schedule.
 You can do so via the EventBridge console (but not the Lambda console).
