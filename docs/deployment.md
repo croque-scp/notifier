@@ -13,15 +13,6 @@ something wrong and then went back and changed it, I don't mention that
 here). That means that if you happen to know any better than I do, feel
 free to deviate.
 
-First-time setup for deployment involves the following steps:
-
-1. TODO
-
-Then for redeployment:
-
-1. Create the Lambda ZIP file
-2. Upload the Lambda ZIP file to the Lambda
-
 # First-time setup for deployment to AWS
 
 ## Creating an IAM user
