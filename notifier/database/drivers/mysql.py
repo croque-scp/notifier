@@ -284,7 +284,9 @@ class MySqlDriver(BaseDatabaseDriver, BaseDatabaseWithSqlFileCache):
                     "store_new_user_last_notified",
                     {
                         "user_id": user_config["user_id"],
-                        "notified_timestamp": user_config["page_created_date"],
+                        "notified_timestamp": user_config[
+                            "user_base_notified"
+                        ],
                     },
                 )
 

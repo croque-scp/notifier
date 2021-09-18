@@ -51,7 +51,7 @@ def sample_database(
             "frequency",
             "language",
             "delivery",
-            "page_created_date",
+            "user_base_notified",
             "subscriptions",
             "unsubscriptions",
         ],

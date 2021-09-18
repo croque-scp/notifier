@@ -94,7 +94,7 @@ class RawUserConfig(TypedDict):
     frequency: str
     language: str
     delivery: DeliveryMethod
-    page_created_date: int
+    user_base_notified: int
     subscriptions: List[Subscription]
     unsubscriptions: List[Subscription]
 

@@ -27,7 +27,7 @@ user_id = "%%created_by_id%%"
 frequency = "%%form_raw{frequency}%%"
 language = "%%form_raw{language}%%"
 delivery = "%%form_raw{method}%%"
-page_created_date = """%%created_at%%"""
+user_base_notified = """%%created_at%%"""
 subscriptions = """
 %%form_data{subscriptions}%%"""
 unsubscriptions = """
@@ -111,7 +111,7 @@ def parse_raw_user_config(
     assert "user_id" in config
     # Parse page date to approximate timestamp and coerce to int
     # TODO Move hardcoded date to config
-    config["page_created_date"] = user_timestamp or 1627277777
+    config["user_base_notified"] = max(user_timestamp or 0, 1627277777)
     config["subscriptions"] = parse_subscriptions(
         config.get("subscriptions", ""), 1
     )
