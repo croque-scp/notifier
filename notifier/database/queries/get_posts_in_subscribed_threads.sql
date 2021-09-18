@@ -35,15 +35,13 @@ WHERE
     )
 
     -- Get posts in threads started by the user
-    OR EXISTS (
-      SELECT NULL FROM
+    OR %(user_id)s IN (
+      SELECT first_post.user_id FROM
         post AS first_post
       GROUP BY
-        first_post.thread_id,
-        first_post.user_id
+        first_post.thread_id
       HAVING
         MIN(first_post.posted_timestamp)
-        AND first_post.user_id = %(user_id)s
         AND first_post.thread_id = post.thread_id
     )
   )
