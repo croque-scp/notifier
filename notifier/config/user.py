@@ -1,13 +1,13 @@
 import logging
 import re
-import time
-from typing import List, Tuple, Union, cast
+from typing import List, Optional, Tuple, Union, cast
 
 import tomlkit
 from tomlkit.exceptions import TOMLKitError
 
 from notifier.database.drivers.base import BaseDatabaseDriver
 from notifier.database.utils import try_cache
+from notifier.parsethread import get_timestamp
 from notifier.types import (
     LocalConfig,
     RawUserConfig,
@@ -27,7 +27,7 @@ user_id = "%%created_by_id%%"
 frequency = "%%form_raw{frequency}%%"
 language = "%%form_raw{language}%%"
 delivery = "%%form_raw{method}%%"
-page_created_date = """%%created_at|%Y-%m-%d%%"""
+page_created_date = """%%created_at%%"""
 subscriptions = """
 %%form_data{subscriptions}%%"""
 unsubscriptions = """
@@ -64,8 +64,11 @@ def fetch_user_configs(
         module_body=user_config_listpages_body,
     ):
         raw_config = config_soup.get_text()
+        # The timestamp of the page's creation date is in the class of a
+        # timestamp element, so cannot be extracted by get_text
+        user_timestamp = get_timestamp(config_soup)
         try:
-            config, slug = parse_raw_user_config(raw_config)
+            config, slug = parse_raw_user_config(raw_config, user_timestamp)
         except (TOMLKitError, AssertionError) as error:
             # If the parse fails, the user was probably trying code
             # injection or something - discard it
@@ -96,7 +99,9 @@ def fetch_user_configs(
     return configs
 
 
-def parse_raw_user_config(raw_config: str) -> Tuple[RawUserConfig, str]:
+def parse_raw_user_config(
+    raw_config: str, user_timestamp: Optional[int]
+) -> Tuple[RawUserConfig, str]:
     """Parses a raw user config string to a suitable format, also returning
     the config slug."""
     config = dict(tomlkit.parse(raw_config))
@@ -105,15 +110,8 @@ def parse_raw_user_config(raw_config: str) -> Tuple[RawUserConfig, str]:
     assert "username" in config
     assert "user_id" in config
     # Parse page date to approximate timestamp and coerce to int
-    config["page_created_date"] = int(
-        time.mktime(
-            time.strptime(
-                # TODO Move hardcoded date to config
-                config.get("page_created_date", "2021-09-01") + " UTC",
-                "%Y-%m-%d %Z",
-            )
-        )
-    )
+    # TODO Move hardcoded date to config
+    config["page_created_date"] = user_timestamp or 1627277777
     config["subscriptions"] = parse_subscriptions(
         config.get("subscriptions", ""), 1
     )
