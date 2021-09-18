@@ -31,6 +31,7 @@ notification_channels = {
     "daily": "0 0 * * *",
     "weekly": "0 0 * * 0",
     "monthly": "0 0 1 * *",
+    "test": "x x x x x",  # pycron accepts this value but it never passes
 }
 
 

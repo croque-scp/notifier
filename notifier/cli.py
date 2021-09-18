@@ -2,8 +2,8 @@ import argparse
 import logging
 from typing import List, Optional, Tuple
 
-from notifier.__main__ import main
 from notifier.config.local import read_local_auth, read_local_config
+from notifier.main import main
 from notifier.notify import notification_channels
 from notifier.types import AuthConfig, LocalConfig
 
