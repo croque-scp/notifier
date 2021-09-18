@@ -1,5 +1,6 @@
 import logging
 import re
+import time
 from typing import List, Tuple, Union, cast
 
 import tomlkit
@@ -26,6 +27,7 @@ user_id = "%%created_by_id%%"
 frequency = "%%form_raw{frequency}%%"
 language = "%%form_raw{language}%%"
 delivery = "%%form_raw{method}%%"
+page_created_date = """%%created_at|%Y-%m-%d%%"""
 subscriptions = """
 %%form_data{subscriptions}%%"""
 unsubscriptions = """
@@ -102,6 +104,16 @@ def parse_raw_user_config(raw_config: str) -> Tuple[RawUserConfig, str]:
     assert isinstance(slug, str)
     assert "username" in config
     assert "user_id" in config
+    # Parse page date to approximate timestamp and coerce to int
+    config["page_created_date"] = int(
+        time.mktime(
+            time.strptime(
+                # TODO Move hardcoded date to config
+                config.get("page_created_date", "2021-09-01") + " UTC",
+                "%Y-%m-%d %Z",
+            )
+        )
+    )
     config["subscriptions"] = parse_subscriptions(
         config.get("subscriptions", ""), 1
     )
