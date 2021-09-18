@@ -14,6 +14,7 @@ def resolve_driver_from_config(driver_path: str) -> Type[BaseDatabaseDriver]:
     module.package.file.DriverClass), import the module and return the
     class.
     """
+    logger.debug("Resolving database driver %s", {"path": driver_path})
     module_path, class_name = driver_path.rsplit(".", 1)
     try:
         driver_module = import_module(module_path)
@@ -27,6 +28,9 @@ def resolve_driver_from_config(driver_path: str) -> Type[BaseDatabaseDriver]:
         raise AttributeError(
             f"Could not find driver class {class_name} in {module_path}"
         ) from error
+    logger.debug(
+        "Found database driver class %s", {"class": repr(driver_class)}
+    )
     return driver_class
 
 

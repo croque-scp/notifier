@@ -31,54 +31,20 @@ In addition to the config file based on the one provided in this
 repository, notifier requires an additional authentication file to provide
 passwords etc. for the various services it requires.
 
-The authentication file should take the following form, as a TOML document:
-
-```toml
-[wikidot]
-password = "<Wikidot password>"
-
-[yagmail]
-password = "<Gmail password for username in config file>"
-
-[mysql]
-host = "<IP of MySQL server>"
-username = "<username for MySQL connection>"
-password = "<password for MySQL connection>"
-```
+See [docs/auth.md](/docs/auth.md) for more information and instructions.
 
 ## Database setup
 
-If using the MySQL database driver, MySQL will need to be installed, and a
-MySQL server will need to be running somewhere.
+For local development and testing, notifier requires a database to be set
+up on a version of MySQL that is compatible with Amazon Aurora Serverless
+v1.
 
-A new user will need to be created for the notifier, replacing the
-placeholders with the MySQL-specific credentials supplied above:
+See [docs/database.md](/docs/database.md) for more information and
+instructions.
 
-```sql
-CREATE USER '<username>'@'<host>' IDENTIFIED BY '<password>';
-```
+## Local execution
 
-Create the database, with the database's name matching the name in the
-config file (default: `wikidot_notifier`), and grant the new user access to
-it:
-
-```sql
-CREATE DATABASE `<name>` CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_bin;
-GRANT ALL PRIVILEGES ON `<name>`.* TO '<username>'@'<host>';
-```
-
-In order to run tests, a test database will also need to be created. The
-name of this database is the same as the configured name, with "_test"
-appended:
-
-```sql
-CREATE DATABASE `<name>_test` CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_bin;
-GRANT ALL PRIVILEGES ON `<name>_test`.* TO '<username>'@'<host>';
-```
-
-## Execution
-
-To start the notifier service:
+To start the notifier service locally:
 
 ```shell
 poetry run python3 -m notifier path_to_config_file path_to_auth_file
@@ -98,6 +64,13 @@ and `monthly`.
 To activate an automatically-determined set of channels immediately and
 once only, add the `--execute-now` switch with no parameter. Note that this
 must be run during the first minute of an hour to match any channels.
+
+## Remote deployment
+
+The notifier service is not intended to be executed locally, but to be
+deployed to the cloud using AWS Lambda.
+
+See [docs/deployment.md](/docs/deployment.md) for more information and instructions.
 
 # Development
 

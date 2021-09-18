@@ -1,3 +1,4 @@
+import logging
 import re
 from pathlib import Path
 from typing import Any, cast
@@ -5,8 +6,11 @@ from typing import Any, cast
 import tomlkit
 from typing_extensions import TypeGuard
 
+from notifier.config.remote import AWS
 from notifier.database.utils import resolve_driver_from_config
 from notifier.types import AuthConfig, LocalConfig
+
+logger = logging.getLogger(__name__)
 
 
 def assert_key_for_scope(scope: str):
@@ -24,8 +28,10 @@ def read_local_config(config_path: str) -> LocalConfig:
 
     Raises AssertionError if there is a problem.
     """
+    logger.debug("Reading local config %s", {"path": config_path})
     with open(config_path, "r") as config_file:
         config = cast(dict, tomlkit.parse(config_file.read()))
+        logger.debug("Found config file")
 
     def replace_path_alias(path: str) -> str:
         path = re.sub(r"^@", str(Path(__file__).parent.parent), path)
@@ -66,22 +72,39 @@ def read_local_config(config_path: str) -> LocalConfig:
 
 def read_local_auth(auth_path: str) -> AuthConfig:
     """Reads the local auth file from the specified path."""
+    logger.debug("Reading local auth config %s", {"path": auth_path})
     with open(auth_path, "r") as auth_file:
         auth = cast(dict, tomlkit.parse(auth_file.read()))
+        logger.debug("Found auth config file")
+
+    # Merge local keys with any external keys
+    for index, external_source in enumerate(auth.pop("external", [])):
+        logger.debug("Supplementing auth config with external secrets")
+        logger.debug(
+            "Fetching secret %s",
+            {"index": index, "secret_name": external_source["secret_name"]},
+        )
+        if external_source["source"] != "AWSSecretsManager":
+            raise ValueError(
+                "External auth other than AWSSecretsManager not supported"
+            )
+        auth.update(
+            AWS.get_secrets(
+                external_source["region_name"],
+                external_source["secret_name"],
+                external_source["use_keys"],
+            )
+        )
+        logger.debug("Supplemented secret %s", {"index": index})
 
     def is_complete_auth(auth: dict) -> TypeGuard[AuthConfig]:
         assert_key = assert_key_for_scope("authentication file")
 
-        assert_key(auth, "wikidot", dict)
-        assert_key(auth["wikidot"], "password", str)
-
-        assert_key(auth, "yagmail", dict)
-        assert_key(auth["yagmail"], "password", str)
-
-        assert_key(auth, "mysql", dict)
-        assert_key(auth["mysql"], "host", str)
-        assert_key(auth["mysql"], "username", str)
-        assert_key(auth["mysql"], "password", str)
+        assert_key(auth, "wikidot_password", str)
+        assert_key(auth, "gmail_password", str)
+        assert_key(auth, "mysql_host", str)
+        assert_key(auth, "mysql_username", str)
+        assert_key(auth, "mysql_password", str)
 
         return True
 

@@ -28,6 +28,24 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v2
+      - name: Setup MySQL
+        id: setup-mysql
+        run: |
+          container_id=$( \
+            docker run -d \
+            -p 3306:3306 \
+            -e MYSQL_ROOT_PASSWORD=root \
+            -e MYSQL_USER=root \
+            -e MYSQL_PASSWORD=root \
+            mysql:5.6.17 \
+          )
+          container_ip=$( \
+            docker inspect -f \
+            '{{range.NetworkSettings.Networks}}{{.IPAddress}}{{end}}' \
+            $container_id \
+          )
+          sed -i "s/localhost/$container_ip/g" .github/auth.ci.toml
+          echo "::set-output name=container-ip::$container_ip"
       - name: Setup Python
         uses: actions/setup-python@v2
         with:
@@ -43,12 +61,16 @@ jobs:
         with:
           path: .venv
           key: venv-${{ runner.os }}-${{ hashFiles('**/poetry.lock') }}
+          restore-keys: |
+            venv-${{ runner.os }}-
       - name: Install Python dependencies
         if: steps.cached-poetry-dependencies.outputs.cache-hit != 'true'
         run: poetry install --no-interaction
-      - name: Start MySQL
+      - name: Create MySQL database
         run: |
-          sudo systemctl start mysql.service
-          mysql -uroot -proot -e 'CREATE DATABASE wikidot_notifier_test;'
+          mysql \
+          -h${{ steps.setup-mysql.outputs.container-ip }} \
+          -proot -uroot \
+          -e "CREATE DATABASE wikidot_notifier_test;"
       - name: Run tests
-        run: poetry run pytest --notifier-config config.toml --notifier-auth .github/auth.ci.toml
+        run: poetry run pytest -x --notifier-config config.toml --notifier-auth .github/auth.ci.toml

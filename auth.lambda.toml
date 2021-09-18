@@ -1,0 +1,11 @@
+[[external]]
+source = "AWSSecretsManager"
+region_name = "eu-west-2"
+secret_name = "WikidotNotifier/auth"
+use_keys = [
+  ["wikidot_password", "wikidot_password"],
+  ["gmail_password", "gmail_password"],
+  ["mysql_host", "mysql_host"],
+  ["mysql_username", "mysql_username"],
+  ["mysql_password", "mysql_password"]
+]

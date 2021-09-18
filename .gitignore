@@ -1,4 +1,7 @@
 .vscode
 __pycache__
 *.db
-/auth.*.toml
+build
+dist
+lambda.zip
+/auth.local.toml

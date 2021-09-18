@@ -1,10 +1,5 @@
-[wikidot]
-password = ""
-
-[yagmail]
-password = ""
-
-[mysql]
-host = "localhost"
-username = "root"
-password = "root"
+wikidot_password = ""
+gmail_password = ""
+mysql_host = "localhost"
+mysql_username = "root"
+mysql_password = "root"

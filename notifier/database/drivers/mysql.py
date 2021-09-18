@@ -34,6 +34,7 @@ class MySqlDriver(BaseDatabaseDriver, BaseDatabaseWithSqlFileCache):
         BaseDatabaseDriver.__init__(self, database_name)
         BaseDatabaseWithSqlFileCache.__init__(self)
 
+        logger.info("Connecting to database...")
         self.conn = pymysql.connect(
             host=host,
             user=username,
@@ -46,6 +47,7 @@ class MySqlDriver(BaseDatabaseDriver, BaseDatabaseWithSqlFileCache):
             # Enable 'executescript'-like functionality for all statements
             client_flag=MULTI_STATEMENTS,
         )
+        logger.info("Connected to database")
 
         self.create_tables()
 
