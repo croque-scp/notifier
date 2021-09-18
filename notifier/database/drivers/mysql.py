@@ -280,6 +280,13 @@ class MySqlDriver(BaseDatabaseDriver, BaseDatabaseWithSqlFileCache):
                         },
                         cursor,
                     )
+                self.execute_named(
+                    "store_new_user_last_notified",
+                    {
+                        "user_id": user_config["user_id"],
+                        "notified_timestamp": user_config["page_created_date"],
+                    },
+                )
 
     def store_user_last_notified(
         self, user_id: str, last_notified_timestamp: int
