@@ -57,13 +57,22 @@ auth file with dummy secrets, used for CI tests, can be found at
 The service will run continuously and activate an automatically-determined
 set of notification channels each hour.
 
-To activate a channel or multiple channels immediately and once only, add
-the `--execute-now` switch followed by any of `hourly`, `daily`, `weekly`
-and `monthly`.
-
 To activate an automatically-determined set of channels immediately and
 once only, add the `--execute-now` switch with no parameter. Note that this
 must be run during the first minute of an hour to match any channels.
+
+To activate a manually-chosen channel or set of channels immediately and
+once only, even at a time when such channel would not normally be
+activated, add the `--execute-now` switch followed by any of `hourly`,
+`daily`, `weekly`, `monthly` and `test`.
+
+The `test` channel will never be activated during normal usage. Note that
+user config setting for the `test` channel is hidden, and can be selected
+by executing the following JavaScript while editing a user config page:
+
+```js
+document.querySelector("[name=field-frequency]").value = "test"
+```
 
 ## Remote deployment
 
