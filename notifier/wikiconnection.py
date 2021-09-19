@@ -211,28 +211,40 @@ class Connection:
         """
 
         if post_id is None:
-            thread_pages = (
-                BeautifulSoup(page["body"], "html.parser")
-                for page in self.paginated_module(
+            # Use the thread module for the first page, as it contains
+            # thread meta information
+            first_page = BeautifulSoup(
+                self.module(
                     wiki_id,
                     "forum/ForumViewThreadModule",
-                    index_key="pageNo",
-                    starting_index=1,
                     t=thread_id.lstrip("t-"),
-                )
+                )["body"],
+                "html.parser",
             )
-            # I know that at least one page exists, so the call to `next` will
-            # not raise a StopIteration
-            # pylint: disable=stop-iteration-return
-            first_page = next(thread_pages)
-            yield parse_thread_meta(first_page)
+            thread_meta = parse_thread_meta(first_page)
+            yield thread_meta
             yield from parse_thread_page(thread_id, first_page)
-            yield from (
-                post
-                for page in thread_pages
-                for post in parse_thread_page(thread_id, page)
-            )
+            # If the thread contains more than one page, use the thread
+            # posts module to iterate the remaining posts
+            if thread_meta["page_count"] > 1:
+                thread_pages = (
+                    BeautifulSoup(page["body"], "html.parser")
+                    for page in self.paginated_module(
+                        wiki_id,
+                        "forum/ForumViewThreadPostsModule",
+                        t=thread_id.lstrip("t-"),
+                        index_key="pageNo",
+                        starting_index=2,
+                    )
+                )
+                yield from (
+                    post
+                    for page in thread_pages
+                    for post in parse_thread_page(thread_id, page)
+                )
         else:
+            # The thread module is able to return a thread page containing
+            # a specific post, in addition to thread meta information
             thread_page = BeautifulSoup(
                 self.module(
                     wiki_id,
