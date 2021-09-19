@@ -668,6 +668,14 @@ optional = false
 python-versions = "*"
 
 [[package]]
+name = "types-emoji"
+version = "1.2.4"
+description = "Typing stubs for emoji"
+category = "main"
+optional = false
+python-versions = "*"
+
+[[package]]
 name = "types-pymysql"
 version = "1.0.2"
 description = "Typing stubs for PyMySQL"
@@ -753,7 +761,7 @@ testing = ["pytest (>=4.6)", "pytest-checkdocs (>=2.4)", "pytest-flake8", "pytes
 [metadata]
 lock-version = "1.1"
 python-versions = "^3.8"
-content-hash = "0222a07a621af5e142ab6fc6d943c6727591fda958f1bf105b85b228161fb580"
+content-hash = "293bd0c96bdb65ef0548cbc7a814c550a91804fb4a3c5cd2e01063c4d71b01fb"
 
 [metadata.files]
 appdirs = [
@@ -1161,6 +1169,10 @@ tomlkit = [
 types-beautifulsoup4 = [
     {file = "types-beautifulsoup4-4.9.1.tar.gz", hash = "sha256:8217c59aa27243936bce597b06b5d50d89229d50a02197b44c4ac487c4009a48"},
     {file = "types_beautifulsoup4-4.9.1-py3-none-any.whl", hash = "sha256:7d9a17e91337325eef2967d6cb5f0dd5047c274532f84d2430da45d5f65b1783"},
+]
+types-emoji = [
+    {file = "types-emoji-1.2.4.tar.gz", hash = "sha256:a7426bcbf0bc8d0809d49f1807e5cb8582f87d4a681b0ae80103f6eca5492e81"},
+    {file = "types_emoji-1.2.4-py3-none-any.whl", hash = "sha256:9fb171f36ef167aaec899e5d42b78dea19c94f50553351731b6997b6e70f7b05"},
 ]
 types-pymysql = [
     {file = "types-PyMySQL-1.0.2.tar.gz", hash = "sha256:8a814d8391934009a0e1a3a344c9295e6a7fda76a6df0c469b0a13f0ae6e79df"},

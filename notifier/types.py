@@ -94,6 +94,7 @@ class RawUserConfig(TypedDict):
     frequency: str
     language: str
     delivery: DeliveryMethod
+    user_base_notified: int
     subscriptions: List[Subscription]
     unsubscriptions: List[Subscription]
 

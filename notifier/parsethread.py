@@ -28,7 +28,7 @@ def parse_thread_meta(thread: Tag) -> RawThreadMeta:
     creator_username = get_user_from_nametag(
         cast(Tag, statistics.find(class_="printuser"))
     )[1]
-    created_timestamp = get_timestamp_from_post_info(statistics)
+    created_timestamp = get_timestamp(statistics)
     if created_timestamp is None:
         raise ValueError("No timestamp for thread")
     return {
@@ -81,7 +81,7 @@ def parse_thread_page(thread_id: str, thread_page: Tag) -> List[RawPost]:
             # Wikidot accepts 'Anonymous' as a null value to [[user]] syntax
             author_name = "Anonymous"
 
-        posted_timestamp = get_timestamp_from_post_info(post_info)
+        posted_timestamp = get_timestamp(post_info)
         if posted_timestamp is None:
             logger.warning(
                 "Could not parse timestamp for post %s",
@@ -176,12 +176,12 @@ def get_user_from_nametag(nametag: Tag) -> Tuple[Optional[str], Optional[str]]:
     return None, None
 
 
-def get_timestamp_from_post_info(info: Tag) -> Optional[int]:
-    """Gets a post's timestamp from its post info.
+def get_timestamp(element: Tag) -> Optional[int]:
+    """Retrieves a Wikidot timestamp.
 
     Returns None if this fails, though I see no reason that it should.
     """
-    post_date = cast(Tag, info.find(class_="odate"))
+    post_date = cast(Tag, element.find(class_="odate"))
     try:
         posted_timestamp = [
             int(css_class.lstrip("time_"))

@@ -51,10 +51,11 @@ def sample_database(
             "frequency",
             "language",
             "delivery",
+            "user_base_notified",
             "subscriptions",
             "unsubscriptions",
         ],
-        [("1", "MyUsername", "hourly", "en", "pm", subs, unsubs)],
+        [("1", "MyUsername", "hourly", "en", "pm", 1, subs, unsubs)],
     )
     sample_wikis: List[SupportedWikiConfig] = construct(
         ["id", "name", "secure"], [("my-wiki", "My Wiki", 1)]
@@ -183,3 +184,36 @@ def test_deleted_thread(sample_database: BaseDatabaseDriver):
     posts = sample_database.get_new_posts_for_user("1", (0, 100))
     assert "t-1" not in [reply["thread_id"] for reply in posts["post_replies"]]
     assert "t-1" not in [post["thread_id"] for post in posts["thread_posts"]]
+
+
+def test_initial_notified_timestamp(sample_database: MySqlDriver):
+    """Test that the initial last notified timestamp for a user is set."""
+    with sample_database.transaction() as cursor:
+
+        def check_timestamp(n):
+            cursor.execute(
+                """
+                SELECT notified_timestamp
+                FROM user_last_notified
+                WHERE user_id='1'
+                """
+            )
+            assert (cursor.fetchone() or {})["notified_timestamp"] == n
+
+        check_timestamp(1)
+        sample_database.execute_named(
+            "store_user_last_notified",
+            {
+                "user_id": "1",
+                "notified_timestamp": 2,
+            },
+        )
+        check_timestamp(2)
+        sample_database.execute_named(
+            "store_new_user_last_notified",
+            {
+                "user_id": "1",
+                "notified_timestamp": 3,
+            },
+        )
+        check_timestamp(2)
