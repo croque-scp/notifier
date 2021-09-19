@@ -285,6 +285,9 @@ change:
   concurrency* and set the limit to 1. This will make sure only one
   instance of the Lambda can run at a time &mdash; I will cover why this
   setting is necessary later.
+- In *Asynchronous invocation*, change the number of retry attempts to 0.
+  - It would be pointless to retry the Lambda, because by then the time
+    would have changed, and no channels would be activated.
 - In the *Test* tab, create a new test event with sample config parameters.
   I used the same value for both the test event and the actual event,
   detailed below.
@@ -323,8 +326,6 @@ Create the trigger, then find it in the EventBridge console, and edit it:
 ```
 
 - Under *Retry policy*, set the number of retry attempts to 0.
-  - It would be pointless to retry the Lambda, because by then the time
-    would have changed, and no channels would be activated.
 
 While you're still setting everything up, and especially if you already
 uploaded the code, you may wish to disable the event to stop the schedule.
