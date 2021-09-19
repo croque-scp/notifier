@@ -1,7 +1,8 @@
 import logging
 import re
-from typing import Iterable, List, Optional, Tuple, cast
+from typing import Iterable, List, Optional, Tuple, Union, cast
 
+from bs4 import BeautifulSoup
 from bs4.element import Tag
 
 from notifier.types import RawPost, RawThreadMeta
@@ -37,6 +38,7 @@ def parse_thread_meta(thread: Tag) -> RawThreadMeta:
         "title": list(breadcrumbs.stripped_strings)[-1].strip(" »"),
         "creator_username": creator_username,
         "created_timestamp": created_timestamp,
+        "page_count": count_pages(thread),
     }
 
 
@@ -191,3 +193,25 @@ def get_timestamp(element: Tag) -> Optional[int]:
     except (IndexError, ValueError):
         return None
     return posted_timestamp
+
+
+def count_pages(module_result: Union[str, Tag]) -> int:
+    """Counts the pages in a Wikidot module.
+
+    Takes the HTML (as text or soup) of the output of any module that can
+    return with a pager, and reads the text of the last page button to get
+    the page number.
+
+    If a pager is not present, the page count is assumed to be 1.
+    """
+    if isinstance(module_result, str):
+        module_result = BeautifulSoup(module_result, "html.parser")
+    page_selectors = cast(Tag, module_result.find(class_="pager"))
+    if not page_selectors:
+        # There are no page selectors if there is only one page
+        return 1
+    final_page_selector = cast(
+        Tag,
+        cast(Tag, page_selectors.select(".target:nth-last-child(2)")[0]).a,
+    )
+    return int(final_page_selector.get_text())

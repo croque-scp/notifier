@@ -98,7 +98,8 @@ def fetch_posts_with_context(
             )
             continue
         logger.debug(
-            "Downloading thread %s",
+            "Downloading thread%s %s",
+            " containing post" if post_id is not None else "",
             {"wiki_id": wiki_id, "thread_id": thread_id, "post_id": post_id},
         )
         for post_index, thread_or_post in enumerate(
@@ -141,30 +142,16 @@ def fetch_posts_with_context(
         if post_id is None:
             # If the full thread was crawled, mark it as seen
             full_threads_already_seen.append(thread_id)
-            logger.debug(
-                "Downloaded thread %s",
-                {
-                    "wiki_id": wiki_id,
-                    "thread_id": thread_id,
-                    "cumulative_post_count": len(posts_already_seen),
-                    "cumulative_full_thread_count": len(
-                        full_threads_already_seen
-                    ),
-                },
-            )
-        else:
-            logger.debug(
-                "Downloaded thread page containing post %s",
-                {
-                    "wiki_id": wiki_id,
-                    "thread_id": thread_id,
-                    "post_id": post_id,
-                    "cumulative_post_count": len(posts_already_seen),
-                    "cumulative_full_thread_count": len(
-                        full_threads_already_seen
-                    ),
-                },
-            )
+        logger.debug(
+            "Downloaded thread%s %s",
+            " containing post" if post_id is not None else "",
+            {
+                "wiki_id": wiki_id,
+                "thread_id": thread_id,
+                "cumulative_post_count": len(posts_already_seen),
+                "cumulative_full_thread_count": len(full_threads_already_seen),
+            },
+        )
 
 
 def fetch_post_context(connection: Connection, wiki_id: str, thread_id: str):

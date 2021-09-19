@@ -6,6 +6,7 @@ from bs4 import BeautifulSoup
 from bs4.element import Tag
 
 from notifier.parsethread import (
+    count_pages,
     get_user_from_nametag,
     parse_thread_meta,
     parse_thread_page,
@@ -131,28 +132,32 @@ class Connection:
         key for each page. 1 for the vast majority of modules; often equal
         to the perPage value for ListPages.
         """
+        logger.debug(
+            "Paginated module %s",
+            {
+                "index": kwargs.get(index_key, starting_index),
+                "module_name": module_name,
+                "wiki_id": wiki,
+            },
+        )
         first_page = self.module(wiki, module_name, **kwargs)
         yield first_page
-        page_selectors = cast(
-            Tag,
-            BeautifulSoup(first_page["body"], "html.parser").find(
-                class_="pager"
-            ),
-        )
-        if not page_selectors:
-            # There are no page selectors if there is only one page
-            return
-        final_page_selector = cast(
-            Tag,
-            cast(Tag, page_selectors.select(".target:nth-last-child(2)")[0]).a,
-        )
-        final_page_index = int(final_page_selector.get_text())
+        page_count = count_pages(first_page["body"])
         # Iterate through the remaining pages
         # Start from the starting index plus one, because the first page
         # was already done
         # End at the final page plus one because range() is head exclusive
-        for page_index in range(starting_index + 1, final_page_index + 1):
+        # (this assumes that the index is 1-based)
+        for page_index in range(starting_index + 1, page_count + 1):
             kwargs.update({index_key: page_index * index_increment})
+            logger.debug(
+                "Paginated module %s",
+                {
+                    "index": kwargs[index_key],
+                    "module_name": module_name,
+                    "wiki_id": wiki,
+                },
+            )
             yield self.module(wiki, module_name, **kwargs)
 
     def listpages(
@@ -207,28 +212,40 @@ class Connection:
         """
 
         if post_id is None:
-            thread_pages = (
-                BeautifulSoup(page["body"], "html.parser")
-                for page in self.paginated_module(
+            # Use the thread module for the first page, as it contains
+            # thread meta information
+            first_page = BeautifulSoup(
+                self.module(
                     wiki_id,
                     "forum/ForumViewThreadModule",
-                    index_key="pageNo",
-                    starting_index=1,
                     t=thread_id.lstrip("t-"),
-                )
+                )["body"],
+                "html.parser",
             )
-            # I know that at least one page exists, so the call to `next` will
-            # not raise a StopIteration
-            # pylint: disable=stop-iteration-return
-            first_page = next(thread_pages)
-            yield parse_thread_meta(first_page)
+            thread_meta = parse_thread_meta(first_page)
+            yield thread_meta
             yield from parse_thread_page(thread_id, first_page)
-            yield from (
-                post
-                for page in thread_pages
-                for post in parse_thread_page(thread_id, page)
-            )
+            # If the thread contains more than one page, use the thread
+            # posts module to iterate the remaining posts
+            if thread_meta["page_count"] > 1:
+                thread_pages = (
+                    BeautifulSoup(page["body"], "html.parser")
+                    for page in self.paginated_module(
+                        wiki_id,
+                        "forum/ForumViewThreadPostsModule",
+                        t=thread_id.lstrip("t-"),
+                        index_key="pageNo",
+                        starting_index=2,
+                    )
+                )
+                yield from (
+                    post
+                    for page in thread_pages
+                    for post in parse_thread_page(thread_id, page)
+                )
         else:
+            # The thread module is able to return a thread page containing
+            # a specific post, in addition to thread meta information
             thread_page = BeautifulSoup(
                 self.module(
                     wiki_id,
