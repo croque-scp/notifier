@@ -9,9 +9,9 @@ my experience level before I set out on this project.
 
 It's worth noting that the instructions in this document are more like a
 log of what I did to get things set up (with the caveat that if I did
-something wrong and then went back and changed it, I don't mention that
-here). That means that if you happen to know any better than I do, feel
-free to deviate.
+something wrong and then went back and changed it, I don't mention it
+&mdash; only the net outcome). That means that if you happen to know any
+better than I do, feel free to deviate.
 
 # First-time setup for deployment to AWS
 
