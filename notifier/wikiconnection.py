@@ -131,6 +131,14 @@ class Connection:
         key for each page. 1 for the vast majority of modules; often equal
         to the perPage value for ListPages.
         """
+        logger.debug(
+            "Paginated module %s",
+            {
+                "index": kwargs.get(index_key, starting_index),
+                "module_name": module_name,
+                "wiki_id": wiki,
+            },
+        )
         first_page = self.module(wiki, module_name, **kwargs)
         yield first_page
         page_selectors = cast(
@@ -153,6 +161,14 @@ class Connection:
         # End at the final page plus one because range() is head exclusive
         for page_index in range(starting_index + 1, final_page_index + 1):
             kwargs.update({index_key: page_index * index_increment})
+            logger.debug(
+                "Paginated module %s",
+                {
+                    "index": kwargs[index_key],
+                    "module_name": module_name,
+                    "wiki_id": wiki,
+                },
+            )
             yield self.module(wiki, module_name, **kwargs)
 
     def listpages(
