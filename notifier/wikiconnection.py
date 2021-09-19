@@ -6,6 +6,7 @@ from bs4 import BeautifulSoup
 from bs4.element import Tag
 
 from notifier.parsethread import (
+    count_pages,
     get_user_from_nametag,
     parse_thread_meta,
     parse_thread_page,
@@ -329,25 +330,3 @@ class Connection:
             address = address_cell.get_text().strip()
             addresses[username.strip()] = address
         return addresses
-
-
-def count_pages(module_result: Union[str, Tag]) -> int:
-    """Counts the pages in a Wikidot module.
-
-    Takes the HTML (as text or soup) of the output of any module that can
-    return with a pager, and reads the text of the last page button to get
-    the page number.
-
-    If a pager is not present, the page count is assumed to be 1.
-    """
-    if isinstance(module_result, str):
-        module_result = BeautifulSoup(module_result, "html.parser")
-    page_selectors = cast(Tag, module_result.find(class_="pager"))
-    if not page_selectors:
-        # There are no page selectors if there is only one page
-        return 1
-    final_page_selector = cast(
-        Tag,
-        cast(Tag, page_selectors.select(".target:nth-last-child(2)")[0]).a,
-    )
-    return int(final_page_selector.get_text())
