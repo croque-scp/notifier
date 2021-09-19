@@ -5,6 +5,7 @@ from typing import Iterable, List, Optional, Tuple, cast
 from bs4.element import Tag
 
 from notifier.types import RawPost, RawThreadMeta
+from notifier.wikiconnection import count_pages
 
 logger = logging.getLogger(__name__)
 
@@ -37,6 +38,7 @@ def parse_thread_meta(thread: Tag) -> RawThreadMeta:
         "title": list(breadcrumbs.stripped_strings)[-1].strip(" »"),
         "creator_username": creator_username,
         "created_timestamp": created_timestamp,
+        "page_count": count_pages(thread),
     }
 
 

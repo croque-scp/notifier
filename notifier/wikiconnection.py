@@ -319,19 +319,18 @@ class Connection:
         return addresses
 
 
-def count_pages(module_result: str) -> int:
+def count_pages(module_result: Union[str, Tag]) -> int:
     """Counts the pages in a Wikidot module.
 
-    Takes the HTML (as text) of the output of any module that can return
-    with a pager, and reads the text of the last page button to get the
-    page number.
+    Takes the HTML (as text or soup) of the output of any module that can
+    return with a pager, and reads the text of the last page button to get
+    the page number.
 
     If a pager is not present, the page count is assumed to be 1.
     """
-    page_selectors = cast(
-        Tag,
-        BeautifulSoup(module_result, "html.parser").find(class_="pager"),
-    )
+    if isinstance(module_result, str):
+        module_result = BeautifulSoup(module_result, "html.parser")
+    page_selectors = cast(Tag, module_result.find(class_="pager"))
     if not page_selectors:
         # There are no page selectors if there is only one page
         return 1
