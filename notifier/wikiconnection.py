@@ -141,25 +141,13 @@ class Connection:
         )
         first_page = self.module(wiki, module_name, **kwargs)
         yield first_page
-        page_selectors = cast(
-            Tag,
-            BeautifulSoup(first_page["body"], "html.parser").find(
-                class_="pager"
-            ),
-        )
-        if not page_selectors:
-            # There are no page selectors if there is only one page
-            return
-        final_page_selector = cast(
-            Tag,
-            cast(Tag, page_selectors.select(".target:nth-last-child(2)")[0]).a,
-        )
-        final_page_index = int(final_page_selector.get_text())
+        page_count = count_pages(first_page["body"])
         # Iterate through the remaining pages
         # Start from the starting index plus one, because the first page
         # was already done
         # End at the final page plus one because range() is head exclusive
-        for page_index in range(starting_index + 1, final_page_index + 1):
+        # (this assumes that the index is 1-based)
+        for page_index in range(starting_index + 1, page_count + 1):
             kwargs.update({index_key: page_index * index_increment})
             logger.debug(
                 "Paginated module %s",
@@ -329,3 +317,26 @@ class Connection:
             address = address_cell.get_text().strip()
             addresses[username.strip()] = address
         return addresses
+
+
+def count_pages(module_result: str) -> int:
+    """Counts the pages in a Wikidot module.
+
+    Takes the HTML (as text) of the output of any module that can return
+    with a pager, and reads the text of the last page button to get the
+    page number.
+
+    If a pager is not present, the page count is assumed to be 1.
+    """
+    page_selectors = cast(
+        Tag,
+        BeautifulSoup(module_result, "html.parser").find(class_="pager"),
+    )
+    if not page_selectors:
+        # There are no page selectors if there is only one page
+        return 1
+    final_page_selector = cast(
+        Tag,
+        cast(Tag, page_selectors.select(".target:nth-last-child(2)")[0]).a,
+    )
+    return int(final_page_selector.get_text())
