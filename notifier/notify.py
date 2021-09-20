@@ -1,7 +1,8 @@
 import logging
 import re
 import time
-from typing import Iterable, List, Optional, cast
+from smtplib import SMTPAuthenticationError
+from typing import Iterable, List, cast
 
 from notifier.config.remote import get_global_config
 from notifier.config.user import get_user_config
@@ -13,6 +14,7 @@ from notifier.newposts import get_new_posts
 from notifier.timing import channel_is_now, channel_will_be_next
 from notifier.types import (
     AuthConfig,
+    CachedUserConfig,
     EmailAddresses,
     GlobalOverrideConfig,
     GlobalOverridesConfig,
@@ -146,9 +148,8 @@ def notify_channel(
     connection: Connection,
     digester: Digester,
     emailer: Emailer,
-    addresses: Optional[EmailAddresses] = None,
 ):
-    """Execute this task's responsibilities."""
+    """Compiles and sends notifications for all users in a given channel."""
     logger.info("Activating channel %s", {"channel": channel})
     # Get config sans subscriptions for users who would be notified
     user_configs = database.get_user_configs(channel)
@@ -158,113 +159,174 @@ def notify_channel(
     )
     # Notify each user on this frequency channel
     notified_users = 0
+    addresses: EmailAddresses = {}
     for user in user_configs:
-        logger.debug(
-            "Making digest for user %s",
-            {
-                **user,
-                "manual_subs": len(user["manual_subs"]),
-                "auto_subs": len(user["auto_subs"]),
-            },
-        )
-        # Get new posts for this user
-        posts = database.get_new_posts_for_user(
-            user["user_id"],
-            (user["last_notified_timestamp"] + 1, current_timestamp),
-        )
-        apply_overrides(posts, database.get_global_overrides())
-        post_count = len(posts["thread_posts"]) + len(posts["post_replies"])
-        logger.debug(
-            "Found posts for notification %s",
-            {
-                "username": user["username"],
-                "post_count": post_count,
-                "channel": channel,
-            },
-        )
-        if post_count == 0:
-            # Nothing to notify this user about
-            logger.debug(
-                "Aborting notification %s",
+        try:
+            notified_users += notify_user(
+                user,
+                channel,
+                current_timestamp,
+                database=database,
+                connection=connection,
+                digester=digester,
+                emailer=emailer,
+                addresses=addresses,
+            )
+        except SMTPAuthenticationError as error:
+            logger.error(
+                "Failed to notify user via email %s",
                 {
-                    "user": user["username"],
-                    "channel": channel,
-                    "reason": "no posts",
+                    "reason": "Gmail authentication failed",
+                    "for user": user["username"],
+                    "in channel": channel,
                 },
+                exc_info=error,
             )
             continue
-        # Extract the 'last notification time' that will be recorded -
-        # it is the timestamp of the most recent post this user is
-        # being notified about
-        last_notified_timestamp = max(
-            post["posted_timestamp"]
-            for post in (
-                posts["thread_posts"]
-                + cast(List[PostInfo], posts["post_replies"])
+        except Exception as error:
+            logger.error(
+                "Failed to notify user %s",
+                {
+                    "reason": "unknown",
+                    "for user": user["username"],
+                    "in channel": channel,
+                    "user_config": user,
+                },
+                exc_info=error,
             )
-        )
-        # Compile the digest
-        subject, body = digester.for_user(user, posts)
-        # Send the digests via PM to PM-subscribed users
-        if user["delivery"] == "pm":
-            logger.debug(
-                "Sending notification %s",
-                {"user": user["username"], "via": "pm", "channel": channel},
-            )
-            connection.send_message(user["user_id"], subject, body)
-        # Send the digests via email to email-subscribed users
-        if user["delivery"] == "email":
-            if addresses is None:
-                # Only get the contacts when there is actually a user who
-                # needs to be emailed
-                logger.info("Retrieving email contacts")
-                addresses = connection.get_contacts()
-                logger.debug(
-                    "Retrieved email contacts %s",
-                    {"address_count": len(addresses)},
-                )
-            try:
-                logger.debug("Using cached email contacts")
-                address = addresses[user["username"]]
-            except KeyError:
-                # This user requested to be notified via email but
-                # hasn't added the notification account as a contact,
-                # meaning their email address is unknown
-                logger.warning(
-                    "Aborting notification %s",
-                    {
-                        "user": user["username"],
-                        "channel": channel,
-                        "reason": "not a back-contact",
-                    },
-                )
-                # They'll have to fix this themselves
-                continue
-            logger.debug(
-                "Sending notification %s",
-                {"user": user["username"], "via": "email", "channel": channel},
-            )
-            emailer.send(address, subject, body)
-        # Immediately after sending the notification, record the user's
-        # last notification time
-        # Minimising the number of computations between these two
-        # processes is essential
-        database.store_user_last_notified(
-            user["user_id"], last_notified_timestamp
-        )
-        logger.debug(
-            "Recorded notification %s",
-            {
-                "username": user["username"],
-                "recorded_timestamp": last_notified_timestamp,
-                "channel": channel,
-            },
-        )
-        notified_users += 1
+            continue
     logger.info(
         "Finished notifying channel %s",
         {"channel": channel, "users_notified_count": notified_users},
     )
+
+
+def notify_user(
+    user: CachedUserConfig,
+    channel: str,
+    current_timestamp: int,
+    *,
+    database: BaseDatabaseDriver,
+    connection: Connection,
+    digester: Digester,
+    emailer: Emailer,
+    addresses: EmailAddresses,
+) -> int:
+    """Compiles and sends a notification for a single user.
+
+    Returns a boolean indicating whether the notification was successful.
+
+    :param addresses: A dict of email addresses to use for sending emails
+    to. Should be set to an empty dict initially; if this is the case, this
+    function will populate it from the notifier's Wikidot account. This
+    object must not be reassigned, only mutated.
+    """
+    logger.debug(
+        "Making digest for user %s",
+        {
+            **user,
+            "manual_subs": len(user["manual_subs"]),
+            "auto_subs": len(user["auto_subs"]),
+        },
+    )
+    # Get new posts for this user
+    posts = database.get_new_posts_for_user(
+        user["user_id"],
+        (user["last_notified_timestamp"] + 1, current_timestamp),
+    )
+    apply_overrides(posts, database.get_global_overrides())
+    post_count = len(posts["thread_posts"]) + len(posts["post_replies"])
+    logger.debug(
+        "Found posts for notification %s",
+        {
+            "username": user["username"],
+            "post_count": post_count,
+            "channel": channel,
+        },
+    )
+    if post_count == 0:
+        # Nothing to notify this user about
+        logger.debug(
+            "Skipping notification %s",
+            {
+                "for user": user["username"],
+                "in channel": channel,
+                "reason": "no posts",
+            },
+        )
+        return False
+
+    # Extract the 'last notification time' that will be recorded -
+    # it is the timestamp of the most recent post this user is
+    # being notified about
+    last_notified_timestamp = max(
+        post["posted_timestamp"]
+        for post in (
+            posts["thread_posts"] + cast(List[PostInfo], posts["post_replies"])
+        )
+    )
+
+    # Compile the digest
+    subject, body = digester.for_user(user, posts)
+
+    # Send the digests via PM to PM-subscribed users
+    if user["delivery"] == "pm":
+        logger.debug(
+            "Sending notification %s",
+            {"to user": user["username"], "via": "pm", "channel": channel},
+        )
+        connection.send_message(user["user_id"], subject, body)
+
+    # Send the digests via email to email-subscribed users
+    if user["delivery"] == "email":
+        if addresses == {}:
+            # Only get the contacts when there is actually a user who
+            # needs to be emailed
+            logger.info("Retrieving email contacts")
+            addresses.update(connection.get_contacts())
+            logger.debug(
+                "Retrieved email contacts %s",
+                {"address_count": len(addresses)},
+            )
+        else:
+            logger.debug("Using cached email contacts")
+
+        try:
+            address = addresses[user["username"]]
+        except KeyError:
+            # This user requested to be notified via email but
+            # hasn't added the notification account as a contact,
+            # meaning their email address is unknown
+            logger.warning(
+                "Aborting notification %s",
+                {
+                    "for user": user["username"],
+                    "in channel": channel,
+                    "reason": "not a back-contact",
+                },
+            )
+            # They'll have to fix this themselves
+            return False
+        logger.debug(
+            "Sending notification %s",
+            {"user": user["username"], "via": "email", "channel": channel},
+        )
+        emailer.send(address, subject, body)
+
+    # Immediately after sending the notification, record the user's
+    # last notification time
+    # Minimising the number of computations between these two
+    # processes is essential
+    database.store_user_last_notified(user["user_id"], last_notified_timestamp)
+    logger.debug(
+        "Recorded notification for user %s",
+        {
+            "username": user["username"],
+            "recorded_timestamp": last_notified_timestamp,
+            "channel": channel,
+        },
+    )
+    return True
 
 
 def apply_overrides(

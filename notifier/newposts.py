@@ -18,8 +18,16 @@ new_posts_rss = "http://{}.wikidot.com/feed/forum/posts.xml"
 def get_new_posts(database: BaseDatabaseDriver, connection: Connection):
     """For each configured wiki, retrieve and store new posts."""
     for wiki in database.get_supported_wikis():
-        logger.info("Getting new posts %s", {"wiki_id": wiki["id"]})
-        fetch_posts_with_context(wiki["id"], database, connection)
+        logger.info("Getting new posts %s", {"for wiki_id": wiki["id"]})
+        try:
+            fetch_posts_with_context(wiki["id"], database, connection)
+        except Exception as error:
+            logger.error(
+                "Failed getting new posts %s",
+                {"for wiki_id": wiki["id"], "reason": "unknown"},
+                exc_info=error,
+            )
+            continue
 
 
 def fetch_posts_with_context(
