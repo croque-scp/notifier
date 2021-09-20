@@ -283,7 +283,7 @@ def notify_user(
             # Only get the contacts when there is actually a user who
             # needs to be emailed
             logger.info("Retrieving email contacts")
-            addresses = connection.get_contacts()
+            addresses.update(connection.get_contacts())
             logger.debug(
                 "Retrieved email contacts %s",
                 {"address_count": len(addresses)},
