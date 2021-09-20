@@ -67,8 +67,9 @@ activated, add the `--execute-now` switch followed by any of `hourly`,
 `daily`, `weekly`, `monthly` and `test`.
 
 The `test` channel will never be activated during normal usage. Note that
-user config setting for the `test` channel is hidden, and can be selected
-by executing the following JavaScript while editing a user config page:
+the user config setting for the `test` channel is hidden, and can be
+selected by executing the following JavaScript while editing a user config
+page:
 
 ```js
 document.querySelector("[name=field-frequency]").value = "test"
@@ -76,8 +77,10 @@ document.querySelector("[name=field-frequency]").value = "test"
 
 ## Remote deployment
 
-The notifier service is not intended to be executed locally, but to be
-deployed to the cloud using AWS Lambda.
+The notifier service is not intended to be executed locally or even to be
+executed as a continuously-running service during production, but rather to
+be deployed to the cloud using AWS Lambda and a handler that calls
+`--execute-now`.
 
 See [docs/deployment.md](/docs/deployment.md) for more information and instructions.
 
