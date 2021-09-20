@@ -106,15 +106,19 @@ class MySqlDriver(BaseDatabaseDriver, BaseDatabaseWithSqlFileCache):
         self.create_tables()
 
     def apply_migrations(self) -> None:
-        migration_version = int(
-            (
-                self.execute_named("get_migration_version").fetchone()
-                or {"version": -1}
-            )["version"]
-        )
+        try:
+            migration_version = int(
+                (
+                    self.execute_named("get_migration_version").fetchone()
+                    or {"version": -2}
+                )["version"]
+            )
+        except pymysql.err.ProgrammingError:
+            # Raised when the meta table doesn't exist
+            migration_version = -1
         # If there is no version set, use the create_tables procedure as a
         # shortcut to the most recent migration
-        if migration_version == -1:
+        if migration_version == -2:
             self.create_tables()
             return
         # Filter out migrations that have already been applied
