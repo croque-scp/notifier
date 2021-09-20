@@ -186,10 +186,10 @@ def notify_channel(
         if post_count == 0:
             # Nothing to notify this user about
             logger.debug(
-                "Aborting notification %s",
+                "Skipping notification %s",
                 {
-                    "user": user["username"],
-                    "channel": channel,
+                    "for user": user["username"],
+                    "in channel": channel,
                     "reason": "no posts",
                 },
             )
@@ -210,7 +210,7 @@ def notify_channel(
         if user["delivery"] == "pm":
             logger.debug(
                 "Sending notification %s",
-                {"user": user["username"], "via": "pm", "channel": channel},
+                {"to user": user["username"], "via": "pm", "channel": channel},
             )
             connection.send_message(user["user_id"], subject, body)
         # Send the digests via email to email-subscribed users
@@ -234,8 +234,8 @@ def notify_channel(
                 logger.warning(
                     "Aborting notification %s",
                     {
-                        "user": user["username"],
-                        "channel": channel,
+                        "for user": user["username"],
+                        "in channel": channel,
                         "reason": "not a back-contact",
                     },
                 )
