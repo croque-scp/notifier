@@ -1,6 +1,7 @@
 import logging
 import re
 import time
+from smtplib import SMTPAuthenticationError
 from typing import Iterable, List, Optional, cast
 
 from notifier.config.remote import get_global_config
@@ -244,7 +245,30 @@ def notify_channel(
                 "Sending notification %s",
                 {"user": user["username"], "via": "email", "channel": channel},
             )
-            emailer.send(address, subject, body)
+            try:
+                emailer.send(address, subject, body)
+            except SMTPAuthenticationError as error:
+                logger.error(
+                    "Failed to notify user via email %s",
+                    {
+                        "reason": "Gmail authentication failed",
+                        "for user": user["username"],
+                        "in channel": channel,
+                    },
+                    exc_info=error,
+                )
+                continue
+            except Exception as error:
+                logger.error(
+                    "Failed to notify user via email %s",
+                    {
+                        "reason": "unknown",
+                        "for user": user["username"],
+                        "in channel": channel,
+                    },
+                    exc_info=error,
+                )
+                continue
         # Immediately after sending the notification, record the user's
         # last notification time
         # Minimising the number of computations between these two
@@ -253,7 +277,7 @@ def notify_channel(
             user["user_id"], last_notified_timestamp
         )
         logger.debug(
-            "Recorded notification %s",
+            "Recorded notification for user %s",
             {
                 "username": user["username"],
                 "recorded_timestamp": last_notified_timestamp,
