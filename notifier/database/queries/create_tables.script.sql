@@ -1,4 +1,7 @@
 --
+-- This is the canonical form of the database schema, accurate after all
+-- migrations up to and including the one stated below have been applied.
+--
 -- Foreign key constraints are rarely used in this schema - while the
 -- values of some columns do map to the values of others, it is not
 -- important for all values to be represented in the corresponding table.
@@ -11,7 +14,14 @@
 -- characters.
 --
 
-CREATE TABLE IF NOT EXISTS user_config (
+CREATE TABLE meta (
+  PRIMARY KEY (`key`),
+  `key`   VARCHAR(20) NOT NULL,
+  `value` VARCHAR(20) NOT NULL
+);
+INSERT INTO meta VALUES ('migration_version', '000');
+
+CREATE TABLE user_config (
   PRIMARY KEY (user_id),
   user_id   VARCHAR(20) NOT NULL,
   username  VARCHAR(20) NOT NULL,
@@ -20,13 +30,13 @@ CREATE TABLE IF NOT EXISTS user_config (
   delivery  VARCHAR(5)  NOT NULL
 );
 
-CREATE TABLE IF NOT EXISTS user_last_notified (
+CREATE TABLE user_last_notified (
   PRIMARY KEY (user_id),
   user_id            VARCHAR(20)  NOT NULL,
   notified_timestamp INT UNSIGNED NOT NULL
 );
 
-CREATE TABLE IF NOT EXISTS manual_sub (
+CREATE TABLE manual_sub (
   user_id   VARCHAR(20) NOT NULL,
   thread_id VARCHAR(20) NOT NULL,
   post_id   VARCHAR(20),
@@ -35,25 +45,25 @@ CREATE TABLE IF NOT EXISTS manual_sub (
   UNIQUE (user_id, thread_id, post_id, sub)
 );
 
-CREATE TABLE IF NOT EXISTS global_override (
+CREATE TABLE global_override (
   wiki_id                VARCHAR(50)   NOT NULL,
   override_settings_json VARCHAR(2000) NOT NULL
 );
 
-CREATE TABLE IF NOT EXISTS wiki (
+CREATE TABLE wiki (
   PRIMARY KEY (id),
   id     VARCHAR(50)  NOT NULL,
   name   VARCHAR(200) NOT NULL,
   secure TINYINT(1)   NOT NULL
 );
 
-CREATE TABLE IF NOT EXISTS category (
+CREATE TABLE category (
   PRIMARY KEY (id),
   id   VARCHAR(20)  NOT NULL,
   name VARCHAR(200) NOT NULL
 );
 
-CREATE TABLE IF NOT EXISTS thread (
+CREATE TABLE thread (
   PRIMARY KEY (id),
   id                VARCHAR(20)  NOT NULL,
   title             VARCHAR(200) NOT NULL,
@@ -64,7 +74,7 @@ CREATE TABLE IF NOT EXISTS thread (
   is_deleted        TINYINT(1)   NOT NULL DEFAULT 0
 );
 
-CREATE TABLE IF NOT EXISTS post (
+CREATE TABLE post (
   PRIMARY KEY (id),
   id               VARCHAR(20)  NOT NULL,
   thread_id        VARCHAR(20)  NOT NULL,

@@ -49,7 +49,7 @@ class MySqlDriver(BaseDatabaseDriver, BaseDatabaseWithSqlFileCache):
         )
         logger.info("Connected to database")
 
-        self.create_tables()
+        self.apply_migrations()
 
     @contextmanager
     def transaction(self) -> Iterator[DictCursor]:
@@ -104,6 +104,33 @@ class MySqlDriver(BaseDatabaseDriver, BaseDatabaseWithSqlFileCache):
                 cursor.execute(scrub)
         logger.info("Dropped tables %s", {"count": len(scrubs)})
         self.create_tables()
+
+    def apply_migrations(self) -> None:
+        migration_version = int(
+            (
+                self.execute_named("get_migration_version").fetchone()
+                or {"version": -1}
+            )["version"]
+        )
+        # If there is no version set, use the create_tables procedure as a
+        # shortcut to the most recent migration
+        if migration_version == -1:
+            self.create_tables()
+            return
+        # Filter out migrations that have already been applied
+        migrations = [
+            (version, migration)
+            for version, migration in sorted(self.get_migrations().items())
+            if version > migration_version
+        ]
+        for version, migration in migrations:
+            logger.info(
+                "Applying migration %s",
+                {"from version": migration_version, "to version": version},
+            )
+            with self.transaction() as cursor:
+                cursor.execute(migration)
+                migration_version = version
 
     def create_tables(self):
         with self.transaction() as cursor:

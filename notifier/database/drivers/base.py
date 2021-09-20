@@ -25,6 +25,11 @@ class BaseDatabaseDriver(ABC):
         used to clear the test database."""
 
     @abstractmethod
+    def apply_migrations(self) -> None:
+        """Extract the current database migration version, and apply all
+        subsequent migrations."""
+
+    @abstractmethod
     def create_tables(self) -> None:
         """Initial setup for the database."""
 

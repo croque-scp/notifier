@@ -2,7 +2,7 @@ import logging
 from abc import ABC
 from importlib import import_module
 from pathlib import Path
-from typing import Any, Callable, Tuple, Type
+from typing import Any, Callable, Dict, Tuple, Type
 
 from notifier.database.drivers.base import BaseDatabaseDriver
 
@@ -98,7 +98,8 @@ class BaseDatabaseWithSqlFileCache(ABC):
     call to each query to re-read from the filesystem.
     """
 
-    builtin_queries_dir = Path(__file__).parent / "queries"
+    queries_dir = Path(__file__).parent / "queries"
+    migrations_dir = Path(__file__).parent / "migrations"
 
     def __init__(self):
         self.clear_query_file_cache()
@@ -114,7 +115,7 @@ class BaseDatabaseWithSqlFileCache(ABC):
         try:
             query_path = next(
                 path
-                for path in self.builtin_queries_dir.iterdir()
+                for path in self.queries_dir.iterdir()
                 if path.name.split(".")[0] == query_name
             )
         except StopIteration as stop:
@@ -135,3 +136,31 @@ class BaseDatabaseWithSqlFileCache(ABC):
         """
         if query_name not in self.query_cache:
             self.read_query_file(query_name)
+
+    def get_migrations(self) -> Dict[int, str]:
+        """Reads all up migrations from the migrations dir and arranges
+        them into a dict keyed to the migration number.
+
+        Migration files must take the following format:
+        000-name.up.sql
+        Where '000' is a 3-digit number corresponding to the version, and
+        'name' is any name that summarises the effect of the migration.
+        """
+        migrations: Dict[int, str] = {}
+        for path in self.migrations_dir.iterdir():
+            if not path.name.endswith(".up.sql"):
+                continue
+            try:
+                version = int(path.name.split("-")[0])
+            except ValueError:
+                continue
+            with path.open() as file:
+                migrations[version] = file.read()
+        for version, wanted in zip(
+            sorted(migrations.keys()), range(0, len(migrations.keys()))
+        ):
+            if version != wanted:
+                raise AttributeError(
+                    f"Migration version {min(version, wanted)} missing"
+                )
+        return migrations
