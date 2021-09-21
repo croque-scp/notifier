@@ -71,6 +71,7 @@ CREATE TABLE thread (
   category_id       VARCHAR(200),
   creator_username  VARCHAR(20),
   created_timestamp INT UNSIGNED NOT NULL,
+  first_post_id     VARCHAR(20),
   is_deleted        TINYINT(1)   NOT NULL DEFAULT 0
 );
 
