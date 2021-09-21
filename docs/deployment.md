@@ -13,6 +13,26 @@ something wrong and then went back and changed it, I don't mention it
 &mdash; only the net outcome). That means that if you happen to know any
 better than I do, feel free to deviate.
 
+# Estimated costs
+
+Breakdown for the total estimated cost of hosting notifier for a 750-hour
+month using the setup method detailed below:
+
+- EventBridge builtin event emission: $0.00
+- Lambda execution time: $0.00
+  - Safely within permanent free tier &mdash; 750 invocations out of
+    1,000,000 and (assuming 5 minutes execution time per function with 200
+    MB memory allocated) 45,000 GB-seconds per month out of 400,000.
+  - Ignoring free tier: $0.73
+- Attaching Elastic IPs to the Lambda network interfaces: $0.00
+  - Recommended method of using a NAT gateway would cost $37.50
+- Aurora Serverless v1:
+  - Usage: assuming a limit of 1 ACU, and the database being active for 5
+    minutes for the Lambda plus 15 minutes to subsequently shut down:
+    $17.50
+  - Storage: Unsure yet - need more data
+  - Cost can be reduced by switching to v2 (`us-east-1` only)
+
 # First-time setup for deployment to AWS
 
 ## Creating an IAM user
