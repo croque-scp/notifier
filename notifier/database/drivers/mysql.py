@@ -31,6 +31,7 @@ class MySqlDriver(BaseDatabaseDriver, BaseDatabaseWithSqlFileCache):
     def __init__(
         self, database_name: str, *, host: str, username: str, password: str
     ):
+        self.database_name = database_name
 
         BaseDatabaseDriver.__init__(self, database_name)
         BaseDatabaseWithSqlFileCache.__init__(self)
@@ -95,16 +96,45 @@ class MySqlDriver(BaseDatabaseDriver, BaseDatabaseWithSqlFileCache):
         cursor.execute(query, {} if params is None else params)
         return cursor
 
-    def scrub_database(self, database_name: str):
-        if not database_name.endswith("_test"):
+    def scrub_database(self):
+        logger.info("Scrubbing database")
+        if not self.database_name.endswith("_test"):
             raise RuntimeError("Don't scrub the production database")
-        with self.transaction() as cursor:
-            self.execute_named("_scrub", {"db_name": database_name}, cursor)
-            scrubs = [row["scrub"] for row in cursor.fetchall()]
-            for scrub in scrubs:
-                cursor.execute(scrub)
-        logger.info("Dropped tables %s", {"count": len(scrubs)})
-        self.create_tables()
+        # To the scrub the database, we apply all down migrations and then
+        # all up migrations
+        try:
+            current_version = int(
+                (
+                    self.execute_named("get_migration_version").fetchone()
+                    or {"version": -1}
+                )["version"]
+            )
+        except pymysql.err.ProgrammingError:
+            logger.info("Nothing to scrub?")
+            return
+        for required_version, migration in reversed(
+            list(enumerate(self.get_migrations("down")))
+        ):
+            if required_version > current_version:
+                continue
+            logger.info(
+                "Applying migration %s",
+                {
+                    "from version": current_version,
+                    "to version": required_version,
+                },
+            )
+            with self.transaction() as cursor:
+                cursor.execute(migration)
+                if required_version > 0:
+                    self.execute_named(
+                        "set_migration_version",
+                        {"version": str(required_version).rjust(3, "0")},
+                    )
+                    current_version = required_version
+        logger.info("Scrubbed database")
+
+        self.apply_migrations()
 
     def apply_migrations(self) -> None:
         try:

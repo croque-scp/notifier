@@ -21,7 +21,7 @@ class BaseDatabaseDriver(ABC):
         """Sets up and connects to the database."""
 
     @abstractmethod
-    def scrub_database(self, database_name: str):
+    def scrub_database(self):
         """Purges all information from the database. Should only ever be
         used to clear the test database."""
 
