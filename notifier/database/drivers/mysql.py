@@ -401,8 +401,13 @@ class MySqlDriver(BaseDatabaseDriver, BaseDatabaseWithSqlFileCache):
                 "category_id": thread["category_id"],
                 "creator_username": thread["creator_username"],
                 "created_timestamp": thread["created_timestamp"],
-                "first_post_id": thread["first_post_id"],
             },
+        )
+
+    def store_thread_first_post(self, thread_id: str, post_id: str) -> None:
+        self.execute_named(
+            "store_thread_first_post",
+            {"thread_id": thread_id, "post_id": post_id},
         )
 
     def store_post(self, post: RawPost) -> None:

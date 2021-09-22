@@ -199,10 +199,9 @@ class Connection:
 
         Returns an iterator.
 
-        The first item of the iterator is information about the forum
-        category that contains the thread; this takes the form of a tuple
-        of category ID, category name, thread title. (The thread title may
-        differ from the title of the first post.)
+        The first item of the iterator is meta information about the
+        thread. Note that the thread title may differ from the title of the
+        first post.
 
         All remaining items are posts. If post_id was provided, contains
         just the posts from the thread page that contains it (the first

@@ -121,5 +121,10 @@ class BaseDatabaseDriver(ABC):
         """
 
     @abstractmethod
+    def store_thread_first_post(self, thread_id: str, post_id: str) -> None:
+        """Store the relationship between a thread and the first post it
+        contains."""
+
+    @abstractmethod
     def store_post(self, post: RawPost) -> None:
         """Store a post."""

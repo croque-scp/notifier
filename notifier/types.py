@@ -133,7 +133,6 @@ class ThreadInfo(TypedDict):
     category_name: Optional[str]
     creator_username: Optional[str]
     created_timestamp: int
-    first_post_id: Optional[str]
 
 
 class RawPost(TypedDict):
