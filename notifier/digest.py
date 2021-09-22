@@ -102,7 +102,9 @@ class Digester:
                 if sub["sub"] == 1 and sub["post_id"] is not None
             ]
         )
-        sub_count = manual_sub_count
+        sub_count = (
+            manual_sub_count + auto_thread_sub_count + auto_post_sub_count
+        )
         total_notification_count = len(posts["thread_posts"]) + len(
             posts["post_replies"]
         )
@@ -234,7 +236,8 @@ def make_threads_digest(
                     first_post["wiki_secure"],
                     first_post["thread_id"],
                 ),
-                thread_title=first_post["thread_title"],
+                thread_title=first_post["thread_title"]
+                or lexicon["untitled_post_title"],
                 thread_has_creator=int(bool(first_post["thread_creator"])),
                 thread_creator=first_post["thread_creator"],
                 date=lexicon["date"].format(
@@ -269,7 +272,8 @@ def make_post_replies_digest(
                     replies[0]["thread_id"],
                     parent_post_id,
                 ),
-                post_title=replies[0]["parent_title"],
+                post_title=replies[0]["parent_title"]
+                or lexicon["untitled_post_title"],
                 date=lexicon["date"].format(
                     timestamp=replies[0]["parent_posted_timestamp"]
                 ),
@@ -295,7 +299,7 @@ def make_post_digest(post: PostInfo, lexicon: dict) -> str:
         post_title=post["title"] or lexicon["untitled_post_title"],
         post_author=post["username"],
         date=lexicon["date"].format(timestamp=post["posted_timestamp"]),
-        snippet=post["snippet"],
+        snippet=post["snippet"].replace("\n", " "),
     )
 
 
