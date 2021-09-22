@@ -1,6 +1,13 @@
 INSERT INTO
   thread
-  (id, title, wiki_id, category_id, creator_username, created_timestamp)
+  (
+    id,
+    title,
+    wiki_id,
+    category_id,
+    creator_username,
+    created_timestamp
+  )
 VALUES
   (
     %(id)s,

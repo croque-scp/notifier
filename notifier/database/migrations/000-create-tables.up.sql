@@ -1,4 +1,7 @@
 --
+-- This is the initial form of the database schema, before any migrations
+-- have been applied.
+--
 -- Foreign key constraints are rarely used in this schema - while the
 -- values of some columns do map to the values of others, it is not
 -- important for all values to be represented in the corresponding table.
@@ -10,6 +13,12 @@
 -- thread, post and user IDs have been arbitrarily given a limit of 20
 -- characters.
 --
+
+CREATE TABLE IF NOT EXISTS meta (
+  PRIMARY KEY (`key`),
+  `key`   VARCHAR(20) NOT NULL,
+  `value` VARCHAR(20) NOT NULL
+);
 
 CREATE TABLE IF NOT EXISTS user_config (
   PRIMARY KEY (user_id),

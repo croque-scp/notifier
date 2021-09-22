@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import Iterable, List, Optional, Tuple
+from typing import Iterable, List, Tuple
 
 from notifier.types import (
     CachedUserConfig,
@@ -8,6 +8,7 @@ from notifier.types import (
     RawPost,
     RawUserConfig,
     SupportedWikiConfig,
+    ThreadInfo,
 )
 
 
@@ -20,9 +21,14 @@ class BaseDatabaseDriver(ABC):
         """Sets up and connects to the database."""
 
     @abstractmethod
-    def scrub_database(self, database_name: str):
+    def scrub_database(self):
         """Purges all information from the database. Should only ever be
         used to clear the test database."""
+
+    @abstractmethod
+    def apply_migrations(self) -> None:
+        """Extract the current database migration version, and apply all
+        subsequent migrations."""
 
     @abstractmethod
     def create_tables(self) -> None:
@@ -108,20 +114,16 @@ class BaseDatabaseDriver(ABC):
         that are already present."""
 
     @abstractmethod
-    def store_thread(
-        self,
-        wiki_id: str,
-        category: Tuple[Optional[str], Optional[str]],
-        thread: Tuple[str, str, Optional[str], int],
-    ) -> None:
-        """Store a thread. Doesn't matter if the thread or category is
-        already known or not.
+    def store_thread(self, thread: ThreadInfo) -> None:
+        """Store a thread.
 
-        :param wiki_id: The ID of the wiki that contains the thread.
-        :param thread: A tuple containing information about the thread: ID,
-        title, creator username, and created timestamp.
-        :param category: A tuple containing the ID and name of the category.
+        Doesn't matter if the thread or category is already known or not.
         """
+
+    @abstractmethod
+    def store_thread_first_post(self, thread_id: str, post_id: str) -> None:
+        """Store the relationship between a thread and the first post it
+        contains."""
 
     @abstractmethod
     def store_post(self, post: RawPost) -> None:

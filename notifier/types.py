@@ -123,6 +123,18 @@ class RawThreadMeta(TypedDict):
     page_count: int
 
 
+class ThreadInfo(TypedDict):
+    """Information about a thread to be stored in the database."""
+
+    id: str
+    title: str
+    wiki_id: str
+    category_id: Optional[str]
+    category_name: Optional[str]
+    creator_username: Optional[str]
+    created_timestamp: int
+
+
 class RawPost(TypedDict):
     """Information for a single post from remote."""
 

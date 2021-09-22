@@ -2,7 +2,7 @@ import logging
 from abc import ABC
 from importlib import import_module
 from pathlib import Path
-from typing import Any, Callable, Tuple, Type
+from typing import Any, Callable, List, Literal, Tuple, Type, Union
 
 from notifier.database.drivers.base import BaseDatabaseDriver
 
@@ -98,7 +98,8 @@ class BaseDatabaseWithSqlFileCache(ABC):
     call to each query to re-read from the filesystem.
     """
 
-    builtin_queries_dir = Path(__file__).parent / "queries"
+    queries_dir = Path(__file__).parent / "queries"
+    migrations_dir = Path(__file__).parent / "migrations"
 
     def __init__(self):
         self.clear_query_file_cache()
@@ -114,7 +115,7 @@ class BaseDatabaseWithSqlFileCache(ABC):
         try:
             query_path = next(
                 path
-                for path in self.builtin_queries_dir.iterdir()
+                for path in self.queries_dir.iterdir()
                 if path.name.split(".")[0] == query_name
             )
         except StopIteration as stop:
@@ -135,3 +136,29 @@ class BaseDatabaseWithSqlFileCache(ABC):
         """
         if query_name not in self.query_cache:
             self.read_query_file(query_name)
+
+    def get_migrations(
+        self, direction: Union[Literal["up"], Literal["down"]]
+    ) -> List[str]:
+        """Reads all migrations of the given direction from the migrations
+        dir and arranges them into a list.
+
+        The index to the list corresponds to the effective migration
+        version after applying the migration for up migrations, and the
+        version required to perform the migration for down migrations.
+        """
+        migrations: List[Tuple[int, str]] = []
+        for path in self.migrations_dir.iterdir():
+            if not path.name.endswith(f".{direction}.sql"):
+                continue
+            try:
+                version = int(path.name.split("-")[0])
+            except ValueError:
+                continue
+            with path.open() as file:
+                migrations.append((version, file.read()))
+        migrations.sort()
+        for wanted, (version, _) in enumerate(migrations):
+            if version != wanted:
+                raise AttributeError(f"Migration version {version} missing")
+        return [migration for _, migration in migrations]

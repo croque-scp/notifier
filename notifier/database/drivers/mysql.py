@@ -1,7 +1,7 @@
 import json
 import logging
 from contextlib import contextmanager
-from typing import Iterable, Iterator, List, Optional, Tuple, cast
+from typing import Iterable, Iterator, List, Tuple, cast
 
 import pymysql
 from pymysql.constants.CLIENT import MULTI_STATEMENTS
@@ -18,6 +18,7 @@ from notifier.types import (
     RawUserConfig,
     Subscription,
     SupportedWikiConfig,
+    ThreadInfo,
     ThreadPostInfo,
 )
 
@@ -30,6 +31,7 @@ class MySqlDriver(BaseDatabaseDriver, BaseDatabaseWithSqlFileCache):
     def __init__(
         self, database_name: str, *, host: str, username: str, password: str
     ):
+        self.database_name = database_name
 
         BaseDatabaseDriver.__init__(self, database_name)
         BaseDatabaseWithSqlFileCache.__init__(self)
@@ -49,7 +51,7 @@ class MySqlDriver(BaseDatabaseDriver, BaseDatabaseWithSqlFileCache):
         )
         logger.info("Connected to database")
 
-        self.create_tables()
+        self.apply_migrations()
 
     @contextmanager
     def transaction(self) -> Iterator[DictCursor]:
@@ -94,16 +96,77 @@ class MySqlDriver(BaseDatabaseDriver, BaseDatabaseWithSqlFileCache):
         cursor.execute(query, {} if params is None else params)
         return cursor
 
-    def scrub_database(self, database_name: str):
-        if not database_name.endswith("_test"):
+    def scrub_database(self):
+        logger.info("Scrubbing database")
+        if not self.database_name.endswith("_test"):
             raise RuntimeError("Don't scrub the production database")
-        with self.transaction() as cursor:
-            self.execute_named("_scrub", {"db_name": database_name}, cursor)
-            scrubs = [row["scrub"] for row in cursor.fetchall()]
-            for scrub in scrubs:
-                cursor.execute(scrub)
-        logger.info("Dropped tables %s", {"count": len(scrubs)})
-        self.create_tables()
+        # To the scrub the database, we apply all down migrations and then
+        # all up migrations
+        try:
+            current_version = int(
+                (
+                    self.execute_named("get_migration_version").fetchone()
+                    or {"version": -1}
+                )["version"]
+            )
+        except pymysql.err.ProgrammingError:
+            logger.info("Nothing to scrub?")
+            return
+        for required_version, migration in reversed(
+            list(enumerate(self.get_migrations("down")))
+        ):
+            if required_version > current_version:
+                continue
+            logger.info(
+                "Applying migration %s",
+                {
+                    "from version": current_version,
+                    "to version": required_version - 1,
+                },
+            )
+            with self.transaction() as cursor:
+                cursor.execute(migration)
+                if required_version > 0:
+                    self.execute_named(
+                        "set_migration_version",
+                        {"version": str(required_version).rjust(3, "0")},
+                    )
+                    current_version = required_version
+        logger.info("Scrubbed database")
+
+        self.apply_migrations()
+
+    def apply_migrations(self) -> None:
+        logger.info("Applying migrations")
+        try:
+            current_version = int(
+                (
+                    self.execute_named("get_migration_version").fetchone()
+                    or {"version": -1}
+                )["version"]
+            )
+        except pymysql.err.ProgrammingError:
+            # Raised when the meta table doesn't exist
+            current_version = -1
+        logger.debug("Database migration version is %s", current_version)
+        for next_version, migration in enumerate(self.get_migrations("up")):
+            if next_version <= current_version:
+                continue
+            logger.info(
+                "Applying migration %s",
+                {
+                    "from version": current_version,
+                    "to version": next_version,
+                },
+            )
+            with self.transaction() as cursor:
+                cursor.execute(migration)
+                self.execute_named(
+                    "set_migration_version",
+                    {"version": str(next_version).rjust(3, "0")},
+                )
+            current_version = next_version
+        logger.info("Applied migrations")
 
     def create_tables(self):
         with self.transaction() as cursor:
@@ -320,28 +383,31 @@ class MySqlDriver(BaseDatabaseDriver, BaseDatabaseWithSqlFileCache):
                     cursor,
                 )
 
-    def store_thread(
-        self,
-        wiki_id: str,
-        category: Tuple[Optional[str], Optional[str]],
-        thread: Tuple[str, str, Optional[str], int],
-    ) -> None:
-        thread_id, thread_title, creator_username, created_timestamp = thread
-        category_id, category_name = category
-        if category_id is not None and category_name is not None:
+    def store_thread(self, thread: ThreadInfo) -> None:
+        if (
+            thread["category_id"] is not None
+            and thread["category_name"] is not None
+        ):
             self.execute_named(
-                "store_category", {"id": category_id, "name": category_name}
+                "store_category",
+                {"id": thread["category_id"], "name": thread["category_name"]},
             )
         self.execute_named(
             "store_thread",
             {
-                "id": thread_id,
-                "title": thread_title,
-                "wiki_id": wiki_id,
-                "category_id": category_id,
-                "creator_username": creator_username,
-                "created_timestamp": created_timestamp,
+                "id": thread["id"],
+                "title": thread["title"],
+                "wiki_id": thread["wiki_id"],
+                "category_id": thread["category_id"],
+                "creator_username": thread["creator_username"],
+                "created_timestamp": thread["created_timestamp"],
             },
+        )
+
+    def store_thread_first_post(self, thread_id: str, post_id: str) -> None:
+        self.execute_named(
+            "store_thread_first_post",
+            {"thread_id": thread_id, "post_id": post_id},
         )
 
     def store_post(self, post: RawPost) -> None:
