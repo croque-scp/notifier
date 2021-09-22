@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import Iterable, List, Optional, Tuple
+from typing import Iterable, List, Tuple
 
 from notifier.types import (
     CachedUserConfig,
@@ -8,6 +8,7 @@ from notifier.types import (
     RawPost,
     RawUserConfig,
     SupportedWikiConfig,
+    ThreadInfo,
 )
 
 
@@ -113,19 +114,10 @@ class BaseDatabaseDriver(ABC):
         that are already present."""
 
     @abstractmethod
-    def store_thread(
-        self,
-        wiki_id: str,
-        category: Tuple[Optional[str], Optional[str]],
-        thread: Tuple[str, str, Optional[str], int],
-    ) -> None:
-        """Store a thread. Doesn't matter if the thread or category is
-        already known or not.
+    def store_thread(self, thread: ThreadInfo) -> None:
+        """Store a thread.
 
-        :param wiki_id: The ID of the wiki that contains the thread.
-        :param thread: A tuple containing information about the thread: ID,
-        title, creator username, and created timestamp.
-        :param category: A tuple containing the ID and name of the category.
+        Doesn't matter if the thread or category is already known or not.
         """
 
     @abstractmethod

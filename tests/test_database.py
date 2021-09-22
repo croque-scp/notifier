@@ -12,6 +12,7 @@ from notifier.types import (
     RawUserConfig,
     Subscription,
     SupportedWikiConfig,
+    ThreadInfo,
 )
 
 
@@ -55,17 +56,29 @@ def sample_database(
             "subscriptions",
             "unsubscriptions",
         ],
-        [("1", "MyUsername", "hourly", "en", "pm", 1, subs, unsubs)],
+        [("1", "MyUser", "hourly", "en", "pm", 1, subs, unsubs)],
     )
     sample_wikis: List[SupportedWikiConfig] = construct(
         ["id", "name", "secure"], [("my-wiki", "My Wiki", 1)]
     )
-    sample_threads = [
-        ("my-wiki", (None, None), ("t-1", "Thread 1", "MyUsername", 10)),
-        ("my-wiki", (None, None), ("t-2", "Thread 2", "MyUsername", 13)),
-        ("my-wiki", (None, None), ("t-3", "Thread 3", "AUsername", 16)),
-        ("my-wiki", (None, None), ("t-4", "Thread 4", "MyUsername", 50)),
-    ]
+    sample_threads: List[ThreadInfo] = construct(
+        [
+            "id",
+            "title",
+            "wiki_id",
+            "category_id",
+            "category_name",
+            "creator_username",
+            "created_timestamp",
+            "first_post_id",
+        ],
+        [
+            ("t-1", "Thread 1", "my-wiki", None, None, "MyUser", 10, "p-11"),
+            ("t-2", "Thread 2", "my-wiki", None, None, "MyUser", 13, "p-21"),
+            ("t-3", "Thread 3", "my-wiki", None, None, "AUser", 16, "p-31"),
+            ("t-4", "Thread 4", "my-wiki", None, None, "MyUser", 50, "p-41"),
+        ],
+    )
     sample_posts: List[RawPost] = construct(
         [
             "id",
@@ -78,25 +91,25 @@ def sample_database(
             "username",
         ],
         [
-            ("p-11", "t-1", None, 10, "Post 11", "", "1", "MyUsername"),
-            ("p-12", "t-1", None, 20, "Post 12", "", "2", "AUsername"),
-            ("p-111", "t-1", "p-11", 30, "Post 111", "", "2", "AUsername"),
-            ("p-21", "t-2", None, 13, "Post 21", "", "1", "MyUsername"),
-            ("p-211", "t-2", "p-21", 17, "Post 211", "", "2", "AUsername"),
-            ("p-212", "t-2", "p-21", 20, "Post 212", "", "3", "BUsername"),
-            ("p-2121", "t-2", "p-212", 23, "Post 2121", "", "1", "MyUsername"),
-            ("p-31", "t-3", None, 16, "Post 31", "", "2", "AUsername"),
-            ("p-32", "t-3", None, 21, "Post 32", "", "3", "BUsername"),
-            ("p-321", "t-3", "p-32", 31, "Post 321", "", "2", "AUsername"),
-            ("p-41", "t-4", None, 50, "Post 41", "", "1", "MyUsername"),
-            ("p-411", "t-4", "p-41", 60, "Post 411", "", "3", "BUsername"),
-            ("p-42", "t-4", None, 65, "Post 42", "", "3", "BUsername"),
+            ("p-11", "t-1", None, 10, "Post 11", "", "1", "MyUser"),
+            ("p-12", "t-1", None, 20, "Post 12", "", "2", "AUser"),
+            ("p-111", "t-1", "p-11", 30, "Post 111", "", "2", "AUser"),
+            ("p-21", "t-2", None, 13, "Post 21", "", "1", "MyUser"),
+            ("p-211", "t-2", "p-21", 17, "Post 211", "", "2", "AUser"),
+            ("p-212", "t-2", "p-21", 20, "Post 212", "", "3", "BUser"),
+            ("p-2121", "t-2", "p-212", 23, "Post 2121", "", "1", "MyUser"),
+            ("p-31", "t-3", None, 16, "Post 31", "", "2", "AUser"),
+            ("p-32", "t-3", None, 21, "Post 32", "", "3", "BUser"),
+            ("p-321", "t-3", "p-32", 31, "Post 321", "", "2", "AUser"),
+            ("p-41", "t-4", None, 50, "Post 41", "", "1", "MyUser"),
+            ("p-411", "t-4", "p-41", 60, "Post 411", "", "3", "BUser"),
+            ("p-42", "t-4", None, 65, "Post 42", "", "3", "BUser"),
         ],
     )
     db.store_user_configs(sample_user_configs)
     db.store_supported_wikis(sample_wikis)
     for thread in sample_threads:
-        db.store_thread(*thread)
+        db.store_thread(thread)
     for post in sample_posts:
         db.store_post(post)
     return db

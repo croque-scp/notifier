@@ -1,7 +1,7 @@
 import json
 import logging
 from contextlib import contextmanager
-from typing import Iterable, Iterator, List, Optional, Tuple, cast
+from typing import Iterable, Iterator, List, Tuple, cast
 
 import pymysql
 from pymysql.constants.CLIENT import MULTI_STATEMENTS
@@ -18,6 +18,7 @@ from notifier.types import (
     RawUserConfig,
     Subscription,
     SupportedWikiConfig,
+    ThreadInfo,
     ThreadPostInfo,
 )
 
@@ -351,27 +352,25 @@ class MySqlDriver(BaseDatabaseDriver, BaseDatabaseWithSqlFileCache):
                     cursor,
                 )
 
-    def store_thread(
-        self,
-        wiki_id: str,
-        category: Tuple[Optional[str], Optional[str]],
-        thread: Tuple[str, str, Optional[str], int],
-    ) -> None:
-        thread_id, thread_title, creator_username, created_timestamp = thread
-        category_id, category_name = category
-        if category_id is not None and category_name is not None:
+    def store_thread(self, thread: ThreadInfo) -> None:
+        if (
+            thread["category_id"] is not None
+            and thread["category_name"] is not None
+        ):
             self.execute_named(
-                "store_category", {"id": category_id, "name": category_name}
+                "store_category",
+                {"id": thread["category_id"], "name": thread["category_name"]},
             )
         self.execute_named(
             "store_thread",
             {
-                "id": thread_id,
-                "title": thread_title,
-                "wiki_id": wiki_id,
-                "category_id": category_id,
-                "creator_username": creator_username,
-                "created_timestamp": created_timestamp,
+                "id": thread["id"],
+                "title": thread["title"],
+                "wiki_id": thread["wiki_id"],
+                "category_id": thread["category_id"],
+                "creator_username": thread["creator_username"],
+                "created_timestamp": thread["created_timestamp"],
+                "first_post_id": thread["first_post_id"],
             },
         )
 
