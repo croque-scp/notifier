@@ -10,6 +10,7 @@ from notifier.notify import (
     notify,
     pick_channels_to_notify,
 )
+from notifier.timing import now
 from notifier.types import AuthConfig, LocalConfig
 
 logger = logging.getLogger(__name__)
@@ -17,6 +18,8 @@ logger = logging.getLogger(__name__)
 
 def main(config: LocalConfig, auth: AuthConfig, execute_now: List[str] = None):
     """Main executor, supposed to be called via command line."""
+
+    logging.info("The current time is %s", now)
 
     # Database stores forum posts and caches subscriptions
     DatabaseDriver = resolve_driver_from_config(config["database"]["driver"])
