@@ -106,39 +106,35 @@ def fetch_posts_with_context(
             connection.thread(wiki_id, thread_id, post_id)
         ):
             if post_index == 0:
-                # First 'post' is the thread meta info
+                # First item is the thread meta info
                 thread_meta = cast(RawThreadMeta, thread_or_post)
-                logger.debug(
-                    "Storing metadata for thread %s",
-                    {
-                        "wiki_id": wiki_id,
-                        "thread_id": thread_id,
-                        "thread_meta": thread_meta,
-                    },
-                )
-                database.store_thread(
-                    wiki_id,
-                    (thread_meta["category_id"], thread_meta["category_name"]),
-                    (
-                        thread_id,
-                        thread_meta["title"],
-                        thread_meta["creator_username"],
-                        thread_meta["created_timestamp"],
-                    ),
-                )
+                thread_info: ThreadInfo = {
+                    "id": thread_id,
+                    "title": thread_meta["title"],
+                    "wiki_id": wiki_id,
+                    "category_id": thread_meta["category_id"],
+                    "category_name": thread_meta["category_name"],
+                    "creator_username": thread_meta["creator_username"],
+                    "created_timestamp": thread_meta["created_timestamp"],
+                }
+                logger.debug("Storing metadata for thread %s", thread_info)
+                database.store_thread(thread_info)
                 continue
-            # Remaining posts are actually posts
-            post = cast(RawPost, thread_or_post)
+            # Remaining items are posts
+            thread_post = cast(RawPost, thread_or_post)
             logger.debug(
                 "Storing post %s",
                 {
                     "wiki_id": wiki_id,
-                    "post": post,
+                    "post": thread_post,
+                    "is first post": post_id is None and post_index == 1,
                 },
             )
-            database.store_post(post)
+            database.store_post(thread_post)
+            if post_id is None and post_index == 1:
+                database.store_thread_first_post(thread_id, thread_post["id"])
             # Mark each post as seen
-            posts_already_seen.append(post["id"])
+            posts_already_seen.append(thread_post["id"])
         if post_id is None:
             # If the full thread was crawled, mark it as seen
             full_threads_already_seen.append(thread_id)
@@ -148,6 +144,7 @@ def fetch_posts_with_context(
             {
                 "wiki_id": wiki_id,
                 "thread_id": thread_id,
+                "post_id": post_id,
                 "cumulative_post_count": len(posts_already_seen),
                 "cumulative_full_thread_count": len(full_threads_already_seen),
             },
