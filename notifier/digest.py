@@ -234,7 +234,8 @@ def make_threads_digest(
                     first_post["wiki_secure"],
                     first_post["thread_id"],
                 ),
-                thread_title=first_post["thread_title"],
+                thread_title=first_post["thread_title"]
+                or lexicon["untitled_post_title"],
                 thread_has_creator=int(bool(first_post["thread_creator"])),
                 thread_creator=first_post["thread_creator"],
                 date=lexicon["date"].format(
@@ -269,7 +270,8 @@ def make_post_replies_digest(
                     replies[0]["thread_id"],
                     parent_post_id,
                 ),
-                post_title=replies[0]["parent_title"],
+                post_title=replies[0]["parent_title"]
+                or lexicon["untitled_post_title"],
                 date=lexicon["date"].format(
                     timestamp=replies[0]["parent_posted_timestamp"]
                 ),
