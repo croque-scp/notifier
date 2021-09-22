@@ -2,19 +2,10 @@ from pathlib import Path
 
 import pytest
 
-from notifier.digest import (
-    Digester,
-    make_wikis_digest,
-    pluralise,
-    process_long_strings,
-)
+from notifier.digest import Digester, make_wikis_digest, pluralise, process_long_strings
 from notifier.formatter import convert_syntax
-from notifier.notify import apply_overrides, override_applies_to_post
-from notifier.types import (
-    CachedUserConfig,
-    GlobalOverridesConfig,
-    NewPostsInfo,
-)
+from notifier.overrides import apply_overrides, override_applies_to_post
+from notifier.types import CachedUserConfig, GlobalOverridesConfig, NewPostsInfo
 
 
 @pytest.fixture(scope="module")
@@ -151,7 +142,7 @@ def test_overrides(fake_posts: NewPostsInfo):
     assert override_applies_to_post(
         fake_posts["thread_posts"][0], overrides["my-wiki"][0]
     )
-    apply_overrides(fake_posts, overrides)
+    apply_overrides(fake_posts, overrides, [])
     assert (
         len(
             [
