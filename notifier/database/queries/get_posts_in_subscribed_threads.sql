@@ -18,7 +18,9 @@ FROM
   LEFT JOIN
   thread ON post.thread_id = thread.id
   LEFT JOIN
-  post AS thread_first_post ON thread.first_post_id = thread_first_post.id
+  thread_first_post ON thread_first_post.thread_id = thread.id
+  LEFT JOIN
+  post AS first_post ON thread_first_post.post_id = first_post.id
   LEFT JOIN
   wiki ON thread.wiki_id = wiki.id
   LEFT JOIN
@@ -37,7 +39,7 @@ WHERE
     )
 
     -- Get posts in threads started by the user
-    OR thread_first_post.user_id = %(user_id)s
+    OR first_post.user_id = %(user_id)s
   )
 
   -- Remove posts in deleted threads

@@ -5,7 +5,7 @@ import feedparser
 
 from notifier.config.user import parse_thread_url
 from notifier.database.drivers.base import BaseDatabaseDriver
-from notifier.types import RawPost, RawThreadMeta
+from notifier.types import RawPost, RawThreadMeta, ThreadInfo
 from notifier.wikiconnection import Connection
 
 logger = logging.getLogger(__name__)

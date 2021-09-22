@@ -70,7 +70,6 @@ CREATE TABLE IF NOT EXISTS thread (
   category_id       VARCHAR(200),
   creator_username  VARCHAR(20),
   created_timestamp INT UNSIGNED NOT NULL,
-/*first_post_id     VARCHAR(20), (Added in 002) */
   is_deleted        TINYINT(1)   NOT NULL DEFAULT 0
 );
 

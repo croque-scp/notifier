@@ -70,7 +70,6 @@ def sample_database(
             "category_name",
             "creator_username",
             "created_timestamp",
-            "first_post_id",
         ],
         [
             ("t-1", "Thread 1", "my-wiki", None, None, "MyUser", 10, "p-11"),
@@ -79,6 +78,12 @@ def sample_database(
             ("t-4", "Thread 4", "my-wiki", None, None, "MyUser", 50, "p-41"),
         ],
     )
+    sample_thread_first_posts = [
+        ("t-1", "p-11"),
+        ("t-2", "p-21"),
+        ("t-3", "p-31"),
+        ("t-4", "p-41"),
+    ]
     sample_posts: List[RawPost] = construct(
         [
             "id",
@@ -110,6 +115,8 @@ def sample_database(
     db.store_supported_wikis(sample_wikis)
     for thread in sample_threads:
         db.store_thread(thread)
+    for thread_id, post_id in sample_thread_first_posts:
+        db.store_thread_first_post(thread_id, post_id)
     for post in sample_posts:
         db.store_post(post)
     return db

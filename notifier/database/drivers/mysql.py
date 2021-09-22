@@ -121,7 +121,7 @@ class MySqlDriver(BaseDatabaseDriver, BaseDatabaseWithSqlFileCache):
                 "Applying migration %s",
                 {
                     "from version": current_version,
-                    "to version": required_version,
+                    "to version": required_version - 1,
                 },
             )
             with self.transaction() as cursor:
