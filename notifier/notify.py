@@ -1,5 +1,4 @@
 import logging
-import re
 import time
 from smtplib import SMTPAuthenticationError
 from typing import Iterable, List, cast
@@ -11,15 +10,13 @@ from notifier.deletions import clear_deleted_posts
 from notifier.digest import Digester
 from notifier.emailer import Emailer
 from notifier.newposts import get_new_posts
+from notifier.overrides import apply_overrides
 from notifier.timing import channel_is_now, channel_will_be_next
 from notifier.types import (
     AuthConfig,
     CachedUserConfig,
     EmailAddresses,
-    GlobalOverrideConfig,
-    GlobalOverridesConfig,
     LocalConfig,
-    NewPostsInfo,
     PostInfo,
 )
 from notifier.wikiconnection import Connection
@@ -234,7 +231,9 @@ def notify_user(
         user["user_id"],
         (user["last_notified_timestamp"] + 1, current_timestamp),
     )
-    apply_overrides(posts, database.get_global_overrides())
+    apply_overrides(
+        posts, database.get_global_overrides(), user["manual_subs"]
+    )
     post_count = len(posts["thread_posts"]) + len(posts["post_replies"])
     logger.debug(
         "Found posts for notification %s",
@@ -326,68 +325,4 @@ def notify_user(
             "channel": channel,
         },
     )
-    return True
-
-
-def apply_overrides(
-    posts: NewPostsInfo, overrides: GlobalOverridesConfig
-) -> None:
-    """Apply global overrides to a set of notifications.
-
-    Modifies notifications in-place.
-    """
-    posts["thread_posts"] = [
-        post
-        for post in posts["thread_posts"]
-        if not any_override_mutes_post(post, overrides, is_reply=False)
-    ]
-    posts["post_replies"] = [
-        reply
-        for reply in posts["post_replies"]
-        if not any_override_mutes_post(reply, overrides, is_reply=True)
-    ]
-
-
-def any_override_mutes_post(
-    post: PostInfo, overrides: GlobalOverridesConfig, *, is_reply: bool
-) -> bool:
-    """Determines whether any override in the configured overrides would
-    result in muting a notification."""
-    return any(
-        override["action"] in (["mute"] + ["mute_thread"] * (not is_reply))
-        and override_applies_to_post(post, override)
-        for override in overrides.get(post["wiki_id"], [])
-    )
-
-
-def override_applies_to_post(
-    post: PostInfo, override: GlobalOverrideConfig
-) -> bool:
-    """Determines whether a given override applies to the given post.
-
-    It is up to the caller to decide what happens if an override applies.
-    """
-    # All conditions of the override must be true for the override to
-    # apply. So, return False if any of them are false, and True otherwise.
-    if "category_id_is" in override and isinstance(
-        override["category_id_is"], str
-    ):
-        if override["category_id_is"] != post["category_id"]:
-            return False
-    if "thread_id_is" in override and isinstance(
-        override["thread_id_is"], str
-    ):
-        if override["thread_id_is"] != post["thread_id"]:
-            return False
-    if "thread_title_matches" in override and isinstance(
-        override["thread_title_matches"], str
-    ):
-        try:
-            match = re.search(
-                override["thread_title_matches"], post["thread_title"]
-            )
-        except re.error:
-            match = None
-        if not match:
-            return False
     return True
