@@ -18,5 +18,3 @@ SET
       AND first_post.thread_id = thread.id
     LIMIT 1
   );
-
-UPDATE meta SET `value` = '001' WHERE `key` = 'migration_version';
