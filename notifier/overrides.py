@@ -35,12 +35,16 @@ def apply_overrides(
     posts["thread_posts"] = [
         post
         for post in posts["thread_posts"]
-        if mutes_notification(post, overrides, subs, unsubs, is_reply=False)
+        if not mutes_notification(
+            post, overrides, subs, unsubs, is_reply=False
+        )
     ]
     posts["post_replies"] = [
         reply
         for reply in posts["post_replies"]
-        if mutes_notification(reply, overrides, subs, unsubs, is_reply=True)
+        if not mutes_notification(
+            reply, overrides, subs, unsubs, is_reply=True
+        )
     ]
 
 
