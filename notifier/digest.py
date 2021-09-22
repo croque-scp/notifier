@@ -297,7 +297,7 @@ def make_post_digest(post: PostInfo, lexicon: dict) -> str:
         post_title=post["title"] or lexicon["untitled_post_title"],
         post_author=post["username"],
         date=lexicon["date"].format(timestamp=post["posted_timestamp"]),
-        snippet=post["snippet"],
+        snippet=post["snippet"].replace("\n", " "),
     )
 
 
