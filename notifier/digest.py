@@ -102,7 +102,9 @@ class Digester:
                 if sub["sub"] == 1 and sub["post_id"] is not None
             ]
         )
-        sub_count = manual_sub_count
+        sub_count = (
+            manual_sub_count + auto_thread_sub_count + auto_post_sub_count
+        )
         total_notification_count = len(posts["thread_posts"]) + len(
             posts["post_replies"]
         )
