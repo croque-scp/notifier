@@ -137,35 +137,36 @@ class MySqlDriver(BaseDatabaseDriver, BaseDatabaseWithSqlFileCache):
         self.apply_migrations()
 
     def apply_migrations(self) -> None:
+        logger.info("Applying migrations")
         try:
-            migration_version = int(
+            current_version = int(
                 (
                     self.execute_named("get_migration_version").fetchone()
-                    or {"version": -2}
+                    or {"version": -1}
                 )["version"]
             )
         except pymysql.err.ProgrammingError:
             # Raised when the meta table doesn't exist
-            migration_version = -1
-        # If there is no version set, use the create_tables procedure as a
-        # shortcut to the most recent migration
-        if migration_version == -2:
-            self.create_tables()
-            return
-        # Filter out migrations that have already been applied
-        migrations = [
-            (version, migration)
-            for version, migration in sorted(self.get_migrations().items())
-            if version > migration_version
-        ]
-        for version, migration in migrations:
+            current_version = -1
+        logger.debug("Database migration version is %s", current_version)
+        for next_version, migration in enumerate(self.get_migrations("up")):
+            if next_version <= current_version:
+                continue
             logger.info(
                 "Applying migration %s",
-                {"from version": migration_version, "to version": version},
+                {
+                    "from version": current_version,
+                    "to version": next_version,
+                },
             )
             with self.transaction() as cursor:
                 cursor.execute(migration)
-                migration_version = version
+                self.execute_named(
+                    "set_migration_version",
+                    {"version": str(next_version).rjust(3, "0")},
+                )
+            current_version = next_version
+        logger.info("Applied migrations")
 
     def create_tables(self):
         with self.transaction() as cursor:

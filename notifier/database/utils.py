@@ -2,7 +2,7 @@ import logging
 from abc import ABC
 from importlib import import_module
 from pathlib import Path
-from typing import Any, Callable, Dict, Tuple, Type
+from typing import Any, Callable, List, Literal, Tuple, Type, Union
 
 from notifier.database.drivers.base import BaseDatabaseDriver
 
@@ -137,30 +137,28 @@ class BaseDatabaseWithSqlFileCache(ABC):
         if query_name not in self.query_cache:
             self.read_query_file(query_name)
 
-    def get_migrations(self) -> Dict[int, str]:
-        """Reads all up migrations from the migrations dir and arranges
-        them into a dict keyed to the migration number.
+    def get_migrations(
+        self, direction: Union[Literal["up"], Literal["down"]]
+    ) -> List[str]:
+        """Reads all migrations of the given direction from the migrations
+        dir and arranges them into a list.
 
-        Migration files must take the following format:
-        000-name.up.sql
-        Where '000' is a 3-digit number corresponding to the version, and
-        'name' is any name that summarises the effect of the migration.
+        The index to the list corresponds to the effective migration
+        version after applying the migration for up migrations, and the
+        version required to perform the migration for down migrations.
         """
-        migrations: Dict[int, str] = {}
+        migrations: List[Tuple[int, str]] = []
         for path in self.migrations_dir.iterdir():
-            if not path.name.endswith(".up.sql"):
+            if not path.name.endswith(f".{direction}.sql"):
                 continue
             try:
                 version = int(path.name.split("-")[0])
             except ValueError:
                 continue
             with path.open() as file:
-                migrations[version] = file.read()
-        for version, wanted in zip(
-            sorted(migrations.keys()), range(0, len(migrations.keys()))
-        ):
+                migrations.append((version, file.read()))
+        migrations.sort()
+        for wanted, (version, _) in enumerate(migrations):
             if version != wanted:
-                raise AttributeError(
-                    f"Migration version {min(version, wanted)} missing"
-                )
-        return migrations
+                raise AttributeError(f"Migration version {version} missing")
+        return [migration for _, migration in migrations]

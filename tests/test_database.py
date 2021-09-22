@@ -36,7 +36,7 @@ def sample_database(
         username=notifier_auth["mysql_username"],
         password=notifier_auth["mysql_password"],
     )
-    db.scrub_database(db_name)
+    db.scrub_database()
     subs: List[Subscription] = construct(
         ["thread_id", "post_id", "sub"],
         [("t-1", None, 1), ("t-3", "p-32", 1)],
