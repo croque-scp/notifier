@@ -1,5 +1,8 @@
 import logging
-from typing import Iterable, Iterator, List, Optional, Union, cast
+import re
+from json import JSONDecodeError
+from typing import Iterable, Iterator, List, Match, Optional, Union, cast
+from uuid import uuid4
 
 import requests
 from bs4 import BeautifulSoup
@@ -84,14 +87,31 @@ class Connection:
             if wiki["id"] == wiki_id
         )
         # If we're logged in, grab the token7, otherwise make one up
-        token7 = self._session.cookies.get("wikidot_token7", "7777777")
-        response = self.post(
+        token7 = self._session.cookies.get(
+            "wikidot_token7", "7777777", domain=f"{wiki_id}.wikidot.com"
+        )
+        response_raw = self.post(
             "http{}://{}.wikidot.com/ajax-module-connector.php".format(
                 "s" if secure else "", wiki_id
             ),
             data=dict(moduleName=module_name, wikidot_token7=token7, **kwargs),
             cookies={"wikidot_token7": token7},
-        ).json()
+        )
+        try:
+            response = response_raw.json()
+        except JSONDecodeError:
+            logger.error(
+                "Could not decode response %s",
+                {
+                    "wiki_id": wiki_id,
+                    "secure": secure,
+                    "module_name": module_name,
+                    "request_kwargs": kwargs,
+                    "status": response_raw.status_code,
+                    "response_text": response_raw.text,
+                },
+            )
+            raise
         if response["status"] == "no_thread":
             raise ThreadNotExists
         if response["status"] != "ok":
