@@ -56,8 +56,12 @@ post = """
 """
 date = """[[date {timestamp} format="%d %b %Y %H:%M:%S|agohover"]]"""
 outro = """
+-----
+
 [[=]]
 + :open_mailbox_with_lowered_flag:
+
+-----
 
 {unsub_footer}
 [[/=]]
@@ -92,6 +96,10 @@ constitutes an automatic subscription.]
 This account ([[*user Notifier]]) is automated -- any response to this
 message will be ignored. If there are any problems, contact me ([[*user
 Croquembouche]]) directly.
+
+-----
+
+[[=]]<>+ :closed_mailbox_with_raised_flag:<>[[/=]]
 
 -----
 """
