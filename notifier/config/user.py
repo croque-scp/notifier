@@ -42,22 +42,48 @@ def get_user_config(
 ):
     """Retrieve remote user config."""
     try_cache(
-        get=lambda: fetch_user_configs(local_config, connection),
+        get=lambda: find_valid_user_configs(local_config, connection),
         store=database.store_user_configs,
         do_not_store=[],
     )
 
 
-def fetch_user_configs(
-    local_config: LocalConfig,
-    connection: Connection,
+def find_valid_user_configs(
+    local_config: LocalConfig, connection: Connection
 ) -> List[RawUserConfig]:
+    """Fetches user configs and returns those that are valid."""
+    configs: List[RawUserConfig] = []
+    for slug, config in fetch_user_configs(local_config, connection):
+        if not user_config_is_valid(slug, config):
+            # Only accept configs for the user who created the page
+            logger.warning(
+                "Skipping user config %s",
+                {
+                    "username": config["username"],
+                    "slug": slug,
+                    "reason": "wrong slug for user ID",
+                },
+            )
+            continue
+        configs.append(config)
+    return configs
+
+
+def user_config_is_valid(slug: str, config: RawUserConfig) -> bool:
+    """Determines whether a user config is permitted to exist given its
+    slug and the ID of the user that created it."""
+    return ":" in slug and slug.split(":")[1] == config["user_id"]
+
+
+def fetch_user_configs(
+    local_config: LocalConfig, connection: Connection
+) -> List[Tuple[str, RawUserConfig]]:
     """Fetches a list of user configurations from the configuration wiki.
 
     User configurations are stored on the dedicated Wikidot site. They are
     cached in the database.
     """
-    configs: List[RawUserConfig] = []
+    configs: List[Tuple[str, RawUserConfig]] = []
     for config_soup in connection.listpages(
         local_config["config_wiki"],
         category=local_config["user_config_category"],
@@ -81,18 +107,7 @@ def fetch_user_configs(
                 exc_info=error,
             )
             continue
-        if ":" not in slug or slug.split(":")[1] != config["user_id"]:
-            # Only accept configs for the user who created the page
-            logger.warning(
-                "Skipping user config %s",
-                {
-                    "username": config["username"],
-                    "slug": slug,
-                    "reason": "wrong slug for user ID",
-                },
-            )
-            continue
-        configs.append(config)
+        configs.append((slug, config))
     return configs
 
 
