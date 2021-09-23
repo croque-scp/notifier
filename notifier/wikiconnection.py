@@ -1,5 +1,6 @@
 import logging
 import re
+import time
 from json import JSONDecodeError
 from typing import Iterable, Iterator, List, Match, Optional, Union, cast
 from uuid import uuid4
@@ -372,9 +373,7 @@ class Connection:
             "s" if wiki["secure"] else "", wiki_id, slug
         )
         page = self._session.get(page_url).text
-        page_id = int(
-            cast(Match, re.search(r"pageId = ([0-9]+);", page)).group(1)
-        )
+        page_id = get_page_id(page)
 
         # Rename the page
         new_slug = f"deleted:{uuid4()}"
@@ -396,6 +395,45 @@ class Connection:
             new_name=new_slug,
         )
 
+        # Wait a bit to give Wikidot a chance to rename the page
+        time.sleep(20)
+
+        # Check that the page has been renamed
+        renamed_page_url = "http{}://{}.wikidot.com/{}".format(
+            "s" if wiki["secure"] else "", wiki_id, new_slug
+        )
+        old_status_code = self._session.get(page_url).status_code
+        new_status_code = self._session.get(renamed_page_url).status_code
+        if old_status_code != 404 or new_status_code == 404:
+            logger.error(
+                "Page was not renamed - manually delete it %s",
+                {
+                    "wiki_id": wiki_id,
+                    "old slug": slug,
+                    "old slug status_code": old_status_code,
+                    "wanted slug": new_slug,
+                    "wanted slug status_code": new_status_code,
+                },
+                exc_info=True,
+            )
+            raise RuntimeError
+
+        renamed_page = self._session.get(renamed_page_url).text
+        renamed_page_id = get_page_id(renamed_page)
+        if page_id != renamed_page_id:
+            logger.error(
+                "Page at renamed location has different page ID %s",
+                {
+                    "wiki_id": wiki_id,
+                    "old slug": slug,
+                    "old slug page_id": page_id,
+                    "new slug": new_slug,
+                    "new slug page_id": renamed_page_id,
+                },
+                exc_info=True,
+            )
+            raise RuntimeError
+
         # Delete the page (the ID stays the same)
         logger.debug(
             "Committing deletion of page %s",
@@ -413,3 +451,10 @@ class Connection:
             event="deletePage",
             page_id=str(page_id),
         )
+
+
+def get_page_id(page_text: str) -> int:
+    """Get a page's ID from its source."""
+    return int(
+        cast(Match, re.search(r"pageId = ([0-9]+);", page_text)).group(1)
+    )
