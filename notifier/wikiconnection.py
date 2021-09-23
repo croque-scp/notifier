@@ -349,3 +349,67 @@ class Connection:
             address = address_cell.get_text().strip()
             addresses[username.strip()] = address
         return addresses
+
+    def delete_page(self, wiki_id: str, slug: str) -> None:
+        """Safely deletes a page by first renaming it to a random string.
+
+        Connection needs to be logged in.
+        """
+        logger.info("Deleting page %s", {"wiki_id": wiki_id, "slug": slug})
+
+        # Get information about the wiki that contains the page
+        try:
+            wiki = next(
+                wiki for wiki in self.supported_wikis if wiki["id"] == wiki_id
+            )
+        except StopIteration as error:
+            raise RuntimeError(
+                "Cannot delete page from unsupported wiki"
+            ) from error
+
+        # Get the ID of the page by downloading it
+        page_url = "http{}://{}.wikidot.com/{}".format(
+            "s" if wiki["secure"] else "", wiki_id, slug
+        )
+        page = self._session.get(page_url).text
+        page_id = int(
+            cast(Match, re.search(r"pageId = ([0-9]+);", page)).group(1)
+        )
+
+        # Rename the page
+        new_slug = f"deleted:{uuid4()}"
+        logger.debug(
+            "Renaming page %s",
+            {
+                "with id": page_id,
+                "from slug": slug,
+                "to slug": new_slug,
+                "in wiki": wiki_id,
+            },
+        )
+        self.module(
+            wiki_id,
+            "Empty",
+            action="WikiPageAction",
+            event="renamePage",
+            page_id=str(page_id),
+            new_name=new_slug,
+        )
+
+        # Delete the page (the ID stays the same)
+        logger.debug(
+            "Committing deletion of page %s",
+            {
+                "with id": page_id,
+                "with previous slug": slug,
+                "with slug": new_slug,
+                "from wiki": wiki_id,
+            },
+        )
+        self.module(
+            wiki_id,
+            "Empty",
+            action="WikiPageAction",
+            event="deletePage",
+            page_id=str(page_id),
+        )
