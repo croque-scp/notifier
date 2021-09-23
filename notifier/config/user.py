@@ -81,17 +81,14 @@ def fetch_user_configs(
                 exc_info=error,
             )
             continue
-        if (
-            ":" not in slug
-            or slug.split(":")[1].casefold() != config["username"].casefold()
-        ):
+        if ":" not in slug or slug.split(":")[1] != config["user_id"]:
             # Only accept configs for the user who created the page
             logger.warning(
                 "Skipping user config %s",
                 {
                     "username": config["username"],
                     "slug": slug,
-                    "reason": "wrong slug for username",
+                    "reason": "wrong slug for user ID",
                 },
             )
             continue
