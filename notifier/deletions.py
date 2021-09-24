@@ -1,9 +1,24 @@
+"""Handles deletions.
+
+Handles deletions of posts and threads from the database that appear to
+have been deleted on the remote (but actually just flags them to be
+ignored).
+
+Also handles the purging of invalid user config pages from the
+configuration wiki. An invalid user config page is any page where the slug
+does not match the user who created it. This indicates that the page has
+not been properly created, and may even be indicative of malicious intent.
+In lieu of manual moderation these pages should be cleared.
+"""
+
 import logging
 import time
 from typing import List, Set, Tuple, cast
+from uuid import uuid4
 
+from notifier.config.user import fetch_user_configs, user_config_is_valid
 from notifier.database.drivers.base import BaseDatabaseDriver
-from notifier.types import RawPost
+from notifier.types import LocalConfig, RawPost
 from notifier.wikiconnection import Connection, ThreadNotExists
 
 logger = logging.getLogger(__name__)
@@ -117,3 +132,54 @@ def delete_posts(
         existing_posts.update(post["id"] for post in thread_posts)
 
     return deleted_threads, deleted_posts
+
+
+def rename_invalid_user_config_pages(
+    local_config: LocalConfig, connection: Connection
+) -> None:
+    """Prepares invalid user config pages for deletion."""
+    logger.info("Finding invalid user configs to prepare for deletion")
+    # Get all user configs and filter out any that are valid
+    invalid_configs = [
+        (slug, config)
+        for slug, config in fetch_user_configs(local_config, connection)
+        if not user_config_is_valid(slug, config)
+    ]
+    logger.debug(
+        "Found invalid configs to rename %s", {"count": len(invalid_configs)}
+    )
+    for slug, config in invalid_configs:
+        try:
+            connection.rename_page(
+                local_config["config_wiki"], slug, f"deleted:{uuid4()}"
+            )
+        except Exception as error:
+            logger.error(
+                "Couldn't rename config page %s",
+                {"slug": slug},
+                exc_info=error,
+            )
+            continue
+
+
+def delete_prepared_invalid_user_pages(
+    local_config: LocalConfig, connection: Connection
+) -> None:
+    """Deletes prepared invalid user config pages."""
+    logger.info("Finding pages marked for deletion")
+    pages_to_delete = connection.listpages(
+        local_config["config_wiki"],
+        category="deleted",
+        module_body="%%fullname%%",
+    )
+    for page in pages_to_delete:
+        slug = page.get_text()
+        try:
+            connection.delete_page(local_config["config_wiki"], slug)
+        except Exception as error:
+            logger.error(
+                "Couldn't delete page %s",
+                {"slug": slug},
+                exc_info=error,
+            )
+            continue
