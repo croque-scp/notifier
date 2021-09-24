@@ -56,16 +56,16 @@ jobs:
           version: 1.1.5
           virtualenvs-create: true
           virtualenvs-in-project: true
-      - name: Cache Python dependencies
-        uses: actions/cache@v2
-        id: cached-poetry-dependencies
-        with:
-          path: .venv
-          key: venv-${{ runner.os }}-${{ hashFiles('**/poetry.lock') }}
-          restore-keys: |
-            venv-${{ runner.os }}-
+      # - name: Cache Python dependencies
+      #   uses: actions/cache@v2
+      #   id: cached-poetry-dependencies
+      #   with:
+      #     path: .venv
+      #     key: venv-${{ runner.os }}-${{ hashFiles('**/poetry.lock') }}
+      #     restore-keys: |
+      #       venv-${{ runner.os }}-
       - name: Install Python dependencies
-        if: steps.cached-poetry-dependencies.outputs.cache-hit != 'true'
+        # if: steps.cached-poetry-dependencies.outputs.cache-hit != 'true'
         run: poetry install --no-interaction
       - name: Create MySQL database
         run: |
