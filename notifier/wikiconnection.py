@@ -1,9 +1,7 @@
 import logging
 import re
-import time
 from json import JSONDecodeError
 from typing import Iterable, Iterator, List, Match, Optional, Union, cast
-from uuid import uuid4
 
 import requests
 from bs4 import BeautifulSoup
@@ -352,38 +350,40 @@ class Connection:
             addresses[username.strip()] = address
         return addresses
 
-    def delete_page(self, wiki_id: str, slug: str) -> None:
-        """Safely deletes a page by first renaming it to a random string.
-
-        Connection needs to be logged in.
-        """
-        logger.info("Deleting page %s", {"wiki_id": wiki_id, "slug": slug})
-
-        # Get information about the wiki that contains the page
+    def get_page_id(self, wiki_id: str, slug: str) -> int:
+        """Get a page's ID from its source."""
         try:
             wiki = next(
                 wiki for wiki in self.supported_wikis if wiki["id"] == wiki_id
             )
         except StopIteration as error:
             raise RuntimeError(
-                "Cannot delete page from unsupported wiki"
+                f"Cannot access page from unsupported wiki {wiki_id}"
             ) from error
-
-        # Get the ID of the page by downloading it
         page_url = "http{}://{}.wikidot.com/{}".format(
             "s" if wiki["secure"] else "", wiki_id, slug
         )
         page = self._session.get(page_url).text
-        page_id = get_page_id(page)
+        return int(
+            cast(Match, re.search(r"pageId = ([0-9]+);", page)).group(1)
+        )
 
-        # Rename the page
-        new_slug = f"deleted:{uuid4()}"
+    def rename_page(self, wiki_id: str, from_slug: str, to_slug: str) -> None:
+        """Renames a page.
+
+        Renames can take a while (30+ seconds) to take effect, so if
+        renaming for safe deletion, probably don't bother deleting until
+        later.
+
+        Connection needs to be logged in.
+        """
+        page_id = self.get_page_id(wiki_id, from_slug)
         logger.debug(
             "Renaming page %s",
             {
                 "with id": page_id,
-                "from slug": slug,
-                "to slug": new_slug,
+                "from slug": from_slug,
+                "to slug": to_slug,
                 "in wiki": wiki_id,
             },
         )
@@ -393,55 +393,25 @@ class Connection:
             action="WikiPageAction",
             event="renamePage",
             page_id=str(page_id),
-            new_name=new_slug,
+            new_name=to_slug,
         )
 
-        # Wait a bit to give Wikidot a chance to rename the page
-        time.sleep(20)
+    def delete_page(self, wiki_id: str, slug: str) -> None:
+        """Deletes a page.
 
-        # Check that the page has been renamed
-        renamed_page_url = "http{}://{}.wikidot.com/{}".format(
-            "s" if wiki["secure"] else "", wiki_id, new_slug
-        )
-        old_status_code = self._session.get(page_url).status_code
-        new_status_code = self._session.get(renamed_page_url).status_code
-        if old_status_code != 404 or new_status_code == 404:
-            logger.error(
-                "Page was not renamed - manually delete it %s",
-                {
-                    "wiki_id": wiki_id,
-                    "old slug": slug,
-                    "old slug status_code": old_status_code,
-                    "wanted slug": new_slug,
-                    "wanted slug status_code": new_status_code,
-                },
-                exc_info=True,
+        Connection needs to be logged in.
+        """
+        if not slug.startswith("deleted:"):
+            raise RuntimeError(
+                "Do not delete a page outside the deleted category"
+                f" (rename it first) ({wiki_id}/{slug})"
             )
-            raise RuntimeError
-
-        renamed_page = self._session.get(renamed_page_url).text
-        renamed_page_id = get_page_id(renamed_page)
-        if page_id != renamed_page_id:
-            logger.error(
-                "Page at renamed location has different page ID %s",
-                {
-                    "wiki_id": wiki_id,
-                    "old slug": slug,
-                    "old slug page_id": page_id,
-                    "new slug": new_slug,
-                    "new slug page_id": renamed_page_id,
-                },
-                exc_info=True,
-            )
-            raise RuntimeError
-
-        # Delete the page (the ID stays the same)
+        page_id = self.get_page_id(wiki_id, slug)
         logger.debug(
             "Committing deletion of page %s",
             {
+                "at slug": slug,
                 "with id": page_id,
-                "with previous slug": slug,
-                "with slug": new_slug,
                 "from wiki": wiki_id,
             },
         )
@@ -452,10 +422,3 @@ class Connection:
             event="deletePage",
             page_id=str(page_id),
         )
-
-
-def get_page_id(page_text: str) -> int:
-    """Get a page's ID from its source."""
-    return int(
-        cast(Match, re.search(r"pageId = ([0-9]+);", page_text)).group(1)
-    )
