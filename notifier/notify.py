@@ -6,7 +6,11 @@ from typing import Iterable, List, cast
 from notifier.config.remote import get_global_config
 from notifier.config.user import get_user_config
 from notifier.database.drivers.base import BaseDatabaseDriver
-from notifier.deletions import clear_deleted_posts
+from notifier.deletions import (
+    clear_deleted_posts,
+    delete_prepared_invalid_user_pages,
+    rename_invalid_user_config_pages,
+)
 from notifier.digest import Digester
 from notifier.emailer import Emailer
 from notifier.newposts import get_new_posts
@@ -107,11 +111,19 @@ def notify(
         active_channels, current_timestamp, config, auth, database, connection
     )
 
-    logger.info("Cleaning up...")
     # Notifications have been sent, so perform time-insensitive maintenance
+    logger.info("Cleaning up...")
+
     for frequency in ["weekly", "monthly"]:
         if channel_will_be_next(notification_channels[frequency]):
+            logger.info(
+                "Checking for deleted posts %s", {"for channel": frequency}
+            )
             clear_deleted_posts(frequency, database, connection)
+
+    logger.info("Purging invalid user config pages")
+    delete_prepared_invalid_user_pages(config, connection)
+    rename_invalid_user_config_pages(config, connection)
 
 
 def notify_active_channels(

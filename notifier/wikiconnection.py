@@ -1,5 +1,7 @@
 import logging
-from typing import Iterable, Iterator, List, Optional, Union, cast
+import re
+from json import JSONDecodeError
+from typing import Iterable, Iterator, List, Match, Optional, Union, cast
 
 import requests
 from bs4 import BeautifulSoup
@@ -53,19 +55,20 @@ class Connection:
                 {"id": "www", "name": "Wikidot", "secure": 1}
             )
         # Always add the configuration wiki, if it's not already present
-        if not any(
-            True
-            for wiki in self.supported_wikis
-            if wiki["id"] == config["config_wiki"]
-        ):
-            self.supported_wikis.append(
-                {
-                    "id": config["config_wiki"],
-                    "name": "Configuration",
-                    # Assume it's unsecure as that's most common
-                    "secure": 0,
-                }
+        try:
+            self.config_wiki = next(
+                wiki
+                for wiki in self.supported_wikis
+                if wiki["id"] == config["config_wiki"]
             )
+        except StopIteration:
+            self.config_wiki = {
+                "id": config["config_wiki"],
+                "name": "Configuration",
+                # Assume it's unsecure as that's most common
+                "secure": 0,
+            }
+            self.supported_wikis.append(self.config_wiki)
 
     def post(self, url, **kwargs):
         """Make a POST request."""
@@ -84,14 +87,31 @@ class Connection:
             if wiki["id"] == wiki_id
         )
         # If we're logged in, grab the token7, otherwise make one up
-        token7 = self._session.cookies.get("wikidot_token7", "7777777")
-        response = self.post(
+        token7 = self._session.cookies.get(
+            "wikidot_token7", "7777777", domain=f"{wiki_id}.wikidot.com"
+        )
+        response_raw = self.post(
             "http{}://{}.wikidot.com/ajax-module-connector.php".format(
                 "s" if secure else "", wiki_id
             ),
             data=dict(moduleName=module_name, wikidot_token7=token7, **kwargs),
             cookies={"wikidot_token7": token7},
-        ).json()
+        )
+        try:
+            response = response_raw.json()
+        except JSONDecodeError:
+            logger.error(
+                "Could not decode response %s",
+                {
+                    "wiki_id": wiki_id,
+                    "secure": secure,
+                    "module_name": module_name,
+                    "request_kwargs": kwargs,
+                    "status": response_raw.status_code,
+                    "response_text": response_raw.text,
+                },
+            )
+            raise
         if response["status"] == "no_thread":
             raise ThreadNotExists
         if response["status"] != "ok":
@@ -329,3 +349,76 @@ class Connection:
             address = address_cell.get_text().strip()
             addresses[username.strip()] = address
         return addresses
+
+    def get_page_id(self, wiki_id: str, slug: str) -> int:
+        """Get a page's ID from its source."""
+        try:
+            wiki = next(
+                wiki for wiki in self.supported_wikis if wiki["id"] == wiki_id
+            )
+        except StopIteration as error:
+            raise RuntimeError(
+                f"Cannot access page from unsupported wiki {wiki_id}"
+            ) from error
+        page_url = "http{}://{}.wikidot.com/{}".format(
+            "s" if wiki["secure"] else "", wiki_id, slug
+        )
+        page = self._session.get(page_url).text
+        return int(
+            cast(Match, re.search(r"pageId = ([0-9]+);", page)).group(1)
+        )
+
+    def rename_page(self, wiki_id: str, from_slug: str, to_slug: str) -> None:
+        """Renames a page.
+
+        Renames can take a while (30+ seconds) to take effect, so if
+        renaming for safe deletion, probably don't bother deleting until
+        later.
+
+        Connection needs to be logged in.
+        """
+        page_id = self.get_page_id(wiki_id, from_slug)
+        logger.debug(
+            "Renaming page %s",
+            {
+                "with id": page_id,
+                "from slug": from_slug,
+                "to slug": to_slug,
+                "in wiki": wiki_id,
+            },
+        )
+        self.module(
+            wiki_id,
+            "Empty",
+            action="WikiPageAction",
+            event="renamePage",
+            page_id=str(page_id),
+            new_name=to_slug,
+        )
+
+    def delete_page(self, wiki_id: str, slug: str) -> None:
+        """Deletes a page.
+
+        Connection needs to be logged in.
+        """
+        if not slug.startswith("deleted:"):
+            raise RuntimeError(
+                "Do not delete a page outside the deleted category"
+                f" (rename it first) ({wiki_id}/{slug})"
+            )
+        page_id = self.get_page_id(wiki_id, slug)
+        logger.debug(
+            "Committing deletion of page %s",
+            {
+                "at slug": slug,
+                "with id": page_id,
+                "from wiki": wiki_id,
+            },
+        )
+        self.module(
+            wiki_id,
+            "Empty",
+            action="WikiPageAction",
+            event="deletePage",
+            page_id=str(page_id),
+        )
