@@ -203,15 +203,23 @@ def count_pages(module_result: Union[str, Tag]) -> int:
     the page number.
 
     If a pager is not present, the page count is assumed to be 1.
+
+    This process only works for modules that return pagers of a fixed
+    length (the only one that I know of that does not do this is page
+    history).
     """
     if isinstance(module_result, str):
         module_result = BeautifulSoup(module_result, "html.parser")
-    page_selectors = cast(Tag, module_result.find(class_="pager"))
+    page_selectors = cast(Optional[Tag], module_result.find(class_="pager"))
     if not page_selectors:
         # There are no page selectors if there is only one page
         return 1
-    final_page_selector = cast(
-        Tag,
-        cast(Tag, page_selectors.select(".target:nth-last-child(2)")[0]).a,
-    )
-    return int(final_page_selector.get_text())
+    # The final page selector is the last one with numeric text. It may be
+    # .target (clickable) or .current (unclickable). Non-numeric text
+    # indicates e.g. a 'next' button
+    for selector in reversed(page_selectors.contents):
+        try:
+            return int(selector.get_text())
+        except ValueError:
+            continue
+    return 1
