@@ -57,19 +57,20 @@ class Connection:
                 {"id": "www", "name": "Wikidot", "secure": 1}
             )
         # Always add the configuration wiki, if it's not already present
-        if not any(
-            True
-            for wiki in self.supported_wikis
-            if wiki["id"] == config["config_wiki"]
-        ):
-            self.supported_wikis.append(
-                {
-                    "id": config["config_wiki"],
-                    "name": "Configuration",
-                    # Assume it's unsecure as that's most common
-                    "secure": 0,
-                }
+        try:
+            self.config_wiki = next(
+                wiki
+                for wiki in self.supported_wikis
+                if wiki["id"] == config["config_wiki"]
             )
+        except StopIteration:
+            self.config_wiki = {
+                "id": config["config_wiki"],
+                "name": "Configuration",
+                # Assume it's unsecure as that's most common
+                "secure": 0,
+            }
+            self.supported_wikis.append(self.config_wiki)
 
     def post(self, url, **kwargs):
         """Make a POST request."""
