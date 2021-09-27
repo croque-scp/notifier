@@ -1,6 +1,7 @@
 import json
 import logging
 from contextlib import contextmanager
+from itertools import chain
 from typing import Iterable, Iterator, List, Tuple, cast
 
 import pymysql
@@ -302,14 +303,16 @@ class MySqlDriver(BaseDatabaseDriver, BaseDatabaseWithSqlFileCache):
             ]
             user_config["auto_subs"] = [
                 cast(Subscription, dict(row))
-                for row in self.execute_named(
-                    "get_auto_sub_posts_for_user",
-                    {"user_id": user_config["user_id"]},
-                ).fetchall()
-                + self.execute_named(
-                    "get_auto_sub_threads_for_user",
-                    {"user_id": user_config["user_id"]},
-                ).fetchall()
+                for row in chain(
+                    self.execute_named(
+                        "get_auto_sub_posts_for_user",
+                        {"user_id": user_config["user_id"]},
+                    ).fetchall(),
+                    self.execute_named(
+                        "get_auto_sub_threads_for_user",
+                        {"user_id": user_config["user_id"]},
+                    ).fetchall(),
+                )
             ]
         return user_configs
 
