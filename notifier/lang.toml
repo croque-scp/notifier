@@ -159,3 +159,44 @@ unknown_category_name = "Khác"
 thread_opener = "Thread:"
 post_replies_opener = "Phản hồi lại post của bạn:"
 untitled_post_title = "(post không có tiêu đề)"
+
+[fr]
+link_site = "http://commandemento5.wikidot.com/notifications"
+link_your_config = "{link_site}/redirect-to-your-config"
+link_unsubscribe = "{link_site}#stop"
+link_info_learning = "{link_site}#learning"
+link_info_automatic = "{link_site}#auto"
+
+frequency_hourly = "de la dernière heure"
+frequency_daily = "journalier"
+frequency_weekly = "hebdomadaire"
+frequency_monthly = "mensuel"
+subject = "[Notifications Forum] {post_count} nouveaux messages"
+intro = """|
+Bonjour ! Voici votre récapitulatif de [{link_site} notifications] {frequency}, vous informant de tous les nouveaux messages sur les fils auxquels vous vous êtes abonné·e.
+
+Ce service vous tient au courant des derniers messages de {sub_count} plural({sub_count}|abonnement|abonnements), sources supprimées manuellement non incluses.
+
+* {manual_sub_count} plural({manual_sub_count}|abonnement|abonnements) plural({manual_sub_count}|manuel|manuels), comme définis dans [{link_your_config} vos paramètres d'utilisateur].
+
+* {auto_thread_sub_count} plural({auto_thread_sub_count}|abonnement automatique à un fil|abonnements automatiques à des fils) et {auto_post_sub_count} plural({auto_post_sub_count}|abonnement automatique à un message|abonnements automatiques à des messages). Ce service [{link_info_learning} apprend encore] de vos abonnements automatiques ; attendez-vous à voir ce nombre augmenter avec le temps. [{link_info_automatic} Apprenez comment marchent les abonnements automatiques.]
+
+Ce compte ([[*user Notifier]]) est automatisé -- les réponses à ce message ne seront pas prises en compte. Si vous avez un problème, contactez directement [[*user
+Croquembouche]] (en anglais).
+
+-----
+
+[[=]]<>+ :closed_mailbox_with_raised_flag:<>[[/=]]
+
+-----
+"""
+unsub_footer = "Se désinscrire de ces notifications : {link_unsubscribe}"
+main_summary = "Vous avez {summary} de {wiki_count} plural({wiki_count}|wiki|wikis)"
+summary = """|
+{notification_count} plural({notification_count}|notification|notifications)
+sur {thread_count} plural({thread_count}|fil|fils)
+"""
+unknown_category_name = "Autres"
+thread_opener = "Fil :"
+post_replies_opener = "Réponses à votre message :"
+untitled_post_title = "(message sans titre)"
