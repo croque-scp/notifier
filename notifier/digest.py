@@ -52,7 +52,7 @@ class Digester:
 
     def __init__(self, lang_path: str):
         # Read the strings from the lexicon file
-        with open(lang_path, "r") as lang_file:
+        with open(lang_path, "r", encoding="utf-8") as lang_file:
             self.lexicon = dict(tomlkit.parse(lang_file.read()))
         # Process long strings (marked with a leading pipe)
         self.lexicon = process_long_strings(self.lexicon)
@@ -120,16 +120,26 @@ class Digester:
         }.get(user["frequency"], "")
         intro = lexicon["intro"].format(
             frequency=frequency,
-            site=lexicon["site"],
+            link_site=lexicon["link_site"],
             sub_count=sub_count,
             manual_sub_count=manual_sub_count,
-            your_config=lexicon["your_config"].format(site=lexicon["site"]),
+            link_your_config=lexicon["link_your_config"].format(
+                link_site=lexicon["link_site"]
+            ),
+            link_info_learning=lexicon["link_info_learning"].format(
+                link_site=lexicon["link_site"]
+            ),
+            link_info_automatic=lexicon["link_info_automatic"].format(
+                link_site=lexicon["link_site"]
+            ),
             auto_thread_sub_count=auto_thread_sub_count,
             auto_post_sub_count=auto_post_sub_count,
         )
         outro = lexicon["outro"].format(
             unsub_footer=lexicon["unsub_footer"].format(
-                unsubscribe=lexicon["unsubscribe"].format(site=lexicon["site"])
+                link_unsubscribe=lexicon["link_unsubscribe"].format(
+                    link_site=lexicon["link_site"]
+                )
             )
         )
         body = lexicon["body"].format(
