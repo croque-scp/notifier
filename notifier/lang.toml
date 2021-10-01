@@ -179,7 +179,7 @@ Ce service vous tient au courant des derniers messages de {sub_count} plural({su
 
 * {manual_sub_count} plural({manual_sub_count}|abonnement|abonnements) plural({manual_sub_count}|manuel|manuels), comme définis dans [{link_your_config} vos paramètres d'utilisateur].
 
-* {auto_thread_sub_count} plural({auto_thread_sub_count}|abonnement automatique à un fil|abonnements automatiques à des fils) et {auto_post_sub_count} plural({auto_post_sub_count}|abonnement automatique à un message|abonnements automatiques à des messages). Ce service [{link_info_learning} apprend encore] de vos abonnements automatiques ; attendez-vous à voir ce nombre augmenter avec le temps. [{link_info_automatic} Apprenez comment marchent les abonnements automatiques.]
+* {auto_thread_sub_count} plural({auto_thread_sub_count}|abonnement automatique à un fil|abonnements automatiques à des fils) et {auto_post_sub_count} à plural({auto_post_sub_count}|un message|des messages). Ce service [{link_info_learning} apprend encore] de vos abonnements automatiques ; attendez-vous à voir ce nombre augmenter avec le temps. [{link_info_automatic} Apprenez comment marchent les abonnements automatiques.]
 
 Ce compte ([[*user Notifier]]) est automatisé -- les réponses à ce message ne seront pas prises en compte. Si vous avez un problème, contactez directement [[*user
 Croquembouche]] (en anglais).
