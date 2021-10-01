@@ -1,7 +1,10 @@
 [base]
-site = "http://notifications.wikidot.com"
-your_config = "{site}/redirect-to-your-config"
-unsubscribe = "{site}/faq#stop"
+link_site = "http://notifications.wikidot.com"
+link_your_config = "{link_site}/redirect-to-your-config"
+link_unsubscribe = "{link_site}/faq#stop"
+link_info_learning = "{link_site}/faq#learning"
+link_info_automatic = "{link_site}/faq#auto"
+
 body = """
 {intro}
 
@@ -74,7 +77,7 @@ frequency_weekly = "weekly"
 frequency_monthly = "monthly"
 subject = "[Forum Notifications] {post_count} new posts"
 intro = """|
-Hello! This is your {frequency} notification digest from {site}, notifying
+Hello! This is your {frequency} notification digest from {link_site}, notifying
 you of new posts to threads that you're subscribed to.
 
 Not including any subscriptions that have been removed as a result of your
@@ -83,14 +86,14 @@ plural({sub_count}|subscription|subscriptions) for you:
 
 * {manual_sub_count} manual
 plural({manual_sub_count}|subscription|subscriptions), as defined in
-[{your_config} your user configuration].
+[{link_your_config} your user configuration].
 
 * {auto_thread_sub_count} automatic thread
 plural({auto_thread_sub_count}|subscription|subscriptions) and
 {auto_post_sub_count} automatic post
 plural({auto_post_sub_count}|subscription|subscriptions). The service is
-[{site}/faq#learning still learning] about your automatic subscriptions, so
-expect this number to increase over time. [{site}/faq#auto Learn what
+[{link_info_learning} still learning] about your automatic subscriptions, so
+expect this number to increase over time. [{link_info_automatic} Learn what
 constitutes an automatic subscription.]
 
 This account ([[*user Notifier]]) is automated -- any response to this
@@ -103,7 +106,7 @@ Croquembouche]]) directly.
 
 -----
 """
-unsub_footer = "Unsubscribe from these notifications: {unsubscribe}"
+unsub_footer = "Unsubscribe from these notifications: {link_unsubscribe}"
 main_summary = "You have {summary} from {wiki_count} plural({wiki_count}|wiki|wikis)"
 summary = """|
 {notification_count} plural({notification_count}|notification|notifications)
@@ -121,7 +124,7 @@ frequency_weekly = "hàng tuần"
 frequency_monthly = "hàng tháng"
 subject = "[Thông Báo Diễn Đàn] {post_count} post mới"
 intro = """|
-Xin chào! Đây là hệ thống thông báo {frequency} của bạn từ {site}, hiển thị
+Xin chào! Đây là hệ thống thông báo {frequency} của bạn từ {link_site}, hiển thị
 thông báo về các bài post mới được đăng vào trang thread mà bạn đăng kí
 theo dõi.
 
@@ -129,12 +132,12 @@ Trừ đi các phần mà bạn đã hủy đăng kí thông qua chỉnh sửa �
 dịch vụ này hiện đang theo dõi {sub_count} đăng kí cho bạn, bao gồm:
 
 * {manual_sub_count} mẫu đăng kí thủ công, theo như cài đặt tại
-[{your_config} bản điều chỉnh người dùng của bạn].
+[{link_your_config} bản điều chỉnh người dùng của bạn].
 
 * {auto_thread_sub_count} thread được đăng kí tự động và
 {auto_post_sub_count} post đăng kí tự động. Dịch vụ hiện vẫn
-[{site}/faq#learning đang học hỏi] về các bản đăng kí tự động của bạn, vì
-thế con số này có thể tăng thêm theo thời gian. [{site}/faq#auto Tìm hiểu
+[{link_info_learning} đang học hỏi] về các bản đăng kí tự động của bạn, vì
+thế con số này có thể tăng thêm theo thời gian. [{link_info_automatic} Tìm hiểu
 về những yếu tố cấu thành bản đăng kí tự động.]
 
 Tài khoản ([[*user Notifier]]) này được chạy tự động -- bất kể tin nhắn
@@ -147,7 +150,7 @@ Croquembouche]]) trực tiếp.
 
 -----
 """
-unsub_footer = "Hủy đăng kí những thông báo này: {unsubscribe}"
+unsub_footer = "Hủy đăng kí những thông báo này: {link_unsubscribe}"
 main_summary = "Bạn có {summary} từ {wiki_count} wiki"
 summary = """|
 {notification_count} thông báo tại {thread_count} thred
