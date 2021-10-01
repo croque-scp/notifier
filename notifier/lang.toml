@@ -113,3 +113,46 @@ unknown_category_name = "Other"
 thread_opener = "Thread:"
 post_replies_opener = "Replies to your post:"
 untitled_post_title = "(untitled post)"
+
+[vi]
+frequency_hourly = "hàng giờ"
+frequency_daily = "hàng ngày"
+frequency_weekly = "hàng tuần"
+frequency_monthly = "hàng tháng"
+subject = "[Thông Báo Diễn Đàn] {post_count} post mới"
+intro = """|
+Xin chào! Đây là hệ thống thông báo {frequency} của bạn từ {site}, hiển thị
+thông báo về các bài post mới được đăng vào trang thread mà bạn đăng kí
+theo dõi.
+
+Trừ đi các phần mà bạn đã hủy đăng kí thông qua chỉnh sửa đăng kí thủ công,
+dịch vụ này hiện đang theo dõi {sub_count} đăng kí cho bạn, bao gồm:
+
+* {manual_sub_count} mẫu đăng kí thủ công, theo như cài đặt tại
+[{your_config} bản điều chỉnh người dùng của bạn].
+
+* {auto_thread_sub_count} thread được đăng kí tự động và
+{auto_post_sub_count} post đăng kí tự động. Dịch vụ hiện vẫn
+[{site}/faq#learning đang học hỏi] về các bản đăng kí tự động của bạn, vì
+thế con số này có thể tăng thêm theo thời gian. [{site}/faq#auto Tìm hiểu
+về những yếu tố cấu thành bản đăng kí tự động.]
+
+Tài khoản ([[*user Notifier]]) này được chạy tự động -- bất kể tin nhắn
+gửi đến tài khoản đều bị bỏ qua. Nếu có khúc mắc, vui lòng liên hệ ([[*user
+Croquembouche]]) trực tiếp.
+
+-----
+
+[[=]]<>+ :closed_mailbox_with_raised_flag:<>[[/=]]
+
+-----
+"""
+unsub_footer = "Hủy đăng kí những thông báo này: {unsubscribe}"
+main_summary = "Bạn có {summary} từ {wiki_count} wiki"
+summary = """|
+{notification_count} thông báo tại {thread_count} thred
+"""
+unknown_category_name = "Khác"
+thread_opener = "Thread:"
+post_replies_opener = "Phản hồi lại post của bạn:"
+untitled_post_title = "(post không có tiêu đề)"
