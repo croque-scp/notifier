@@ -162,7 +162,7 @@ untitled_post_title = "(post không có tiêu đề)"
 
 [fr]
 link_site = "http://commandemento5.wikidot.com/notifications"
-link_your_config = "{link_site}/redirect-to-your-config"
+link_your_config = "http://notifications.wikidot.com/redirect-to-your-config"
 link_unsubscribe = "{link_site}#stop"
 link_info_learning = "{link_site}#learning"
 link_info_automatic = "{link_site}#auto"
