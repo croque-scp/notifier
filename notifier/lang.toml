@@ -200,3 +200,47 @@ unknown_category_name = "Autres"
 thread_opener = "Fil :"
 post_replies_opener = "Réponses à votre message :"
 untitled_post_title = "(message sans titre)"
+
+[es]
+frequency_hourly = "de cada hora"
+frequency_daily = "diario"
+frequency_weekly = "semanal"
+frequency_monthly = "mensual"
+subject = "[Notificaciones del Foro] {post_count} nuevos mensajes"
+intro = """|
+¡Hola! Este es el resumen {frequency} de notificaciones de {link_site}, avisándote
+de las nuevas respuestas a hilos a los que estás suscrito.
+No incluye ninguna suscripción que haya sido removida como resultado de tus
+desuscripciones manuales, este servicio mantiene seguimiento de {sub_count}
+plural({sub_count}|suscripción|suscripciones) para ti:
+
+* {manual_sub_count}
+plural({manual_sub_count}|suscripción|suscripciones) manuales, como se define en
+[{link_your_config} tu configuración de usuario].
+
+* {auto_thread_sub_count} hilos automáticos
+plural({auto_thread_sub_count}|suscrito|suscritos) y
+{auto_post_sub_count} publicaciones automáticas
+plural({auto_post_sub_count}|suscritas|suscritas). El servicio aún
+[{link_info_learning} está aprendiendo] sobre tus suscripciones automáticas, así que espera que este número crezca con el tiempo. [{link_info_automatic} Aprende qué constituye una suscripción automática.]
+
+La cuenta ([[*user Notifier]]) está automatizada -- cualquier respuesta a este
+mensaje será ignorada. Si hay cualquier problema, contacta directamente conmigo, ([[*user
+Croquembouche]]).
+
+-----
+
+[[=]]<>+ :closed_mailbox_with_raised_flag:<>[[/=]]
+
+-----
+"""
+unsub_footer = "Desuscribirse de estas notificaciones: {link_unsubscribe}"
+main_summary = "Tienes {summary} de {wiki_count} plural({wiki_count}|wiki|wikis)"
+summary = """|
+{notification_count} plural({notification_count}|notificación|notificaciones)
+en {thread_count} plural({thread_count}|hilo|hilos)
+"""
+unknown_category_name = "Otros"
+thread_opener = "Hilo:"
+post_replies_opener = "Respuestas:"
+untitled_post_title = "(publicación sin título)"
