@@ -244,3 +244,36 @@ unknown_category_name = "Otros"
 thread_opener = "Hilo:"
 post_replies_opener = "Respuestas:"
 untitled_post_title = "(publicación sin título)"
+
+[ja]
+frequency_hourly = "一時間ごと"
+frequency_daily = "一日ごと"
+frequency_weekly = "一週間ごと"
+frequency_monthly = "ひと月ごと"
+subject = "[フォーラム通知] {post_count} 新しいポスト"
+intro = """|
+こんにちは！こちらは{link_site}から{frequency}の通知です。
+あなたの登録したスレッドに新しいポストが投稿されたので、通知をします。
+これは、あなたが手動で登録解除したスレッドを含んでいません。
+本サービスにあなたが登録したスレッド数は{sub_count}個です。
+そのうち、[{link_your_config} あなたのユーザー設定ページ]にある通り、{manual_sub_count}個が手動登録です。
+自動登録されたスレッドは{auto_thread_sub_count}個で、ポストは{auto_post_sub_count}個です。
+本サービスはあなたの自動登録を[{link_info_learning} 学習しています]。今後、自動登録の個数が増加する場合があります。
+[{link_info_automatic} 自動登録の構成については、こちらを参照してください。]
+本アカウント([[*user Notifier]])は自動であり、いかなる返信対応もできません。問題があるようでしたら、[[*user Croquembouche]]に直接ご連絡ください。
+
+-----
+
+[[=]]<>+ :closed_mailbox_with_raised_flag:<>[[/=]]
+
+-----
+"""
+unsub_footer = "[{link_unsubscribe} 登録を解除する]"
+main_summary = "{wiki_count}個のwikiからの{summary}です。"
+summary = """|
+{thread_count}個のスレッドに{notification_count}件の通知
+"""
+unknown_category_name = "その他"
+thread_opener = "スレッド:"
+post_replies_opener = "返信:"
+untitled_post_title = "(無題のポスト)"
