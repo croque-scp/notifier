@@ -250,7 +250,7 @@ frequency_hourly = "一時間ごと"
 frequency_daily = "一日ごと"
 frequency_weekly = "一週間ごと"
 frequency_monthly = "ひと月ごと"
-subject = "[フォーラム通知] {post_count} 新しいポスト"
+subject = "[フォーラム通知] {post_count}個の新しいポスト"
 intro = """|
 こんにちは！こちらは{link_site}から{frequency}の通知です。
 あなたの登録したスレッドに新しいポストが投稿されたので、通知をします。
