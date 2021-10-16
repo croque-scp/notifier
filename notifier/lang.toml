@@ -277,3 +277,36 @@ unknown_category_name = "その他"
 thread_opener = "スレッド:"
 post_replies_opener = "返信:"
 untitled_post_title = "(無題のポスト)"
+
+[zh]
+frequency_hourly = "每小时"
+frequency_daily = "每日"
+frequency_weekly = "每周"
+frequency_monthly = "每月"
+subject = "[论坛提醒] {post_count} 个新帖子"
+intro = """|
+您好！这是您在 {link_site} 订阅的{frequency}提醒概要，提醒您所订阅的讨论区内发布了新的讨论帖。
+
+排除了由于您手动取消订阅而被移除的所有订阅内容，本服务将为您持续追踪 {sub_count} 个订阅：
+
+* {manual_sub_count} 个手动订阅，可在[{link_your_config} 您的个人配置]处配置。
+
+* {auto_thread_sub_count} 个自动订阅讨论区以及 {auto_post_sub_count} 个自动订阅讨论帖。该服务[{link_info_learning} 仍在学习]您的自动订阅内容中，所以预计这个数字将会随时间增长。[{link_info_automatic} 了解自动订阅的内容构成。]
+
+本账户（[[*user Notifier]]）为全自动运营——任何对本消息发送的回复都将被忽略。如果您遇到了任何问题，请直接联系我（[[*user Croquembouche]]）。
+
+-----
+
+[[=]]<>+ :closed_mailbox_with_raised_flag:<>[[/=]]
+
+-----
+"""
+unsub_footer = "已取消订阅的帖子：{link_unsubscribe}"
+main_summary = "您总共在 {wiki_count} 个维基处订阅了 {summary} 个帖子"
+summary = """|
+从 {thread_count} 个讨论区处收到的 {notification_count} 条提醒
+"""
+unknown_category_name = "其它"
+thread_opener = "讨论区："
+post_replies_opener = "回复："
+untitled_post_title = "（无标题帖子）"
