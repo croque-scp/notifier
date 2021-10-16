@@ -278,7 +278,7 @@ thread_opener = "スレッド:"
 post_replies_opener = "返信:"
 untitled_post_title = "(無題のポスト)"
 
-[cn]
+[zh]
 frequency_hourly = "每小时"
 frequency_daily = "每日"
 frequency_weekly = "每周"
