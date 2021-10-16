@@ -301,7 +301,7 @@ intro = """|
 
 -----
 """
-unsub_footer = "已取消订阅的帖子：{link_unsubscribe}"
+unsub_footer = "取消订阅本提醒：{link_unsubscribe}"
 main_summary = "您总共在 {wiki_count} 个维基处订阅了 {summary} 个帖子"
 summary = """|
 从 {thread_count} 个讨论区处收到的 {notification_count} 条提醒
