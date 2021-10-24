@@ -204,6 +204,20 @@ def test_deleted_thread(sample_database: BaseDatabaseDriver):
     posts = sample_database.get_new_posts_for_user("1", (0, 100))
     assert "t-1" not in [reply["thread_id"] for reply in posts["post_replies"]]
     assert "t-1" not in [post["thread_id"] for post in posts["thread_posts"]]
+    assert "p-111" not in [reply["id"] for reply in posts["post_replies"]]
+
+
+def test_deleted_post(sample_database: BaseDatabaseDriver):
+    """Test that marking a post as deleted works and that it then does
+    not appear in notifications."""
+    # p-21 would not appear in a notification anyway because it was made by
+    # the testing user, put p-211 would, and should have been recursively
+    # marked as deleted
+    posts = sample_database.get_new_posts_for_user("1", (0, 100))
+    assert "p-211" in [reply["id"] for reply in posts["post_replies"]]
+    sample_database.mark_post_as_deleted("p-21")
+    posts = sample_database.get_new_posts_for_user("1", (0, 100))
+    assert "p-211" not in [reply["id"] for reply in posts["post_replies"]]
 
 
 def test_initial_notified_timestamp(sample_database: MySqlDriver):
