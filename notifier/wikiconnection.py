@@ -422,3 +422,30 @@ class Connection:
             event="deletePage",
             page_id=str(page_id),
         )
+
+    def set_tags(self, wiki_id: str, slug: str, tags: str) -> None:
+        """Sets the tags on a page.
+
+        Overrides all previous tags, so if amending a page's tags, be sure
+        to have already observed them.
+
+        Connection needs to be logged in.
+        """
+        page_id = self.get_page_id(wiki_id, slug)
+        logger.debug(
+            "Setting page tags %s",
+            {
+                "tags": tags,
+                "on slug": slug,
+                "with id": page_id,
+                "on wiki": wiki_id,
+            },
+        )
+        self.module(
+            wiki_id,
+            "Empty",
+            action="WikiPageAction",
+            event="saveTags",
+            page_id=str(page_id),
+            tags=tags,
+        )
