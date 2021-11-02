@@ -53,10 +53,11 @@ def sample_database(
             "language",
             "delivery",
             "user_base_notified",
+            "tags",
             "subscriptions",
             "unsubscriptions",
         ],
-        [("1", "MyUser", "hourly", "en", "pm", 1, subs, unsubs)],
+        [("1", "MyUser", "hourly", "en", "pm", 1, "", subs, unsubs)],
     )
     sample_wikis: List[SupportedWikiConfig] = construct(
         ["id", "name", "secure"], [("my-wiki", "My Wiki", 1)]
