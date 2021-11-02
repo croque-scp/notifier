@@ -24,7 +24,7 @@ def main(
 ):
     """Main executor, supposed to be called via command line."""
 
-    logging.info("The current time is %s", now)
+    logger.info("The current time is %s", now)
 
     # Database stores forum posts and caches subscriptions
     DatabaseDriver = resolve_driver_from_config(config["database"]["driver"])
@@ -34,6 +34,9 @@ def main(
         username=auth["mysql_username"],
         password=auth["mysql_password"],
     )
+
+    if limit_wikis is not None:
+        logger.info("Wikis will be limited to %s", limit_wikis)
 
     if execute_now is None:
         logger.info("Starting in scheduled mode")
