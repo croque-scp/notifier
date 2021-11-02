@@ -23,7 +23,7 @@ from notifier.types import (
     LocalConfig,
     PostInfo,
 )
-from notifier.wikiconnection import Connection
+from notifier.wikiconnection import Connection, RestrictedInbox
 
 logger = logging.getLogger(__name__)
 
@@ -285,12 +285,33 @@ def notify_user(
     subject, body = digester.for_user(user, posts)
 
     # Send the digests via PM to PM-subscribed users
+    pm_inform_tag = "restricted-inbox"
     if user["delivery"] == "pm":
         logger.debug(
             "Sending notification %s",
             {"to user": user["username"], "via": "pm", "channel": channel},
         )
-        connection.send_message(user["user_id"], subject, body)
+        try:
+            connection.send_message(user["user_id"], subject, body)
+        except RestrictedInbox:
+            # If the inbox is restricted, inform the user
+            logger.warning(
+                "Aborting notification %s",
+                {
+                    "for user": user["username"],
+                    "in channel": channel,
+                    "reason": "restricted Wikidot inbox",
+                },
+            )
+            if pm_inform_tag not in user["tags"]:
+                connection.set_tags(
+                    config["config_wiki"],
+                    ":".join(
+                        [config["user_config_category"], str(user["user_id"])]
+                    ),
+                    " ".join([user["tags"], pm_inform_tag]),
+                )
+            return False
 
     # Send the digests via email to email-subscribed users
     if user["delivery"] == "email":
@@ -359,4 +380,14 @@ def notify_user(
             "channel": channel,
         },
     )
+
+    # If the method was PM and the delivery was successful, remove the
+    # restricted inbox tag
+    if user["delivery"] == "pm" and pm_inform_tag in user["tags"]:
+        connection.set_tags(
+            config["config_wiki"],
+            ":".join([config["user_config_category"], str(user["user_id"])]),
+            user["tags"].replace(pm_inform_tag, ""),
+        )
+
     return True
