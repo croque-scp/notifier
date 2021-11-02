@@ -23,7 +23,7 @@ from notifier.types import (
     LocalConfig,
     PostInfo,
 )
-from notifier.wikiconnection import Connection
+from notifier.wikiconnection import Connection, RestrictedInbox
 
 logger = logging.getLogger(__name__)
 
@@ -73,6 +73,8 @@ def notify(
     auth: AuthConfig,
     active_channels: List[str],
     database: BaseDatabaseDriver,
+    limit_wikis: List[str] = None,
+    force_initial_search_timestamp: int = None,
 ):
     """Main task executor. Should be called as often as the most frequent
     notification digest.
@@ -98,7 +100,7 @@ def notify(
     connection = Connection(config, database.get_supported_wikis())
 
     logger.info("Getting new posts...")
-    get_new_posts(database, connection)
+    get_new_posts(database, connection, limit_wikis)
 
     # Record the 'current' timestamp immediately after downloading posts
     current_timestamp = int(time.time())
@@ -108,7 +110,13 @@ def notify(
 
     logger.info("Notifying...")
     notify_active_channels(
-        active_channels, current_timestamp, config, auth, database, connection
+        active_channels,
+        current_timestamp,
+        config,
+        auth,
+        database,
+        connection,
+        force_initial_search_timestamp,
     )
 
     # Notifications have been sent, so perform time-insensitive maintenance
@@ -133,6 +141,7 @@ def notify_active_channels(
     auth: AuthConfig,
     database: BaseDatabaseDriver,
     connection: Connection,
+    force_initial_search_timestamp: int = None,
 ):
     """Prepare and send notifications to all activated channels."""
     digester = Digester(config["path"]["lang"])
@@ -142,6 +151,8 @@ def notify_active_channels(
         notify_channel(
             channel,
             current_timestamp,
+            force_initial_search_timestamp,
+            config=config,
             database=database,
             connection=connection,
             digester=digester,
@@ -152,7 +163,9 @@ def notify_active_channels(
 def notify_channel(
     channel: str,
     current_timestamp: int,
+    force_initial_search_timestamp: int = None,
     *,
+    config: LocalConfig,
     database: BaseDatabaseDriver,
     connection: Connection,
     digester: Digester,
@@ -175,6 +188,8 @@ def notify_channel(
                 user,
                 channel,
                 current_timestamp,
+                force_initial_search_timestamp,
+                config=config,
                 database=database,
                 connection=connection,
                 digester=digester,
@@ -214,7 +229,9 @@ def notify_user(
     user: CachedUserConfig,
     channel: str,
     current_timestamp: int,
+    force_initial_search_timestamp: int = None,
     *,
+    config: LocalConfig,
     database: BaseDatabaseDriver,
     connection: Connection,
     digester: Digester,
@@ -241,7 +258,12 @@ def notify_user(
     # Get new posts for this user
     posts = database.get_new_posts_for_user(
         user["user_id"],
-        (user["last_notified_timestamp"] + 1, current_timestamp),
+        (
+            (user["last_notified_timestamp"] + 1)
+            if force_initial_search_timestamp is None
+            else force_initial_search_timestamp,
+            current_timestamp,
+        ),
     )
     apply_overrides(
         posts, database.get_global_overrides(), user["manual_subs"]
@@ -281,12 +303,33 @@ def notify_user(
     subject, body = digester.for_user(user, posts)
 
     # Send the digests via PM to PM-subscribed users
+    pm_inform_tag = "restricted-inbox"
     if user["delivery"] == "pm":
         logger.debug(
             "Sending notification %s",
             {"to user": user["username"], "via": "pm", "channel": channel},
         )
-        connection.send_message(user["user_id"], subject, body)
+        try:
+            connection.send_message(user["user_id"], subject, body)
+        except RestrictedInbox:
+            # If the inbox is restricted, inform the user
+            logger.warning(
+                "Aborting notification %s",
+                {
+                    "for user": user["username"],
+                    "in channel": channel,
+                    "reason": "restricted Wikidot inbox",
+                },
+            )
+            if pm_inform_tag not in user["tags"]:
+                connection.set_tags(
+                    config["config_wiki"],
+                    ":".join(
+                        [config["user_config_category"], str(user["user_id"])]
+                    ),
+                    " ".join([user["tags"], pm_inform_tag]),
+                )
+            return False
 
     # Send the digests via email to email-subscribed users
     if user["delivery"] == "email":
@@ -302,6 +345,7 @@ def notify_user(
         else:
             logger.debug("Using cached email contacts")
 
+        email_inform_tag = "not-a-back-contact"
         try:
             address = addresses[user["username"]]
         except KeyError:
@@ -316,8 +360,25 @@ def notify_user(
                     "reason": "not a back-contact",
                 },
             )
-            # They'll have to fix this themselves
+            # They'll have to fix this themselves - inform them
+            if email_inform_tag not in user["tags"]:
+                connection.set_tags(
+                    config["config_wiki"],
+                    ":".join(
+                        [config["user_config_category"], str(user["user_id"])]
+                    ),
+                    " ".join([user["tags"], email_inform_tag]),
+                )
             return False
+        if email_inform_tag in user["tags"]:
+            # This user has fixed the above issue, so remove the tag
+            connection.set_tags(
+                config["config_wiki"],
+                ":".join(
+                    [config["user_config_category"], str(user["user_id"])]
+                ),
+                user["tags"].replace(email_inform_tag, ""),
+            )
         logger.debug(
             "Sending notification %s",
             {"user": user["username"], "via": "email", "channel": channel},
@@ -337,4 +398,13 @@ def notify_user(
             "channel": channel,
         },
     )
+
+    # If the delivery was successful, remove any error tags
+    if user["tags"] != "":
+        connection.set_tags(
+            config["config_wiki"],
+            ":".join([config["user_config_category"], str(user["user_id"])]),
+            "",
+        )
+
     return True

@@ -15,9 +15,19 @@ logger = logging.getLogger(__name__)
 new_posts_rss = "http://{}.wikidot.com/feed/forum/posts.xml"
 
 
-def get_new_posts(database: BaseDatabaseDriver, connection: Connection):
+def get_new_posts(
+    database: BaseDatabaseDriver,
+    connection: Connection,
+    limit_wikis: List[str] = None,
+):
     """For each configured wiki, retrieve and store new posts."""
-    for wiki in database.get_supported_wikis():
+    wikis = database.get_supported_wikis()
+    if limit_wikis is not None:
+        wikis = [wiki for wiki in wikis if wiki["id"] in limit_wikis]
+    logger.info("Downloading posts from wikis %s", wikis)
+    for wiki in wikis:
+        if limit_wikis is not None and wiki["id"] in limit_wikis:
+            continue
         logger.info("Getting new posts %s", {"for wiki_id": wiki["id"]})
         try:
             fetch_posts_with_context(wiki["id"], database, connection)

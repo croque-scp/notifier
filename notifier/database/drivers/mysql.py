@@ -329,6 +329,7 @@ class MySqlDriver(BaseDatabaseDriver, BaseDatabaseWithSqlFileCache):
                         "frequency": user_config["frequency"],
                         "language": user_config["language"],
                         "delivery": user_config["delivery"],
+                        "tags": user_config["tags"],
                     },
                     cursor,
                 )

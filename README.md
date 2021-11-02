@@ -75,6 +75,9 @@ page:
 document.querySelector("[name=field-frequency]").value = "test"
 ```
 
+To restrict which wikis posts will be downloaded from, add `--limit-wikis
+[list]`.
+
 ## Remote deployment
 
 The notifier service is not intended to be executed locally or even to be

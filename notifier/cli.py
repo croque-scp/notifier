@@ -1,24 +1,26 @@
 import argparse
 import logging
-from typing import List, Optional, Tuple
 
 from notifier.config.local import read_local_auth, read_local_config
 from notifier.main import main
 from notifier.notify import notification_channels
-from notifier.types import AuthConfig, LocalConfig
 
 logger = logging.getLogger(__name__)
 
 
 def cli():
     """Run main procedure as a command-line tool."""
-    config, auth, execute_now = read_command_line_arguments()
-    main(config, auth, execute_now)
+    args = read_command_line_arguments()
+    main(
+        read_local_config(args.config),
+        read_local_auth(args.auth),
+        args.execute_now,
+        args.limit_wikis,
+        args.force_initial_search_timestamp,
+    )
 
 
-def read_command_line_arguments() -> Tuple[
-    LocalConfig, AuthConfig, Optional[List[str]]
-]:
+def read_command_line_arguments():
     """Extracts from the command line the config file and auth file."""
     parser = argparse.ArgumentParser()
     parser.add_argument(
@@ -35,9 +37,17 @@ def read_command_line_arguments() -> Tuple[
         nargs="*",
         choices=notification_channels.keys(),
     )
-    args = parser.parse_args()
+    parser.add_argument(
+        "--limit-wikis",
+        type=str,
+        help="""A set of wiki IDs to download new posts from. Must be a
+        subset of the wiki IDs listed in the remote configuration.""",
+        nargs="+",
+    )
+    parser.add_argument(
+        "--force-initial-search-timestamp",
+        type=int,
+        help="""The lower timestamp to use when searching for posts.""",
+    )
 
-    config_file = read_local_config(args.config)
-    auth_file = read_local_auth(args.auth)
-
-    return config_file, auth_file, args.execute_now
+    return parser.parse_args()

@@ -2,10 +2,19 @@ from pathlib import Path
 
 import pytest
 
-from notifier.digest import Digester, make_wikis_digest, pluralise, process_long_strings
+from notifier.digest import (
+    Digester,
+    make_wikis_digest,
+    pluralise,
+    process_long_strings,
+)
 from notifier.formatter import convert_syntax
 from notifier.overrides import apply_overrides, override_applies_to_post
-from notifier.types import CachedUserConfig, GlobalOverridesConfig, NewPostsInfo
+from notifier.types import (
+    CachedUserConfig,
+    GlobalOverridesConfig,
+    NewPostsInfo,
+)
 
 
 @pytest.fixture(scope="module")
@@ -18,6 +27,7 @@ def fake_user() -> CachedUserConfig:
         "language": "en",
         "delivery": "pm",
         "last_notified_timestamp": 0,
+        "tags": "",
         "manual_subs": [],
         "auto_subs": [],
     }

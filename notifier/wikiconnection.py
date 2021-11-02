@@ -38,6 +38,11 @@ class ThreadNotExists(Exception):
     exist before) that it was deleted."""
 
 
+class RestrictedInbox(Exception):
+    """Indicates that a user could not receive a Wikidot PM because their
+    inbox is restricted."""
+
+
 class Connection:
     """Connection to Wikidot facilitating communications with it."""
 
@@ -114,6 +119,12 @@ class Connection:
             raise
         if response["status"] == "no_thread":
             raise ThreadNotExists
+        if (
+            response["status"] == "no_permission"
+            and response["message"]
+            == "This user wishes to receive messages only from selected users."
+        ):
+            raise RestrictedInbox
         if response["status"] != "ok":
             logger.error(
                 "Bad response from Wikidot %s",
@@ -421,4 +432,31 @@ class Connection:
             action="WikiPageAction",
             event="deletePage",
             page_id=str(page_id),
+        )
+
+    def set_tags(self, wiki_id: str, slug: str, tags: str) -> None:
+        """Sets the tags on a page.
+
+        Overrides all previous tags, so if amending a page's tags, be sure
+        to have already observed them.
+
+        Connection needs to be logged in.
+        """
+        page_id = self.get_page_id(wiki_id, slug)
+        logger.debug(
+            "Setting page tags %s",
+            {
+                "tags": tags,
+                "on slug": slug,
+                "with id": page_id,
+                "on wiki": wiki_id,
+            },
+        )
+        self.module(
+            wiki_id,
+            "Empty",
+            action="WikiPageAction",
+            event="saveTags",
+            pageId=str(page_id),
+            tags=tags.strip(),
         )

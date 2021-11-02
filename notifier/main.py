@@ -16,10 +16,16 @@ from notifier.types import AuthConfig, LocalConfig
 logger = logging.getLogger(__name__)
 
 
-def main(config: LocalConfig, auth: AuthConfig, execute_now: List[str] = None):
+def main(
+    config: LocalConfig,
+    auth: AuthConfig,
+    execute_now: List[str] = None,
+    limit_wikis: List[str] = None,
+    force_initial_search_timestamp: int = None,
+):
     """Main executor, supposed to be called via command line."""
 
-    logging.info("The current time is %s", now)
+    logger.info("The current time is %s", now)
 
     # Database stores forum posts and caches subscriptions
     DatabaseDriver = resolve_driver_from_config(config["database"]["driver"])
@@ -30,6 +36,9 @@ def main(config: LocalConfig, auth: AuthConfig, execute_now: List[str] = None):
         password=auth["mysql_password"],
     )
 
+    if limit_wikis is not None:
+        logger.info("Wikis will be limited to %s", limit_wikis)
+
     if execute_now is None:
         logger.info("Starting in scheduled mode")
 
@@ -38,7 +47,14 @@ def main(config: LocalConfig, auth: AuthConfig, execute_now: List[str] = None):
 
         # Schedule the task
         scheduler.add_job(
-            lambda: notify(config, auth, pick_channels_to_notify(), database),
+            lambda: notify(
+                config,
+                auth,
+                pick_channels_to_notify(),
+                database,
+                limit_wikis,
+                force_initial_search_timestamp,
+            ),
             CronTrigger.from_crontab(notification_channels["hourly"]),
         )
 
@@ -51,6 +67,13 @@ def main(config: LocalConfig, auth: AuthConfig, execute_now: List[str] = None):
         channels = pick_channels_to_notify(execute_now)
 
         # Run immediately and once only
-        notify(config, auth, channels, database)
+        notify(
+            config,
+            auth,
+            channels,
+            database,
+            limit_wikis,
+            force_initial_search_timestamp,
+        )
 
         print("Finished")
