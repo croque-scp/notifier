@@ -28,6 +28,7 @@ frequency = "%%form_raw{frequency}%%"
 language = "%%form_raw{language}%%"
 delivery = "%%form_raw{method}%%"
 user_base_notified = """%%created_at%%"""
+tags = """%%tags%%"""
 subscriptions = """
 %%form_data{subscriptions}%%"""
 unsubscriptions = """
@@ -124,6 +125,8 @@ def parse_raw_user_config(
     # Parse page date to approximate timestamp and coerce to int
     # TODO Move hardcoded date to config
     config["user_base_notified"] = max(user_timestamp or 0, 1627277777)
+    assert "tags" in config
+    assert isinstance(config["tags"], str)
     config["subscriptions"] = parse_subscriptions(
         config.get("subscriptions", ""), 1
     )

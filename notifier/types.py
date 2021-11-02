@@ -95,6 +95,7 @@ class RawUserConfig(TypedDict):
     language: str
     delivery: DeliveryMethod
     user_base_notified: int
+    tags: str
     subscriptions: List[Subscription]
     unsubscriptions: List[Subscription]
 
