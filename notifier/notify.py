@@ -142,6 +142,7 @@ def notify_active_channels(
         notify_channel(
             channel,
             current_timestamp,
+            config=config,
             database=database,
             connection=connection,
             digester=digester,
@@ -153,6 +154,7 @@ def notify_channel(
     channel: str,
     current_timestamp: int,
     *,
+    config: LocalConfig,
     database: BaseDatabaseDriver,
     connection: Connection,
     digester: Digester,
@@ -175,6 +177,7 @@ def notify_channel(
                 user,
                 channel,
                 current_timestamp,
+                config=config,
                 database=database,
                 connection=connection,
                 digester=digester,
@@ -215,6 +218,7 @@ def notify_user(
     channel: str,
     current_timestamp: int,
     *,
+    config: LocalConfig,
     database: BaseDatabaseDriver,
     connection: Connection,
     digester: Digester,
@@ -316,7 +320,16 @@ def notify_user(
                     "reason": "not a back-contact",
                 },
             )
-            # They'll have to fix this themselves
+            # They'll have to fix this themselves - inform them
+            inform_tag = "not-a-back-contact"
+            if inform_tag not in user["tags"]:
+                connection.set_tags(
+                    config["config_wiki"],
+                    ":".join(
+                        [config["user_config_category"], str(user["user_id"])]
+                    ),
+                    " ".join([user["tags"], inform_tag]),
+                )
             return False
         logger.debug(
             "Sending notification %s",
