@@ -109,6 +109,7 @@ class CachedUserConfig(TypedDict):
     language: str
     delivery: DeliveryMethod
     last_notified_timestamp: int
+    tags: str
     manual_subs: List[Subscription]
     auto_subs: List[Subscription]
 
