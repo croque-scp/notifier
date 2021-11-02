@@ -457,6 +457,6 @@ class Connection:
             "Empty",
             action="WikiPageAction",
             event="saveTags",
-            page_id=str(page_id),
-            tags=tags,
+            pageId=str(page_id),
+            tags=tags.strip(),
         )
