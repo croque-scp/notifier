@@ -73,6 +73,7 @@ def notify(
     auth: AuthConfig,
     active_channels: List[str],
     database: BaseDatabaseDriver,
+    limit_wikis: List[str] = None,
 ):
     """Main task executor. Should be called as often as the most frequent
     notification digest.
@@ -98,7 +99,7 @@ def notify(
     connection = Connection(config, database.get_supported_wikis())
 
     logger.info("Getting new posts...")
-    get_new_posts(database, connection)
+    get_new_posts(database, connection, limit_wikis)
 
     # Record the 'current' timestamp immediately after downloading posts
     current_timestamp = int(time.time())

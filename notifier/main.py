@@ -16,7 +16,12 @@ from notifier.types import AuthConfig, LocalConfig
 logger = logging.getLogger(__name__)
 
 
-def main(config: LocalConfig, auth: AuthConfig, execute_now: List[str] = None):
+def main(
+    config: LocalConfig,
+    auth: AuthConfig,
+    execute_now: List[str] = None,
+    limit_wikis: List[str] = None,
+):
     """Main executor, supposed to be called via command line."""
 
     logging.info("The current time is %s", now)
@@ -38,7 +43,9 @@ def main(config: LocalConfig, auth: AuthConfig, execute_now: List[str] = None):
 
         # Schedule the task
         scheduler.add_job(
-            lambda: notify(config, auth, pick_channels_to_notify(), database),
+            lambda: notify(
+                config, auth, pick_channels_to_notify(), database, limit_wikis
+            ),
             CronTrigger.from_crontab(notification_channels["hourly"]),
         )
 
@@ -51,6 +58,6 @@ def main(config: LocalConfig, auth: AuthConfig, execute_now: List[str] = None):
         channels = pick_channels_to_notify(execute_now)
 
         # Run immediately and once only
-        notify(config, auth, channels, database)
+        notify(config, auth, channels, database, limit_wikis)
 
         print("Finished")
