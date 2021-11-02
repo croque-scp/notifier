@@ -1,5 +1,19 @@
 INSERT INTO
   user_config
-  (user_id, username, frequency, language, delivery)
+  (
+    user_id,
+    username,
+    frequency,
+    language,
+    delivery,
+    tags
+  )
 VALUES
-  (%(user_id)s, %(username)s, %(frequency)s, %(language)s, %(delivery)s)
+  (
+    %(user_id)s,
+    %(username)s,
+    %(frequency)s,
+    %(language)s,
+    %(delivery)s,
+    %(tags)s
+  )
