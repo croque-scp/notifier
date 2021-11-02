@@ -306,6 +306,7 @@ def notify_user(
         else:
             logger.debug("Using cached email contacts")
 
+        email_inform_tag = "not-a-back-contact"
         try:
             address = addresses[user["username"]]
         except KeyError:
@@ -321,16 +322,24 @@ def notify_user(
                 },
             )
             # They'll have to fix this themselves - inform them
-            inform_tag = "not-a-back-contact"
-            if inform_tag not in user["tags"]:
+            if email_inform_tag not in user["tags"]:
                 connection.set_tags(
                     config["config_wiki"],
                     ":".join(
                         [config["user_config_category"], str(user["user_id"])]
                     ),
-                    " ".join([user["tags"], inform_tag]),
+                    " ".join([user["tags"], email_inform_tag]),
                 )
             return False
+        if email_inform_tag in user["tags"]:
+            # This user has fixed the above issue, so remove the tag
+            connection.set_tags(
+                config["config_wiki"],
+                ":".join(
+                    [config["user_config_category"], str(user["user_id"])]
+                ),
+                user["tags"].replace(email_inform_tag, ""),
+            )
         logger.debug(
             "Sending notification %s",
             {"user": user["username"], "via": "email", "channel": channel},
