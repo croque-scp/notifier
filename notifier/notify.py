@@ -381,13 +381,12 @@ def notify_user(
         },
     )
 
-    # If the method was PM and the delivery was successful, remove the
-    # restricted inbox tag
-    if user["delivery"] == "pm" and pm_inform_tag in user["tags"]:
+    # If the delivery was successful, remove any error tags
+    if user["tags"] != "":
         connection.set_tags(
             config["config_wiki"],
             ":".join([config["user_config_category"], str(user["user_id"])]),
-            user["tags"].replace(pm_inform_tag, ""),
+            "",
         )
 
     return True
