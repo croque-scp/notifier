@@ -74,6 +74,7 @@ def notify(
     active_channels: List[str],
     database: BaseDatabaseDriver,
     limit_wikis: List[str] = None,
+    force_initial_search_timestamp: int = None,
 ):
     """Main task executor. Should be called as often as the most frequent
     notification digest.
@@ -109,7 +110,13 @@ def notify(
 
     logger.info("Notifying...")
     notify_active_channels(
-        active_channels, current_timestamp, config, auth, database, connection
+        active_channels,
+        current_timestamp,
+        config,
+        auth,
+        database,
+        connection,
+        force_initial_search_timestamp,
     )
 
     # Notifications have been sent, so perform time-insensitive maintenance
@@ -134,6 +141,7 @@ def notify_active_channels(
     auth: AuthConfig,
     database: BaseDatabaseDriver,
     connection: Connection,
+    force_initial_search_timestamp: int = None,
 ):
     """Prepare and send notifications to all activated channels."""
     digester = Digester(config["path"]["lang"])
@@ -143,6 +151,7 @@ def notify_active_channels(
         notify_channel(
             channel,
             current_timestamp,
+            force_initial_search_timestamp,
             config=config,
             database=database,
             connection=connection,
@@ -154,6 +163,7 @@ def notify_active_channels(
 def notify_channel(
     channel: str,
     current_timestamp: int,
+    force_initial_search_timestamp: int = None,
     *,
     config: LocalConfig,
     database: BaseDatabaseDriver,
@@ -178,6 +188,7 @@ def notify_channel(
                 user,
                 channel,
                 current_timestamp,
+                force_initial_search_timestamp,
                 config=config,
                 database=database,
                 connection=connection,
@@ -218,6 +229,7 @@ def notify_user(
     user: CachedUserConfig,
     channel: str,
     current_timestamp: int,
+    force_initial_search_timestamp: int = None,
     *,
     config: LocalConfig,
     database: BaseDatabaseDriver,
@@ -246,7 +258,12 @@ def notify_user(
     # Get new posts for this user
     posts = database.get_new_posts_for_user(
         user["user_id"],
-        (user["last_notified_timestamp"] + 1, current_timestamp),
+        (
+            (user["last_notified_timestamp"] + 1)
+            if force_initial_search_timestamp is None
+            else force_initial_search_timestamp,
+            current_timestamp,
+        ),
     )
     apply_overrides(
         posts, database.get_global_overrides(), user["manual_subs"]

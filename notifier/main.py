@@ -21,6 +21,7 @@ def main(
     auth: AuthConfig,
     execute_now: List[str] = None,
     limit_wikis: List[str] = None,
+    force_initial_search_timestamp: int = None,
 ):
     """Main executor, supposed to be called via command line."""
 
@@ -47,7 +48,12 @@ def main(
         # Schedule the task
         scheduler.add_job(
             lambda: notify(
-                config, auth, pick_channels_to_notify(), database, limit_wikis
+                config,
+                auth,
+                pick_channels_to_notify(),
+                database,
+                limit_wikis,
+                force_initial_search_timestamp,
             ),
             CronTrigger.from_crontab(notification_channels["hourly"]),
         )
@@ -61,6 +67,13 @@ def main(
         channels = pick_channels_to_notify(execute_now)
 
         # Run immediately and once only
-        notify(config, auth, channels, database, limit_wikis)
+        notify(
+            config,
+            auth,
+            channels,
+            database,
+            limit_wikis,
+            force_initial_search_timestamp,
+        )
 
         print("Finished")
