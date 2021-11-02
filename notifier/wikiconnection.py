@@ -38,6 +38,11 @@ class ThreadNotExists(Exception):
     exist before) that it was deleted."""
 
 
+class RestrictedInbox(Exception):
+    """Indicates that a user could not receive a Wikidot PM because their
+    inbox is restricted."""
+
+
 class Connection:
     """Connection to Wikidot facilitating communications with it."""
 
@@ -114,6 +119,12 @@ class Connection:
             raise
         if response["status"] == "no_thread":
             raise ThreadNotExists
+        if (
+            response["status"] == "no_permission"
+            and response["message"]
+            == "This user wishes to receive messages only from selected users."
+        ):
+            raise RestrictedInbox
         if response["status"] != "ok":
             logger.error(
                 "Bad response from Wikidot %s",
