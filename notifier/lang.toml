@@ -72,6 +72,7 @@ outro = """
 
 [en]
 frequency_hourly = "hourly"
+frequency_8hourly = "every-8-hours"
 frequency_daily = "daily"
 frequency_weekly = "weekly"
 frequency_monthly = "monthly"
@@ -119,6 +120,7 @@ untitled_post_title = "(untitled post)"
 
 [vi]
 frequency_hourly = "hàng giờ"
+frequency_8hourly = "8 giờ một lần"
 frequency_daily = "hàng ngày"
 frequency_weekly = "hàng tuần"
 frequency_monthly = "hàng tháng"
@@ -168,6 +170,7 @@ link_info_learning = "{link_site}#learning"
 link_info_automatic = "{link_site}#auto"
 
 frequency_hourly = "de la dernière heure"
+frequency_8hourly = "dans les 8 dernières heures"
 frequency_daily = "journalier"
 frequency_weekly = "hebdomadaire"
 frequency_monthly = "mensuel"
@@ -203,6 +206,7 @@ untitled_post_title = "(message sans titre)"
 
 [es]
 frequency_hourly = "de cada hora"
+frequency_8hourly = "de cada 8 horas"
 frequency_daily = "diario"
 frequency_weekly = "semanal"
 frequency_monthly = "mensual"
@@ -247,6 +251,7 @@ untitled_post_title = "(publicación sin título)"
 
 [ja]
 frequency_hourly = "一時間ごと"
+frequency_8hourly = "八時間ごと"
 frequency_daily = "一日ごと"
 frequency_weekly = "一週間ごと"
 frequency_monthly = "ひと月ごと"
@@ -280,6 +285,7 @@ untitled_post_title = "(無題のポスト)"
 
 [zh]
 frequency_hourly = "每小时"
+frequency_8hourly = "每8小时"
 frequency_daily = "每日"
 frequency_weekly = "每周"
 frequency_monthly = "每月"
