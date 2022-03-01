@@ -64,7 +64,7 @@ must be run during the first minute of an hour to match any channels.
 To activate a manually-chosen channel or set of channels immediately and
 once only, even at a time when such channel would not normally be
 activated, add the `--execute-now` switch followed by any of `hourly`,
-`daily`, `weekly`, `monthly` and `test`.
+`8hourly`, `daily`, `weekly`, `monthly` and `test`.
 
 The `test` channel will never be activated during normal usage. Note that
 the user config setting for the `test` channel is hidden, and can be
