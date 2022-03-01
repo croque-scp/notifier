@@ -114,6 +114,7 @@ class Digester:
         )
         frequency = {
             "hourly": lexicon["frequency_hourly"],
+            "8hourly": lexicon["frequency_8hourly"],
             "daily": lexicon["frequency_daily"],
             "weekly": lexicon["frequency_weekly"],
             "monthly": lexicon["frequency_monthly"],
