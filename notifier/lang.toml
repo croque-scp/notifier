@@ -316,3 +316,43 @@ unknown_category_name = "其它"
 thread_opener = "讨论区："
 post_replies_opener = "回复："
 untitled_post_title = "（无标题帖子）"
+
+[it]
+frequency_hourly = "orario"
+frequency_8hourly = "ottaorario"
+frequency_daily = "giornaliero"
+frequency_weekly = "settimanale"
+frequency_monthly = "mensile"
+subject = "[Notifiche dal Forum] {post_count} nuovi post"
+intro = """|
+Ehilà! Ecco a te il tuo riassunto {frequency} delle notifiche da {link_site}, che ti 
+avvisa dei nuovi post pubblicati nei thread ai quali hai effettuato un'iscrizione.
+Eccezion fatta per tutti i thread l'iscrizione ai quali hai annullato
+manualmente, questo servizio tiene d'occhio {sub_count}
+plural({sub_count}|la tua iscrizione|le tue iscrizioni) al posto tuo:
+* {manual_sub_count} 
+plural({manual_sub_count}|l'iscrizione manuale|le iscrizioni manuali), come descritte
+[{link_your_config} nelle tue configurazioni utente].
+* {auto_thread_sub_count}
+plural({auto_thread_sub_count}|l'iscrizione automatica|le iscrizioni automatiche) ai thread e
+{auto_post_sub_count} 
+plural({auto_post_sub_count}|l'iscrizione automatica|le iscrizioni automatiche)ai post. Il servizio sta ancora
+[{link_info_learning} imparando man mano] il funzionamento delle iscrizioni automatiche, perciò
+aspettati che il numero qui sopra cresca con il tempo. [{link_info_automatic} Informati su cosa sia un'iscrizione automatica.]
+Il presente account ([[*user Notifier]]) è automatizzato -- qualsiasi risposta a questo
+messaggio sarà ignorata. Nel caso ci siano problemi, contatta me ([[*user
+Croquembouche]]) direttamente, in lingua Inglese.
+-----
+[[=]]<>+ :closed_mailbox_with_raised_flag:<>[[/=]]
+-----
+"""
+unsub_footer = "Disiscriviti da queste notifiche: {link_unsubscribe}"
+main_summary = "Hai {summary} da {wiki_count} plural({wiki_count}|wiki|wiki)"
+summary = """|
+{notification_count} plural({notification_count}|notifica|notifiche)
+in {thread_count} plural({thread_count}|thread|thread)
+"""
+unknown_category_name = "Altro"
+thread_opener = "Thread:"
+post_replies_opener = "Risposte al tuo post:"
+untitled_post_title = "(post senza titolo)"
