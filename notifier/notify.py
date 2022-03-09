@@ -31,7 +31,7 @@ logger = logging.getLogger(__name__)
 # frequency.
 notification_channels = {
     "hourly": "0 * * * *",
-    "8hourly": "0 */3 * * *",
+    "8hourly": "0 */8 * * *",
     "daily": "0 0 * * *",
     "weekly": "0 0 * * 0",
     "monthly": "0 0 1 * *",
