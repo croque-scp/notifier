@@ -17,21 +17,22 @@ emoji = "^1.4.2"
 yagmail = {extras = ["all"], version = "^0.14.256"}
 SecretStorage = "^3.3.1"
 PyMySQL = "^1.0.2"
-types-PyMySQL = "^1.0.2"
 boto3 = "^1.18.41"
-types-emoji = "^1.2.4"
 python-dateutil = "^2.8.2"
-typing-extensions = "^4.1.1"
-boto3-stubs = "^1.21.30"
+boto3-stubs = {extras = ["essential"], version = "^1.21.30"}
 
 [tool.poetry.dev-dependencies]
-black = "^21.7b0"
+black = "^22.3.0"
 pytest = "^6.2.4"
 isort = "^5.9.2"
 pylint = "^2.9.6"
 mypy = "^0.910"
 types-requests = "^2.25.0"
 types-beautifulsoup4 = "^4.9.1"
+types-PyMySQL = "^1.0.2"
+types-emoji = "^1.2.4"
+typing-extensions = "^4.1.1"
+boto3-stubs = "^1.21.30"
 
 [tool.black]
 line-length = 79
