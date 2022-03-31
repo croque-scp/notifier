@@ -193,22 +193,32 @@ class NewPostsInfo(TypedDict):
 EmailAddresses = Dict[str, str]
 
 
-class ChannelPublicLogDump(TypedDict):
+class ChannelLogDump(TypedDict):
     """Structure of the JSON public log dump, one per channel activation.
     All data must be aggregated and anonymised."""
 
     channel: str
     start_timestamp: int
     end_timestamp: int
-    sites_count: int
     user_count: int
     activated_user_count: int
     notified_user_count: int
     notified_post_count: int
     notified_thread_count: int
+
+
+class ActivationLogDump(TypedDict):
+    """Structure of the JSON public log dump, one per activation."""
+
+    start_timestamp: int
+    end_timestamp: int
+    sites_count: int
     downloaded_post_count: int
     downloaded_thread_count: int
 
 
-# The full log dump as a collection of channel log dumps.
-PublicLogDump = List[ChannelPublicLogDump]
+class LogDump(TypedDict):
+    """The full log dump as a collection of channel log dumps."""
+
+    activations: List[ActivationLogDump]
+    channels: List[ChannelLogDump]
