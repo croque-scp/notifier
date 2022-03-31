@@ -213,6 +213,7 @@ class ActivationLogDump(TypedDict):
     start_timestamp: int
     end_timestamp: int
     sites_count: int
+    user_count: int
     downloaded_post_count: int
     downloaded_thread_count: int
 

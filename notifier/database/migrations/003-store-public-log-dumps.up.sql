@@ -13,6 +13,7 @@ CREATE TABLE IF NOT EXISTS activation_log_dump (
   start_timestamp         INT UNSIGNED NOT NULL UNIQUE,
   end_timestamp           INT UNSIGNED NOT NULL,
   sites_count             INT          NOT NULL,
+  user_count              INT          NOT NULL,
   downloaded_post_count   INT          NOT NULL,
   downloaded_thread_count INT          NOT NULL
 );
