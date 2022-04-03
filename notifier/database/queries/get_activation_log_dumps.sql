@@ -8,5 +8,4 @@ SELECT
 FROM
   activation_log_dump
 WHERE
-  start_timestamp > %(lower_timestamp)
-  AND end_timestamp < %(upper_timestamp)
+  start_timestamp BETWEEN %(lower_timestamp)s AND %(upper_timestamp)s

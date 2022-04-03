@@ -2,8 +2,11 @@ from abc import ABC, abstractmethod
 from typing import Iterable, List, Tuple
 
 from notifier.types import (
+    ActivationLogDump,
     CachedUserConfig,
+    ChannelLogDump,
     GlobalOverridesConfig,
+    LogDump,
     NewPostsInfo,
     RawPost,
     RawUserConfig,
@@ -128,3 +131,15 @@ class BaseDatabaseDriver(ABC):
     @abstractmethod
     def store_post(self, post: RawPost) -> None:
         """Store a post."""
+
+    @abstractmethod
+    def store_channel_log_dump(self, log: ChannelLogDump) -> None:
+        """Store a channel log dump."""
+
+    @abstractmethod
+    def store_activation_log_dump(self, log: ActivationLogDump) -> None:
+        """Store an activation log dump."""
+
+    @abstractmethod
+    def get_log_dumps_since(self, timestamp_range: Tuple[int, int]) -> LogDump:
+        """Retrieve log dumps stored in the time range."""

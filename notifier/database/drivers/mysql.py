@@ -11,8 +11,11 @@ from pymysql.cursors import DictCursor
 from notifier.database.drivers.base import BaseDatabaseDriver
 from notifier.database.utils import BaseDatabaseWithSqlFileCache
 from notifier.types import (
+    ActivationLogDump,
     CachedUserConfig,
+    ChannelLogDump,
     GlobalOverridesConfig,
+    LogDump,
     NewPostsInfo,
     PostReplyInfo,
     RawPost,
@@ -28,6 +31,8 @@ logger = logging.getLogger(__name__)
 
 class MySqlDriver(BaseDatabaseDriver, BaseDatabaseWithSqlFileCache):
     """Database powered by MySQL."""
+
+    conn: pymysql.Connection[DictCursor]
 
     def __init__(
         self, database_name: str, *, host: str, username: str, password: str
@@ -428,6 +433,62 @@ class MySqlDriver(BaseDatabaseDriver, BaseDatabaseWithSqlFileCache):
                 "username": post["username"],
             },
         )
+
+    def store_channel_log_dump(self, log: ChannelLogDump) -> None:
+        """Store a channel log dump."""
+        self.execute_named(
+            "store_channel_log_dump",
+            {
+                "channel": log["channel"],
+                "start_timestamp": log["start_timestamp"],
+                "end_timestamp": log["end_timestamp"],
+                "user_count": log["user_count"],
+                "activated_user_count": log["activated_user_count"],
+                "notified_user_count": log["notified_user_count"],
+                "notified_post_count": log["notified_post_count"],
+                "notified_thread_count": log["notified_thread_count"],
+            },
+        )
+
+    def store_activation_log_dump(self, log: ActivationLogDump) -> None:
+        """Store an activation log dump."""
+        self.execute_named(
+            "store_activation_log_dump",
+            {
+                "start_timestamp": log["start_timestamp"],
+                "end_timestamp": log["end_timestamp"],
+                "sites_count": log["sites_count"],
+                "user_count": log["user_count"],
+                "downloaded_post_count": log["downloaded_post_count"],
+                "downloaded_thread_count": log["downloaded_thread_count"],
+            },
+        )
+
+    def get_log_dumps_since(self, timestamp_range: Tuple[int, int]) -> LogDump:
+        """Retrieve log dumps stored in the time range."""
+        lower_timestamp, upper_timestamp = timestamp_range
+        return {
+            "activations": cast(
+                List[ActivationLogDump],
+                self.execute_named(
+                    "get_activation_log_dumps",
+                    {
+                        "lower_timestamp": lower_timestamp,
+                        "upper_timestamp": upper_timestamp,
+                    },
+                ).fetchall(),
+            ),
+            "channels": cast(
+                List[ChannelLogDump],
+                self.execute_named(
+                    "get_channel_log_dumps",
+                    {
+                        "lower_timestamp": lower_timestamp,
+                        "upper_timestamp": upper_timestamp,
+                    },
+                ).fetchall(),
+            ),
+        }
 
 
 def __instantiate():
