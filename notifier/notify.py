@@ -3,6 +3,7 @@ import time
 from smtplib import SMTPAuthenticationError
 from typing import Iterable, List, cast
 
+from dumps import upload_log_dump_to_s3
 from notifier.config.remote import get_global_config
 from notifier.config.user import get_user_config
 from notifier.database.drivers.base import BaseDatabaseDriver
@@ -120,7 +121,10 @@ def notify(
         force_initial_search_timestamp,
     )
 
-    # Notifications have been sent, so perform time-insensitive maintenance
+    logger.info("Uploading log dumps...")
+    upload_log_dump_to_s3(config, database)
+
+    # Perform time-insensitive maintenance
     logger.info("Cleaning up...")
 
     for frequency in ["weekly", "monthly"]:
