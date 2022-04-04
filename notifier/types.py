@@ -24,6 +24,13 @@ class DatabaseConfig(TypedDict):
     database_name: str
 
 
+class LogDumpS3Config(TypedDict):
+    """Configuration for uploading a log dump to S3."""
+
+    bucket_name: str
+    object_key: str
+
+
 class LocalConfig(TypedDict):
     """Contents of the local config file."""
 
@@ -35,6 +42,7 @@ class LocalConfig(TypedDict):
     gmail_username: str
     database: DatabaseConfig
     path: LocalConfigPaths
+    log_dump_s3: LogDumpS3Config
 
 
 class SupportedWikiConfig(TypedDict):

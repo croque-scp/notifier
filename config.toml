@@ -15,3 +15,7 @@ database_name = "wikidot_notifier"
 # @ -> package root
 # ? -> this config file
 lang = "@/lang.toml"
+
+[log_dump_s3]
+bucket_name = "wdnotifier"
+object_key = "logs/recent_notifications.json"
