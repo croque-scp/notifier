@@ -3,7 +3,6 @@ CREATE TABLE IF NOT EXISTS channel_log_dump (
   start_timestamp         INT UNSIGNED NOT NULL UNIQUE,
   end_timestamp           INT UNSIGNED NOT NULL,
   user_count              INT          NOT NULL,
-  activated_user_count    INT          NOT NULL,
   notified_user_count     INT          NOT NULL,
   notified_post_count     INT          NOT NULL,
   notified_thread_count   INT          NOT NULL

@@ -5,7 +5,6 @@ INSERT INTO
     start_timestamp,
     end_timestamp,
     user_count,
-    activated_user_count,
     notified_user_count,
     notified_post_count,
     notified_thread_count
@@ -16,7 +15,6 @@ INSERT INTO
     %(start_timestamp)s,
     %(end_timestamp)s,
     %(user_count)s,
-    %(activated_user_count)s,
     %(notified_user_count)s,
     %(notified_post_count)s,
     %(notified_thread_count)s

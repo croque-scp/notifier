@@ -209,7 +209,6 @@ class ChannelLogDump(TypedDict):
     start_timestamp: int
     end_timestamp: int
     user_count: int
-    activated_user_count: int
     notified_user_count: int
     notified_post_count: int
     notified_thread_count: int

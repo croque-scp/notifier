@@ -443,7 +443,6 @@ class MySqlDriver(BaseDatabaseDriver, BaseDatabaseWithSqlFileCache):
                 "start_timestamp": log["start_timestamp"],
                 "end_timestamp": log["end_timestamp"],
                 "user_count": log["user_count"],
-                "activated_user_count": log["activated_user_count"],
                 "notified_user_count": log["notified_user_count"],
                 "notified_post_count": log["notified_post_count"],
                 "notified_thread_count": log["notified_thread_count"],
