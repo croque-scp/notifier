@@ -16,7 +16,11 @@ ONE_DAY_S = 60 * 60 * 24
 ENTRY_RETAIN_LIMIT = ONE_DAY_S * 7 * 3
 
 
-def upload_log_dump_to_s3(config: LocalConfig, database: BaseDatabaseDriver):
+def upload_log_dump_to_s3(
+    config: LocalConfig,
+    database: BaseDatabaseDriver,
+    entry_retain_limit: float = ENTRY_RETAIN_LIMIT,
+):
     """Uploads an aggregated log dump."""
     # Acquire the dump object from S3
     s3 = boto3.resource("s3")
@@ -27,7 +31,8 @@ def upload_log_dump_to_s3(config: LocalConfig, database: BaseDatabaseDriver):
     now = int(time.time())
     timestamp_range = (
         # Add a half hour to the limit to cover any run discrepancies
-        now - (ENTRY_RETAIN_LIMIT + HALF_AN_HOUR_S),
+        # Also handle case where the limit is set to math.inf
+        int(max(0, now - (entry_retain_limit + HALF_AN_HOUR_S))),
         now,
     )
     dump = database.get_log_dumps_since(timestamp_range)
@@ -42,6 +47,7 @@ def upload_log_dump_to_s3(config: LocalConfig, database: BaseDatabaseDriver):
             "activation_count": len(dump["activations"]),
             "channel_count": len(dump["channels"]),
             "expires": expiry,
+            "timestamp_range": timestamp_range,
         },
     )
 
