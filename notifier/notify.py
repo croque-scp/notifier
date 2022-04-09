@@ -3,7 +3,6 @@ import time
 from smtplib import SMTPAuthenticationError
 from typing import Iterable, List, cast
 
-from dumps import upload_log_dump_to_s3
 from notifier.config.remote import get_global_config
 from notifier.config.user import get_user_config
 from notifier.database.drivers.base import BaseDatabaseDriver
@@ -13,6 +12,7 @@ from notifier.deletions import (
     rename_invalid_user_config_pages,
 )
 from notifier.digest import Digester
+from notifier.dumps import upload_log_dump_to_s3
 from notifier.emailer import Emailer
 from notifier.newposts import get_new_posts
 from notifier.overrides import apply_overrides

@@ -6,8 +6,8 @@ import pytest
 from _pytest.monkeypatch import MonkeyPatch
 from mypy_boto3_s3.service_resource import Object
 
-from dumps import upload_log_dump_to_s3
 from notifier.database.drivers.base import BaseDatabaseDriver
+from notifier.dumps import upload_log_dump_to_s3
 from notifier.types import LocalConfig
 
 
