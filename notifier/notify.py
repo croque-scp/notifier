@@ -1,7 +1,7 @@
 import logging
 import time
 from smtplib import SMTPAuthenticationError
-from typing import Iterable, List, cast
+from typing import Iterable, List, Tuple, cast
 
 from notifier.config.remote import get_global_config
 from notifier.config.user import get_user_config
@@ -22,6 +22,7 @@ from notifier.types import (
     CachedUserConfig,
     EmailAddresses,
     LocalConfig,
+    NewPostsInfo,
     PostInfo,
 )
 from notifier.wikiconnection import Connection, RestrictedInbox
@@ -178,6 +179,7 @@ def notify_channel(
 ):
     """Compiles and sends notifications for all users in a given channel."""
     logger.info("Activating channel %s", {"channel": channel})
+    channel_start_timestamp = int(time.time())
     # Get config sans subscriptions for users who would be notified
     user_configs = database.get_user_configs(channel)
     logger.debug(
@@ -186,10 +188,12 @@ def notify_channel(
     )
     # Notify each user on this frequency channel
     notified_users = 0
+    notified_posts = 0
+    notified_threads = 0
     addresses: EmailAddresses = {}
     for user in user_configs:
         try:
-            notified_users += notify_user(
+            sent, post_count, thread_count = notify_user(
                 user,
                 channel,
                 current_timestamp,
@@ -201,6 +205,10 @@ def notify_channel(
                 emailer=emailer,
                 addresses=addresses,
             )
+            if sent:
+                notified_users += 1
+                notified_posts += post_count
+                notified_threads += thread_count
         except SMTPAuthenticationError as error:
             logger.error(
                 "Failed to notify user via email %s",
@@ -224,6 +232,18 @@ def notify_channel(
                 exc_info=error,
             )
             continue
+
+    database.store_channel_log_dump(
+        {
+            "channel": channel,
+            "start_timestamp": channel_start_timestamp,
+            "end_timestamp": int(time.time()),
+            "user_count": len(user_configs),
+            "notified_user_count": notified_users,
+            "notified_post_count": notified_posts,
+            "notified_thread_count": notified_threads,
+        }
+    )
     logger.info(
         "Finished notifying channel %s",
         {"channel": channel, "users_notified_count": notified_users},
@@ -242,10 +262,14 @@ def notify_user(
     digester: Digester,
     emailer: Emailer,
     addresses: EmailAddresses,
-) -> int:
+) -> Tuple[bool, int, int]:
     """Compiles and sends a notification for a single user.
 
-    Returns a boolean indicating whether the notification was successful.
+    Returns a tuple containing the following: a boolean indicating whether
+    the notification was successful, the number of posts notified about,
+    and the number of threads notified about. The latter values will be 0
+    in the case that the notification was not successful, even if there
+    were posts to notify about (e.g. if the user has an invalid config).
 
     :param addresses: A dict of email addresses to use for sending emails
     to. Should be set to an empty dict initially; if this is the case, this
@@ -292,7 +316,7 @@ def notify_user(
                 "reason": "no posts",
             },
         )
-        return False
+        return False, 0, 0
 
     # Extract the 'last notification time' that will be recorded -
     # it is the timestamp of the most recent post this user is
@@ -334,7 +358,7 @@ def notify_user(
                     ),
                     " ".join([user["tags"], pm_inform_tag]),
                 )
-            return False
+            return False, 0, 0
 
     # Send the digests via email to email-subscribed users
     if user["delivery"] == "email":
@@ -374,7 +398,7 @@ def notify_user(
                     ),
                     " ".join([user["tags"], email_inform_tag]),
                 )
-            return False
+            return False, 0, 0
         if email_inform_tag in user["tags"]:
             # This user has fixed the above issue, so remove the tag
             connection.set_tags(
@@ -412,4 +436,15 @@ def notify_user(
             "",
         )
 
-    return True
+    return True, post_count, count_threads(posts)
+
+
+def count_threads(posts: NewPostsInfo) -> int:
+    """Counts the number of unique threads in a list of posts."""
+
+    def count_threads_in_posts(posts: Iterable[PostInfo]) -> int:
+        return len(set(post["thread_id"] for post in posts))
+
+    return count_threads_in_posts(
+        posts["post_replies"],
+    ) + count_threads_in_posts(posts["thread_posts"])
