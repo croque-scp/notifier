@@ -130,20 +130,19 @@ class Connection:
                 # Successful response, break to parsing
                 break
             except ConnectionError as error:
+                will_retry = attempt_count > self.MODULE_ATTEMPT_LIMIT
                 logger.debug(
                     "Module connection failed %s",
                     {
                         "attempt_number": attempt_count + 1,
                         "attempt_delay_s": attempt_delay,
                         "max_attempts": self.MODULE_ATTEMPT_LIMIT,
-                        "will_retry": (
-                            attempt_count + 1 == self.MODULE_ATTEMPT_LIMIT
-                        ),
+                        "will_retry": will_retry,
                     },
                     exc_info=error,
                 )
-        else:
-            raise OngoingConnectionError
+                if not will_retry:
+                    raise OngoingConnectionError from error
 
         try:
             response = response_raw.json()
