@@ -2,6 +2,7 @@ from _pytest.config.argparsing import Parser
 from _pytest.python import Metafunc
 
 from notifier.config.local import read_local_auth, read_local_config
+from tests.test_database import sample_database
 
 
 def pytest_addoption(parser: Parser):

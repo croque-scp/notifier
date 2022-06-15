@@ -6,7 +6,9 @@ from notifier.database.drivers.base import BaseDatabaseDriver
 from notifier.database.drivers.mysql import MySqlDriver
 from notifier.database.utils import resolve_driver_from_config
 from notifier.types import (
+    ActivationLogDump,
     AuthConfig,
+    ChannelLogDump,
     LocalConfig,
     RawPost,
     RawUserConfig,
@@ -112,6 +114,29 @@ def sample_database(
             ("p-42", "t-4", None, 65, "Post 42", "", "3", "BUser"),
         ],
     )
+    sample_channel_log: List[ChannelLogDump] = construct(
+        [
+            "channel",
+            "start_timestamp",
+            "end_timestamp",
+            "user_count",
+            "notified_user_count",
+            "notified_post_count",
+            "notified_thread_count",
+        ],
+        [("hourly", 30, 31, 5, 2, 10, 2), ("daily", 32, 33, 2, 0, 0, 0)],
+    )
+    sample_activation_log: List[ActivationLogDump] = construct(
+        [
+            "start_timestamp",
+            "end_timestamp",
+            "sites_count",
+            "user_count",
+            "downloaded_post_count",
+            "downloaded_thread_count",
+        ],
+        [(30, 33, 1, 10, 100, 70)],
+    )
     db.store_user_configs(sample_user_configs)
     db.store_supported_wikis(sample_wikis)
     for thread in sample_threads:
@@ -120,6 +145,10 @@ def sample_database(
         db.store_thread_first_post(thread_id, post_id)
     for post in sample_posts:
         db.store_post(post)
+    for channel_log in sample_channel_log:
+        db.store_channel_log_dump(channel_log)
+    for activation_log in sample_activation_log:
+        db.store_activation_log_dump(activation_log)
     return db
 
 
