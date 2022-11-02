@@ -356,3 +356,51 @@ unknown_category_name = "Altro"
 thread_opener = "Thread:"
 post_replies_opener = "Risposte al tuo post:"
 untitled_post_title = "(post senza titolo)"
+
+[no]
+frequency_hourly = "timelige "
+frequency_8hourly = "8-timers-"
+frequency_daily = "daglige "
+frequency_weekly = "ukentlige "
+frequency_monthly = "månedlige "
+subject = "[Forum-varsler] {post_count} nye innlegg"
+intro = """|
+Hei! Dette er ditt {frequency}varslingssammendrag fra {link_site}, med
+varsler om nye innlegg i diskusjoner du har abonnert på.
+
+Utenom abonnementer som har blitt fjernet som et resultat av dine manuelle
+abonnementer, holder denne tjenesten rede på {sub_count}
+plural({sub_count}|abonnement|abonnementer) for deg:
+
+* {manual_sub_count}
+plural({manual_sub_count}|manuelt abonnement|manuelle abonnementer), som definert i
+[{link_your_config} dine bruker-instillinger].
+
+* {auto_thread_sub_count}
+plural({auto_thread_sub_count}|automatisk diskusjons-abonnement|automatiske diskusjons-abonnementer) og
+{auto_post_sub_count}
+plural({auto_post_sub_count}|automatisk innlegg-abonnement|automatiske innlegg-abonnementer). Tjenesten er
+[{link_info_learning} fremdeles under opplæring] om dine automatiske abonnementer, så
+du kan forvente dette tallet til å stige over tid. [{link_info_automatic} Finn ut hva
+som utgjør et automatisk abonnement.]
+
+Denne kontoen ([[*user Notifier]]) er automatisert -- alle svar til denne
+meldingen vil bli ignorert. Hvis du har problemer, kontakt meg ([[*user
+Croquembouche]]) direkte.
+
+-----
+
+[[=]]<>+ :closed_mailbox_with_raised_flag:<>[[/=]]
+
+-----
+"""
+unsub_footer = "Avslutt abonnement på disse varslene: {link_unsubscribe}"
+main_summary = "Du har {summary} fra {wiki_count} plural({wiki_count}|wiki|wikier)"
+summary = """|
+{notification_count} plural({notification_count}|varsel|varsler)
+i {thread_count} plural({thread_count}|diskusjon|diskusjoner)
+"""
+unknown_category_name = "Annet"
+thread_opener = "Diskusjon:"
+post_replies_opener = "Svar til ditt innlegg:"
+untitled_post_title = "(innlegg uten navn)"
