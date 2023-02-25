@@ -32,6 +32,9 @@ month using the setup method detailed below:
     $17.50
   - Storage: Unsure yet - need more data
   - Cost can be reduced by switching to v2 (`us-east-1` only)
+    - (Note 2023-02-25: As of April 2022, Aurora Serverless v2 is fully
+      available. However, it cannot scale to 0, so the minimum cost per month
+      is $43.)
 
 # First-time setup for deployment to AWS
 
@@ -169,6 +172,9 @@ to use Amazon Aurora Serverless v1. notifier only runs once an hour, so it
 doesn't make sense to pay for provisioning an always-available database for
 the 55 minutes per hour that it's not in use. The notifier codebase is
 compatible with MySQL 5.6.10a.
+
+(Note 2023-02-25: The database has been upgraded to MySQL 5.7 as part of a
+mandatory Aurora engine upgrade.)
 
 In the RDS section of the console, create a new database with the following
 settings:

@@ -15,6 +15,9 @@ reference, the latest version of MySQL at the time of writing is 8.0.26).
 For this reason, a compatible version of MySQL is needed for local
 development.
 
+(Note 2023-02-25: The database has been upgraded to MySQL 5.7 as part of a
+mandatory Aurora engine upgrade.)
+
 [Docker](https://www.docker.com/) is used for pinning the MySQL version,
 and to avoid this version conflicting with any MySQL already installed on
 your system.
