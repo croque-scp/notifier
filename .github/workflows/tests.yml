@@ -37,7 +37,7 @@ jobs:
             -e MYSQL_ROOT_PASSWORD=root \
             -e MYSQL_USER=root \
             -e MYSQL_PASSWORD=root \
-            mysql:5.7.2 \
+            mysql:5.7.4 \
           )
           container_ip=$( \
             docker inspect -f \
