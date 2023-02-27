@@ -346,8 +346,8 @@ Create the trigger, then find it in the EventBridge console, and edit it:
 
 ```json
 [
-  "config.toml",
-  "auth.lambda.toml"
+  "config/config.toml",
+  "config/auth.lambda.toml"
 ]
 ```
 

@@ -6,7 +6,7 @@ on:
       - 'notifier/**'
       - 'tests/**'
       - 'pyproject.toml'
-      - 'config.toml'
+      - 'config/config.toml'
       - '.github/workflows/tests.yml'
     branches: [ main ]
     
@@ -16,7 +16,7 @@ on:
       - 'notifier/**'
       - 'tests/**'
       - 'pyproject.toml'
-      - 'config.toml'
+      - 'config/config.toml'
       - '.github/workflows/tests.yml'
 
   # Run manually
@@ -44,7 +44,7 @@ jobs:
             '{{range.NetworkSettings.Networks}}{{.IPAddress}}{{end}}' \
             $container_id \
           )
-          sed -i "s/localhost/$container_ip/g" .github/auth.ci.toml
+          sed -i "s/localhost/$container_ip/g" config/auth.ci.toml
           echo "::set-output name=container-ip::$container_ip"
       - name: Setup Python
         uses: actions/setup-python@v2
@@ -76,4 +76,4 @@ jobs:
       - name: Run tests
         run: |
           source .venv/bin/activate
-          pytest -x --notifier-config config.toml --notifier-auth .github/auth.ci.toml
+          pytest -x --notifier-config config/config.toml --notifier-auth config/auth.ci.toml
