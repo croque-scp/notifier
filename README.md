@@ -111,7 +111,9 @@ poetry run mypy notifier
 
 ## Testing
 
-Run tests:
+### Testing locally
+
+To run tests locally:
 
 ```shell
 poetry run pytest --notifier-config path_to_config_file --notifier-auth path_to_auth_file
@@ -122,3 +124,12 @@ described above. Database tests (`tests/test_database.py`) require that
 this database already exist.
 
 I recommend using a MySQL server on localhost for tests.
+
+### Testing with Docker
+
+A Docker Compose setup is present that will spin up a temporary MySQL database
+and run tests against it:
+
+```shell
+docker compose -f docker-compose.test.yml up --build --abort-on-container-exit
+```
