@@ -43,5 +43,9 @@ ENTRYPOINT ["pytest", "-x"]
 
 
 FROM public.ecr.aws/lambda/python:3.8 AS execute_lambda
-COPY --from=execute /app ${LAMBDA_TASK_ROOT}
+COPY --from=build /app/dist ${LAMBDA_TASK_ROOT}
+RUN pip install ${LAMBDA_TASK_ROOT}/*.whl
+COPY ./config ${LAMBDA_TASK_ROOT}/config
+ENV PATH=${LAMBDA_TASK_ROOT}/.venv/bin:$PATH
+COPY ./lambda_function.py ${LAMBDA_TASK_ROOT}
 CMD ["lambda_function.lambda_handler"]
