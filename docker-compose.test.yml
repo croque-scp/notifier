@@ -25,7 +25,7 @@ services:
       - MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD-root}
       - MYSQL_DATABASE=${MYSQL_DATABASE-wikidot_notifier_test}
     healthcheck:
-      test: ["CMD", "mysqladmin" ,"ping"]
+      test: ["CMD", "mysqladmin" ,"ping", "-uroot", "-proot"]
       interval: 3s
       timeout: 3s
       retries: 10
