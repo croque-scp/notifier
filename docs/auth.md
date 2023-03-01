@@ -21,7 +21,7 @@ this file directly. In this case it is imperative that this file is never
 made public (e.g. make sure to add it to your .gitignore).
 
 A version of this file with dummy values used for CI testing can be found
-at [.github/auth.ci.toml](/.github/auth.ci.toml).
+at [config/auth.ci.toml](/config/auth.ci.toml).
 
 ## External values
 
@@ -53,4 +53,4 @@ region_name = "<AWS region>"
 secret_name = "<AWS secret name>"
 ```
 
-See [auth.lambda.toml](/auth.lambda.toml) for a sample.
+See [config/auth.lambda.toml](/config/auth.lambda.toml) for a sample.

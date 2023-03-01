@@ -12,7 +12,7 @@ if __name__ == "__main__":
     user["language"] = lang
     user["delivery"] = delivery
     posts = fake_posts.__pytest_wrapped__.obj(user)
-    digester = Digester(str(Path.cwd() / "notifier" / "lang.toml"))
+    digester = Digester(str(Path.cwd() / "config" / "lang.toml"))
     subject, digest = digester.for_user(user, posts)
     print("Subject:", subject)
     print(digest)
