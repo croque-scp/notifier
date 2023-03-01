@@ -483,6 +483,8 @@ In the Lambda's configuration, select section *VPC*:
 
 # Redeployment
 
+## As a .zip
+
 To create the lambda zip file, execute the `zip_lambda.sh` file in the
 project root:
 
@@ -491,3 +493,19 @@ project root:
 ```
 
 This should produce a `lambda.zip`. Upload that to the Lambda.
+
+## As a Docker container
+
+Create a private ECR repository. It must be private for it to be selectable as a Lambda image source.
+
+Create the Docker image using the `execute_lambda` target, making sure to tag it with the correct image tag as provided by ECR:
+
+```shell
+docker build --target execute_lambda --tag notifier:execute_lambda --tag public.ecr.aws/<namespace>/rossjrw/notifier:latest .
+```
+
+Upload the image to the ECR repository you created.
+
+- ECR has instructions for doing this - I had to use the AWS CLI using a `notifier` profile that was authenticated using an access ID I created on the WikidotNotifierAdmin IAM user. For this I also needed to create a new IAM policy providing access to the specific ECR repositry, which I attached to the WikidotNotifierAdministration IAM group.
+
+If this is replacing a Lambda function created with the .zip method, this new image-based function must be created with a different name. If you want to use the same name (like I did) then you must delete the existing Lambda function (like I did) and recreate it from scratch, this time using the container image as a template, and then follow the instructions from way up above to set it up again.
