@@ -14,4 +14,4 @@ database_name = "wikidot_notifier"
 # . -> cwd
 # @ -> package root
 # ? -> this config file
-lang = "@/config/lang.toml"
+lang = "?/../lang.toml"
