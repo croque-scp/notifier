@@ -42,7 +42,7 @@ COPY tests/ tests/
 ENTRYPOINT ["pytest", "-x"]
 
 
-FROM public.ecr.aws/lambda/python:3.8 AS execute_lambda
+FROM amazon/aws-lambda-python:3.8 AS execute_lambda
 COPY --from=build /app/dist ${LAMBDA_TASK_ROOT}
 RUN pip install ${LAMBDA_TASK_ROOT}/*.whl
 COPY ./config ${LAMBDA_TASK_ROOT}/config
