@@ -54,6 +54,9 @@ class MySqlDriver(BaseDatabaseDriver, BaseDatabaseWithSqlFileCache):
 
         self.apply_migrations()
 
+    def __del__(self):
+        self.conn.close()
+
     @contextmanager
     def transaction(self) -> Iterator[DictCursor]:
         """Context manager for an explicit transaction.
