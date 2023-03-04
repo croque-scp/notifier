@@ -23,7 +23,7 @@ FROM
   thread_first_post ON thread_first_post.thread_id = thread.id
   INNER JOIN
   post AS first_post ON thread_first_post.post_id = first_post.id
-  INNER JOIN
+  LEFT JOIN
   category ON thread.category_id = category.id
   LEFT JOIN
   manual_sub AS thread_sub ON (

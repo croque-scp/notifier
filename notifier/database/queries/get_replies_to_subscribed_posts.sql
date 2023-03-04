@@ -25,7 +25,7 @@ FROM
   wiki ON thread.wiki_id = wiki.id
   INNER JOIN
   post AS parent_post ON post.parent_post_id = parent_post.id
-  INNER JOIN
+  LEFT JOIN
   category ON thread.category_id = category.id
   LEFT JOIN
   manual_sub AS post_sub ON (
