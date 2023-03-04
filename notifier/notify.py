@@ -314,7 +314,7 @@ def notify_user(
             connection.send_message(user["user_id"], subject, body)
         except RestrictedInbox:
             # If the inbox is restricted, inform the user
-            logger.warning(
+            logger.debug(
                 "Aborting notification %s",
                 {
                     "for user": user["username"],
@@ -353,7 +353,7 @@ def notify_user(
             # This user requested to be notified via email but
             # hasn't added the notification account as a contact,
             # meaning their email address is unknown
-            logger.warning(
+            logger.debug(
                 "Aborting notification %s",
                 {
                     "for user": user["username"],
