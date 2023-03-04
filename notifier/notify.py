@@ -30,12 +30,12 @@ logger = logging.getLogger(__name__)
 # Notification channels with frequency names mapping to the crontab of that
 # frequency.
 notification_channels = {
-    "hourly": "0 * * * *",
-    "8hourly": "0 */8 * * *",
-    "daily": "0 0 * * *",
-    "weekly": "0 0 * * 0",
-    "monthly": "0 0 1 * *",
     "test": "x x x x x",  # pycron accepts this value but it never passes
+    "monthly": "0 0 1 * *",
+    "weekly": "0 0 * * 0",
+    "daily": "0 0 * * *",
+    "8hourly": "0 */8 * * *",
+    "hourly": "0 * * * *",
 }
 
 
