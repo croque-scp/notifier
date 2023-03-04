@@ -15,15 +15,15 @@ SELECT
   category.name AS category_name
 FROM
   post
-  LEFT JOIN
+  INNER JOIN
   thread ON post.thread_id = thread.id
-  LEFT JOIN
-  thread_first_post ON thread_first_post.thread_id = thread.id
-  LEFT JOIN
-  post AS first_post ON thread_first_post.post_id = first_post.id
-  LEFT JOIN
+  INNER JOIN
   wiki ON thread.wiki_id = wiki.id
-  LEFT JOIN
+  INNER JOIN
+  thread_first_post ON thread_first_post.thread_id = thread.id
+  INNER JOIN
+  post AS first_post ON thread_first_post.post_id = first_post.id
+  INNER JOIN
   category ON thread.category_id = category.id
   LEFT JOIN
   manual_sub AS thread_sub ON (
@@ -37,7 +37,19 @@ FROM
     AND user_response_child_post.user_id = %(user_id)s
   )
 WHERE
-  (
+  -- Remove deleted posts
+  post.is_deleted = 0
+
+  -- Remove posts made by the user
+  AND post.user_id <> %(user_id)s
+
+  -- Remove posts not posted in the current frequency channel
+  AND post.posted_timestamp BETWEEN %(lower_timestamp)s AND %(upper_timestamp)s
+
+  -- Remove posts in deleted threads
+  AND thread.is_deleted = 0
+
+  AND (
     -- Get posts in threads subscribed to
     thread_sub.sub = 1
 
@@ -45,20 +57,8 @@ WHERE
     OR first_post.user_id = %(user_id)s
   )
 
-  -- Remove posts in deleted threads
-  AND thread.is_deleted = 0
-
-  -- Remove deleted posts
-  AND post.is_deleted = 0
-
   -- Remove posts in threads unsubscribed from
   AND (thread_sub.sub <> -1 OR thread_sub.sub IS NULL)
-
-  -- Remove posts not posted in the current frequency channel
-  AND post.posted_timestamp BETWEEN %(lower_timestamp)s AND %(upper_timestamp)s
-
-  -- Remove posts made by the user
-  AND post.user_id <> %(user_id)s
 
   -- Remove posts the user already responded to
   AND user_response_child_post.id IS NULL
