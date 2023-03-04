@@ -34,7 +34,7 @@ notification_channels = {
     "monthly": "0 0 1 * *",
     "weekly": "0 0 * * 0",
     "daily": "0 0 * * *",
-    "8hourly": "0 */8 * * *",
+    "8hourly": "0 7,15,23 * * *",
     "hourly": "0 * * * *",
 }
 
