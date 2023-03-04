@@ -27,18 +27,21 @@ FROM
   post AS parent_post ON post.parent_post_id = parent_post.id
   LEFT JOIN
   category ON thread.category_id = category.id
+  LEFT JOIN
+  manual_sub AS post_sub ON (
+    post_sub.user_id = %(user_id)s
+    AND post_sub.thread_id = thread.id
+    AND post_sub.post_id = parent_post.id
+  )
+  LEFT JOIN
+  post AS user_response_child_post ON (
+    user_response_child_post.parent_post_id = post.id
+    AND user_response_child_post.user_id = %(user_id)s
+  )
 WHERE
   (
     -- Get replies to posts subscribed to
-    EXISTS (
-      SELECT NULL FROM
-        manual_sub
-      WHERE
-        manual_sub.post_id = parent_post.id
-        AND manual_sub.thread_id = thread.id
-        AND manual_sub.user_id = %(user_id)s
-        AND manual_sub.sub = 1
-    )
+    post_sub.sub = 1
 
     -- Get replies to posts made by the user
     OR parent_post.user_id = %(user_id)s
@@ -51,15 +54,7 @@ WHERE
   AND post.is_deleted = 0
 
   -- Remove replies to posts unsubscribed from
-  AND NOT EXISTS (
-    SELECT NULL FROM
-      manual_sub
-    WHERE
-      manual_sub.post_id = parent_post.id
-      AND manual_sub.thread_id = thread.id
-      AND manual_sub.user_id = %(user_id)s
-      AND manual_sub.sub = -1
-  )
+  AND (post_sub.sub <> -1 OR post_sub.sub IS NULL)
 
   -- Remove posts not posted in the current frequency channel
   AND post.posted_timestamp BETWEEN %(lower_timestamp)s AND %(upper_timestamp)s
@@ -68,13 +63,7 @@ WHERE
   AND post.user_id <> %(user_id)s
 
   -- Remove posts the user already responded to
-  AND NOT EXISTS (
-    SELECT NULL FROM
-      post AS child_post
-    WHERE
-      child_post.parent_post_id = post.id
-      AND child_post.user_id = %(user_id)s
-  )
+  AND user_response_child_post.id IS NULL
 ORDER BY
   wiki.id,
   category.id,
