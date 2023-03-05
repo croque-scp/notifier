@@ -117,7 +117,7 @@ def parse_raw_user_config(
 ) -> Tuple[RawUserConfig, str]:
     """Parses a raw user config string to a suitable format, also returning
     the config slug."""
-    config = dict(tomlkit.parse(raw_config))
+    config = tomlkit.parse(raw_config)
     slug = config.pop("slug", "")
     assert isinstance(slug, str)
     assert "username" in config
@@ -133,7 +133,7 @@ def parse_raw_user_config(
     config["unsubscriptions"] = parse_subscriptions(
         config.get("unsubscriptions", ""), -1
     )
-    return cast(RawUserConfig, config), slug
+    return cast(RawUserConfig, dict(config)), slug
 
 
 def parse_subscriptions(
