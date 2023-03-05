@@ -39,7 +39,7 @@ RUN apt-get update && apt-get install -y default-mysql-client
 ENV PATH=/app/.venv/bin:$PATH
 COPY conftest.py .
 COPY tests/ tests/
-ENTRYPOINT ["pytest", "-x"]
+ENTRYPOINT ["pytest", "-vx"]
 
 
 FROM amazon/aws-lambda-python:3.8 AS execute_lambda
