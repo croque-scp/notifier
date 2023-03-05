@@ -1,5 +1,5 @@
 import logging
-from typing import List
+from typing import List, Optional
 
 from apscheduler.schedulers.blocking import BlockingScheduler
 from apscheduler.triggers.cron import CronTrigger
@@ -19,9 +19,9 @@ logger = logging.getLogger(__name__)
 def main(
     config: LocalConfig,
     auth: AuthConfig,
-    execute_now: List[str] = None,
-    limit_wikis: List[str] = None,
-    force_initial_search_timestamp: int = None,
+    execute_now: Optional[List[str]] = None,
+    limit_wikis: Optional[List[str]] = None,
+    force_initial_search_timestamp: Optional[int] = None,
 ):
     """Main executor, supposed to be called via command line."""
 

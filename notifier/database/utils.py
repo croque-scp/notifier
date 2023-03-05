@@ -2,7 +2,7 @@ import logging
 from abc import ABC
 from importlib import import_module
 from pathlib import Path
-from typing import Any, Callable, List, Literal, Tuple, Type, Union
+from typing import Any, Callable, List, Literal, Optional, Tuple, Type, Union
 
 from notifier.database.drivers.base import BaseDatabaseDriver
 
@@ -38,8 +38,8 @@ def try_cache(
     *,
     get: Callable,
     store: Callable,
-    do_not_store: Any = None,
-    catch: Tuple[Type[Exception], ...] = None,
+    do_not_store: Optional[Any] = None,
+    catch: Optional[Tuple[Type[Exception], ...]] = None,
 ) -> None:
     """Attempts to retrieve data from somewhere. If it succeeds, caches the
     data. If it fails, does nothing.

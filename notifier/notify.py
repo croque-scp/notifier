@@ -1,7 +1,7 @@
 import logging
 import time
 from smtplib import SMTPAuthenticationError
-from typing import Iterable, List, cast
+from typing import Iterable, List, Optional, cast
 
 from notifier.config.remote import get_global_config
 from notifier.config.user import get_user_config
@@ -39,7 +39,9 @@ notification_channels = {
 }
 
 
-def pick_channels_to_notify(force_channels: List[str] = None) -> List[str]:
+def pick_channels_to_notify(
+    force_channels: Optional[List[str]] = None,
+) -> List[str]:
     """Choose a set of channels to notify.
 
     :param force_channels: A list of channels to activate; or None, in
@@ -74,8 +76,8 @@ def notify(
     auth: AuthConfig,
     active_channels: List[str],
     database: BaseDatabaseDriver,
-    limit_wikis: List[str] = None,
-    force_initial_search_timestamp: int = None,
+    limit_wikis: Optional[List[str]] = None,
+    force_initial_search_timestamp: Optional[int] = None,
 ):
     """Main task executor. Should be called as often as the most frequent
     notification digest.
@@ -142,7 +144,7 @@ def notify_active_channels(
     auth: AuthConfig,
     database: BaseDatabaseDriver,
     connection: Connection,
-    force_initial_search_timestamp: int = None,
+    force_initial_search_timestamp: Optional[int] = None,
 ):
     """Prepare and send notifications to all activated channels."""
     digester = Digester(config["path"]["lang"])
@@ -164,7 +166,7 @@ def notify_active_channels(
 def notify_channel(
     channel: str,
     current_timestamp: int,
-    force_initial_search_timestamp: int = None,
+    force_initial_search_timestamp: Optional[int] = None,
     *,
     config: LocalConfig,
     database: BaseDatabaseDriver,
@@ -230,7 +232,7 @@ def notify_user(
     user: CachedUserConfig,
     channel: str,
     current_timestamp: int,
-    force_initial_search_timestamp: int = None,
+    force_initial_search_timestamp: Optional[int] = None,
     *,
     config: LocalConfig,
     database: BaseDatabaseDriver,

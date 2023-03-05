@@ -2,7 +2,7 @@ import json
 import logging
 from contextlib import contextmanager
 from itertools import chain
-from typing import Iterable, Iterator, List, Tuple, cast
+from typing import Iterable, Iterator, List, Optional, Tuple, cast
 
 import pymysql
 from pymysql.constants.CLIENT import MULTI_STATEMENTS
@@ -78,8 +78,8 @@ class MySqlDriver(BaseDatabaseDriver, BaseDatabaseWithSqlFileCache):
     def execute_named(
         self,
         query_name: str,
-        params: Iterable = None,
-        cursor: DictCursor = None,
+        params: Optional[Iterable] = None,
+        cursor: Optional[DictCursor] = None,
     ) -> DictCursor:
         """Execute a named query against the database. The query is read
         either from file or the cache.

@@ -1,5 +1,5 @@
 import logging
-from typing import List, Tuple, cast
+from typing import List, Optional, Tuple, cast
 
 import feedparser
 
@@ -18,7 +18,7 @@ new_posts_rss = "http://{}.wikidot.com/feed/forum/posts.xml"
 def get_new_posts(
     database: BaseDatabaseDriver,
     connection: Connection,
-    limit_wikis: List[str] = None,
+    limit_wikis: Optional[List[str]] = None,
 ):
     """For each configured wiki, retrieve and store new posts."""
     wikis = database.get_supported_wikis()
