@@ -263,7 +263,7 @@ Use the MySQL client to set up the database and user identity for the
 notifier service as instructed in [docs/database.md](/docs/database.md):
 
 - The notifier Lambda will connect to the database from an IP address
-  matching `10.0.0.0/255.255.255.0` (assuming the IP range of the VPC is
+  matching `10.0.0.0/255.0.0.0` (assuming the IP range of the VPC is
   `10.0.0.0/16`), so enter that as the user's hostname.
 - Set the user password to whatever you like, but keep a note of it. This
   will be used as '`mysql_password`' later.
