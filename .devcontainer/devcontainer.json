@@ -10,7 +10,11 @@
   "customizations": {
     "vscode": {
       "settings": {
-        "python.linting.pylintPath": "/workspace/.venv/bin/pylint"
+        "python.defaultInterpreterPath": "./.venv/bin/python",
+        "python.linting.pylintPath": "./.venv/bin/pylint",
+        "python.analysis.extraPaths": [".venv/bin"],
+        "python.linting.mypyEnabled": true,
+        "python.linting.enabled": true
       },
       "extensions": ["ms-azuretools.vscode-docker"]
     }
