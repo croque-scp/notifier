@@ -1,9 +1,19 @@
 from datetime import datetime, timedelta
+import logging
 
 import pycron
 
+logger = logging.getLogger(__name__)
+
 # Store the current time as soon as possible
 now = datetime.now()
+
+
+def override_current_time(time: str):
+    """Overrides the current time with the given ISO 8601 string."""
+    global now
+    now = datetime.fromisoformat(time.replace("Z", "+00:00"))
+    logger.info(f"Current time forcibly overridden with {time}")
 
 
 def channel_is_now(crontab: str):

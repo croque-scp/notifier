@@ -15,7 +15,7 @@ better than I do, feel free to deviate.
 
 # Estimated costs
 
-Breakdown for the total estimated cost of hosting notifier for a 750-hour
+Breakdown for the total estimated cost of hosting notifier for a 730-hour
 month using the setup method detailed below:
 
 - EventBridge builtin event emission: $0.00
@@ -26,15 +26,21 @@ month using the setup method detailed below:
   - Ignoring free tier: $0.73
 - Attaching Elastic IPs to the Lambda network interfaces: $0.00
   - Recommended method of using a NAT gateway would cost $37.50
-- Aurora Serverless v1:
-  - Usage: assuming a limit of 1 ACU, and the database being active for 5
-    minutes for the Lambda plus 15 minutes to subsequently shut down:
-    $17.50
-  - Storage: Unsure yet - need more data
-  - Cost can be reduced by switching to v2 (`us-east-1` only)
-    - (Note 2023-02-25: As of April 2022, Aurora Serverless v2 is fully
-      available. However, it cannot scale to 0, so the minimum cost per month
-      is $43.)
+- Database:
+  - Using Aurora Serverless v1:
+    - Usage: assuming a limit of 1 ACU, and the database being active for 5
+      minutes for the Lambda plus 15 minutes to subsequently shut down:
+      $17.50
+    - Storage: Unsure yet - need more data
+    - Cost can be reduced by switching to v2 (`us-east-1` only)
+      - (Note 2023-02-25: As of April 2022, Aurora Serverless v2 is fully
+        available. However, it cannot scale to 0, so the minimum cost per month
+        is $43.)
+  - Using an EC2:
+    - With `t3.nano` in unlimited burst mode as the instance type, assuming running once an hour for 15 minutes, with an 8 GB `gp3` EBS:
+      - Usage: Assuming $0.0059 per hour: $1.08
+      - Compute: Assuming full single-core CPU usage (i.e. 50% of vCPUs for `t3.nano`) for (730 / 4) hours per month at $0.04 per vCPU-hour, and ignoring accumulated CPU credits: $7.30
+      - Storage: With an 8GB `gp3`-backed EBS: $0.19
 
 # First-time setup for deployment to AWS
 
@@ -173,6 +179,10 @@ doesn't make sense to pay for provisioning an always-available database for
 the 55 minutes per hour that it's not in use. The notifier codebase is
 compatible with MySQL 5.6.10a.
 
+As of 2023-03-19, the database no longer runs on Aurora Serverless v1, it now runs on an EC2. This is considerably cheaper.
+
+### On Aurora Serverless v1
+
 (Note 2023-02-25: The database has been upgraded to MySQL 5.7 as part of a
 mandatory Aurora engine upgrade.)
 
@@ -191,8 +201,6 @@ settings:
   (unless you don't like having money).
 - Create the database into the VPC.
 - Add it to the `WikidotNotifierDatabaseSecurityGroup` security group only.
-- Enable the Web Service Data API. (I don't think we need it, but it can't
-  hurt)
 - Do not specify an initial database name &mdash; leave the field blank.
   AWS may tell you that this will cause it not to create a database in the
   cluster. That's fine &mdash; we will do that ourselves later.
@@ -206,6 +214,33 @@ Manager).
 You may notice that the 'database cluster' you've created doesn't actually
 contain any 'database instances'. This is apparently normal for serverless
 databases.
+
+### On an EC2
+
+Aurora Serverless v1 is overpriced and it may be cheaper to run the database on an EC2 instance.
+
+In the EC2 section of the console:
+
+- Create a new EC2 instance. I named mine `WDNotifier MySQL database`.
+- For the image, a standard Amazon Linux 2 will be fine.
+- The notifier database with MySQL 5.7 runs just about fine on a `t3.nano` ($0.0059 / hour),<sup>3</sup> provided that you set the CPU burst limit to unlimited ($0.04 / hour).<sup>4</sup>
+  - If you are using MySQL 8, it will work on an ARM chipset, and you could get away with using the even cheaper t4g.nano instance type ($0.0047 / hour).<sup>3</sup>
+  - If not comfortable with running a `t` instance in unlimited burst mode, consider that the alternative is picking an instance type with a decent compute capacity, and these do not come in small sizes. The best I found was a `c6a.large` ($0.0909 / hour),<sup>3</sup> the smallest `c6a` and cheapest `c` with a corresponding 'large' price. The `t3.nano` in unlimited mode comes to $0.0459 / hour, which is still the best price.
+    - `c6g.medium`, requiring ARM compatibility and therefore MySQL 8, would actually be cheaper at $0.0404 / hour.<sup>3</sup>
+- Make sure the instance is EBS-backed. No special provisions for data transfer speed are necessary. A `gp3`-type EBS is fine.
+- Create the instance in the notifier's VPC.
+
+Note the instance ID; I will refer to mine as `i-<DB INSTANCE ID>`.
+
+The EC2 instance will need to have MySQL installed on it. As explained in the section below ('Accessing the database'), AWS objects in the VPC can only be accessed by other objects in the VPC, so a Cloud9-based terminal is necessary. So, having connected to it by that or some other means:
+
+- Install MySQL on the instance.
+  - This can be done by installing media directly from the MySQL website.
+  - The instance does not have access to the internet, so it cannot download these things itself. However, you can download them on the Cloud9 instance and then `scp` them over to the database instance. Alternatively, you can temporarily enable internet access by associating an Elastic IP to the instance's network interface. Just make sure to dissociate and release that IP when you're done to avoid incurring charges.
+  - The MySQL version can be whatever you like, just make sure it's compatible with the data. I used 5.7 given that I was migrating to EC2 from RDS and didn't want to worry about upgrading the version as well.
+- Configure MySQL to start on boot: `systemctl start mysqld`.
+
+For the rest of these instructions, instead of using the Aurora Serverless hostname, use the EC2 instance's internal IP.
 
 ## Accessing the database
 
@@ -222,6 +257,8 @@ Cloud9 instance deployed to the VPC.<sup>2</sup>
 
 1. https://docs.aws.amazon.com/AmazonRDS/latest/AuroraUserGuide/aurora-serverless.html
 2. https://aws.amazon.com/getting-started/hands-on/configure-connect-serverless-mysql-database-aurora/
+3. https://aws.amazon.com/ec2/pricing/on-demand/, accessed 2023-03-19
+4. https://aws.amazon.com/ec2/pricing/on-demand/#T2.2FT3.2FT4g_Unlimited_Mode_Pricing, accessed 2023-03-19
 
 ### Setting up Cloud9
 
@@ -263,7 +300,7 @@ Use the MySQL client to set up the database and user identity for the
 notifier service as instructed in [docs/database.md](/docs/database.md):
 
 - The notifier Lambda will connect to the database from an IP address
-  matching `10.0.0.0/255.255.255.0` (assuming the IP range of the VPC is
+  matching `10.0.0.0/255.0.0.0` (assuming the IP range of the VPC is
   `10.0.0.0/16`), so enter that as the user's hostname.
 - Set the user password to whatever you like, but keep a note of it. This
   will be used as '`mysql_password`' later.
@@ -326,6 +363,35 @@ When testing, note that so long as you execute the notifier any time but
 the first minute of an hour, no notification channels will be activated.
 Feel free to test at any point during those times.
 
+## Start/stop the database using Step Functions
+
+Whether you need to tell the database to start and stop depends on which service is running it: Aurora Serverless or EC2.
+
+### Database running on Aurora Serverless v1
+
+Aurora Serverless will automatically start and stop based on usage. Just beware the long shutdown wait time.
+
+### Database running on EC2
+
+The EC2 instance is stupid and doesn't magically know when to start and stop. We need to:
+
+1. Instruct the instance to boot.
+2. Wait for it to boot.
+3. Run the notifier.
+4. Shut down the instance.
+
+This can be done using Step Functions, and the setup looks like this:
+
+<p align="center"><img width="500" src="https://raw.githubusercontent.com/croque-scp/notifier/master/docs/stepfunctions_graph.svg"></p>
+
+The Step Function must be created in the default VPC &mdash; the one that has access to the internet, __not__ the WikidotNotifier VPC. This is because it does not interface directly with anything in the VPC, but instead uses API calls to ask the EC2 to start/stop and to trigger the Lambda, which is a global AWS service not associated with a VPC.
+
+Note the loop. This pings the database to see if it is running, starts the notifier if so, and waits 5 seconds if not. A counter is incremented that breaks the loop with an error after a few tries. However in practice I've found that the inital 20 second wait is enough for the database to be ready pretty much every time.
+
+The EventBridge trigger needs to be modified to include the database's instance ID, as described below.
+
+The specific payload given to the notifier Lambda from Step Functions needs to be modified to include the Step Function's start time: `"force_current_time.$": "$$.Execution.StartTime"`. This will ensure that even if the Step Function and the database cumulatively take more than a minute to start, the Lambda will still think it is the correct minute to activate a notification channel.
+
 ## Adding the Lambda trigger
 
 The Lambda is trigged by an EventBridge cron schedule.
@@ -341,14 +407,14 @@ Create the trigger, then find it in the EventBridge console, and edit it:
 
 - Under *Select targets*, open *Configure input*.
 - Select *Constant (JSON text)*.
-- Enter the execution config parameters. I used the following parameters
-  for both this actual event and for the test event above:
+- Enter the execution config parameters. I used the following parameters:
 
 ```json
-[
-  "config/config.toml",
-  "config/auth.lambda.toml"
-]
+{
+  "db_instance_id": "i-01708f003d7c13d71",
+  "config_path": "config/config.toml",
+  "auth_path": "config/auth.lambda.toml"
+}
 ```
 
 - Under *Retry policy*, set the number of retry attempts to 0.

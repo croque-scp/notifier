@@ -10,7 +10,7 @@ from notifier.notify import (
     notify,
     pick_channels_to_notify,
 )
-from notifier.timing import now
+from notifier.timing import now, override_current_time
 from notifier.types import AuthConfig, LocalConfig
 
 logger = logging.getLogger(__name__)
@@ -22,10 +22,14 @@ def main(
     execute_now: List[str] = None,
     limit_wikis: List[str] = None,
     force_initial_search_timestamp: int = None,
+    force_current_time: str = None,
 ):
     """Main executor, supposed to be called via command line."""
 
     logger.info("The current time is %s", now)
+
+    if force_current_time is not None:
+        override_current_time(force_current_time)
 
     # Database stores forum posts and caches subscriptions
     DatabaseDriver = resolve_driver_from_config(config["database"]["driver"])
