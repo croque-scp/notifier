@@ -226,7 +226,7 @@ In the EC2 section of the console:
 - The notifier database with MySQL 5.7 runs just about fine on a `t3.nano` ($0.0059 / hour),<sup>3</sup> provided that you set the CPU burst limit to unlimited ($0.04 / hour).<sup>4</sup>
   - If you are using MySQL 8, it will work on an ARM chipset, and you could get away with using the even cheaper t4g.nano instance type ($0.0047 / hour).<sup>3</sup>
   - If not comfortable with running a `t` instance in unlimited burst mode, consider that the alternative is picking an instance type with a decent compute capacity, and these do not come in small sizes. The best I found was a `c6a.large` ($0.0909 / hour),<sup>3</sup> the smallest `c6a` and cheapest `c` with a corresponding 'large' price. The `t3.nano` in unlimited mode comes to $0.0459 / hour, which is still the best price.
-    - `c6g.medium`, requiring ARM compatibility and therefore MySQL 8, would actually be cheaper at $0.0404 / hour.<sup>3</sup>
+    - `c6g.medium`, requiring ARM compatibility and therefore MySQL 8, would actually be cheaper at $0.0404 / hour.<sup>3</sup> However, using a `t` instance does mean you can temporarily spin it up for things like testing and migrations at practically no cost.
 - Make sure the instance is EBS-backed. No special provisions for data transfer speed are necessary. A `gp3`-type EBS is fine.
 - Create the instance in the notifier's VPC.
 

@@ -17,6 +17,18 @@ service outside of that circumstance.
 
 ## Installation
 
+### With Docker
+
+Requires Docker.
+
+The Dockerfile specifies a number of stages. For local testing, set the target stage to 'execute':
+
+```shell
+docker build --target execute --tag notifier:latest .
+```
+
+### Locally
+
 Requires at least Python 3.8.
 
 Via [Poetry](https://python-poetry.org/):
@@ -44,7 +56,13 @@ instructions.
 
 ## Local execution
 
-To start the notifier service locally:
+To start the notifier service in a Docker container:
+
+```shell
+docker run --rm notifier:latest path_to_config_file path_to_auth_file
+```
+
+Or locally:
 
 ```shell
 poetry run python3 -m notifier path_to_config_file path_to_auth_file
