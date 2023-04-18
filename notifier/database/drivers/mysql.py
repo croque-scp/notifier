@@ -319,6 +319,42 @@ class MySqlDriver(BaseDatabaseDriver, BaseDatabaseWithSqlFileCache):
             ]
         return user_configs
 
+    def get_notifiable_users(self, frequency: str) -> List[str]:
+        user_configs = [
+            cast(CachedUserConfig, dict(row))
+            for row in self.execute_named(
+                "get_user_ids_for_frequency_with_notifications", 
+                {"frequency": frequency},
+            ).fetchall()
+        ]
+        for user_config in user_configs:
+            # The last notified timestamp can be NULL (originating from the
+            # LEFT JOIN) if the user has never been notified and thus does
+            # not have an entry in the user_last_notified table
+            if user_config["last_notified_timestamp"] is None:
+                user_config["last_notified_timestamp"] = 0
+            user_config["manual_subs"] = [
+                cast(Subscription, dict(row))
+                for row in self.execute_named(
+                    "get_manual_subs_for_user",
+                    {"user_id": user_config["user_id"]},
+                ).fetchall()
+            ]
+            user_config["auto_subs"] = [
+                cast(Subscription, dict(row))
+                for row in chain(
+                    self.execute_named(
+                        "get_auto_sub_posts_for_user",
+                        {"user_id": user_config["user_id"]},
+                    ).fetchall(),
+                    self.execute_named(
+                        "get_auto_sub_threads_for_user",
+                        {"user_id": user_config["user_id"]},
+                    ).fetchall(),
+                )
+            ]
+        return user_configs
+
     def store_user_configs(self, user_configs: List[RawUserConfig]) -> None:
         with self.transaction() as cursor:
             # Overwrite all current configs

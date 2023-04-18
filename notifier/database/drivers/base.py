@@ -86,6 +86,12 @@ class BaseDatabaseDriver(ABC):
         """
 
     @abstractmethod
+    def get_notifiable_users(self, frequency: str) -> List[str]:
+        """Get the list of IDs for users subscribed to the given channel
+        frequency who have at least one notification waiting for them.
+        """
+
+    @abstractmethod
     def store_user_configs(self, user_configs: List[RawUserConfig]) -> None:
         """Caches user notification configurations.
 
