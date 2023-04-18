@@ -1,11 +1,5 @@
 SELECT
-  user_config.user_id AS user_id,
-  user_config.username AS username,
-  user_config.frequency AS frequency,
-  user_config.language AS language,
-  user_config.delivery AS delivery,
-  user_config.tags AS tags,
-  user_last_notified.notified_timestamp AS last_notified_timestamp
+  user_config.user_id AS user_id
 FROM
   user_config
   LEFT JOIN
