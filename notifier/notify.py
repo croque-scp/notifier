@@ -1,7 +1,7 @@
 import logging
 import time
 from smtplib import SMTPAuthenticationError
-from typing import Iterable, List, Optional, cast
+from typing import Iterable, List, Optional, Any, cast
 
 from notifier.config.remote import get_global_config
 from notifier.config.user import get_user_config
@@ -78,7 +78,7 @@ def notify(
     database: BaseDatabaseDriver,
     limit_wikis: Optional[List[str]] = None,
     force_initial_search_timestamp: Optional[int] = None,
-):
+) -> None:
     """Main task executor. Should be called as often as the most frequent
     notification digest.
 
@@ -145,7 +145,7 @@ def notify_active_channels(
     database: BaseDatabaseDriver,
     connection: Connection,
     force_initial_search_timestamp: Optional[int] = None,
-):
+) -> None:
     """Prepare and send notifications to all activated channels."""
     digester = Digester(config["path"]["lang"])
     emailer = Emailer(config["gmail_username"], auth["gmail_password"])
@@ -173,7 +173,7 @@ def notify_channel(
     connection: Connection,
     digester: Digester,
     emailer: Emailer,
-):
+) -> None:
     """Compiles and sends notifications for all users in a given channel."""
     logger.info("Activating channel %s", {"channel": channel})
     # Get config sans subscriptions for users who would be notified
@@ -253,7 +253,7 @@ def notify_user(
     logger.debug(
         "Making digest for user %s",
         {
-            **user,
+            **cast(Any, user),
             "manual_subs": len(user["manual_subs"]),
             "auto_subs": len(user["auto_subs"]),
         },

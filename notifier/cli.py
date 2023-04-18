@@ -8,7 +8,7 @@ from notifier.notify import notification_channels
 logger = logging.getLogger(__name__)
 
 
-def cli():
+def cli() -> None:
     """Run main procedure as a command-line tool."""
     args = read_command_line_arguments()
     main(
@@ -20,7 +20,7 @@ def cli():
     )
 
 
-def read_command_line_arguments():
+def read_command_line_arguments() -> argparse.Namespace:
     """Extracts from the command line the config file and auth file."""
     parser = argparse.ArgumentParser()
     parser.add_argument(

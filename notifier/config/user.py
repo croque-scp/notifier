@@ -40,7 +40,7 @@ def get_user_config(
     local_config: LocalConfig,
     database: BaseDatabaseDriver,
     connection: Connection,
-):
+) -> None:
     """Retrieve remote user config."""
     try_cache(
         get=lambda: find_valid_user_configs(local_config, connection),

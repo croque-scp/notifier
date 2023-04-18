@@ -22,7 +22,7 @@ def main(
     execute_now: Optional[List[str]] = None,
     limit_wikis: Optional[List[str]] = None,
     force_initial_search_timestamp: Optional[int] = None,
-):
+) -> None:
     """Main executor, supposed to be called via command line."""
 
     logger.info("The current time is %s", now)

@@ -51,6 +51,26 @@ disable = [
 [tool.mypy]
 strict = true
 
+[[tool.mypy.overrides]]
+module = "yagmail.*"
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+module = "apscheduler.*"
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+module = "boto3.*"
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+module = "feedparser.*"
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+module = "tomlkit.*"
+implicit_reexport = true
+
 [build-system]
 requires = ["poetry-core>=1.0.0"]
 build-backend = "poetry.core.masonry.api"

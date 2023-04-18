@@ -19,7 +19,7 @@ def get_new_posts(
     database: BaseDatabaseDriver,
     connection: Connection,
     limit_wikis: Optional[List[str]] = None,
-):
+) -> None:
     """For each configured wiki, retrieve and store new posts."""
     wikis = database.get_supported_wikis()
     if limit_wikis is not None:
@@ -42,7 +42,7 @@ def get_new_posts(
 
 def fetch_posts_with_context(
     wiki_id: str, database: BaseDatabaseDriver, connection: Connection
-):
+) -> None:
     """Look up new posts for a wiki and then attach their context. Stores
     the posts in the cache."""
     # Get the list of new posts from the forum's RSS
@@ -167,21 +167,6 @@ def fetch_posts_with_context(
                 "cumulative_full_thread_count": len(full_threads_already_seen),
             },
         )
-
-
-def fetch_post_context(connection: Connection, wiki_id: str, thread_id: str):
-    """Lookup the context of a post in its Wikidot thread.
-
-    Bind the target post's parent post ID, if any, and then return the list
-    of raw post information for all posts in the context.
-    """
-    connection.paginated_module(
-        wiki_id,
-        "forum/ForumViewThreadModule",
-        index_key="pageNo",
-        starting_index=1,
-        t=thread_id.lstrip("t-"),
-    )
 
 
 def fetch_new_posts_rss(wiki_id: str) -> List[Tuple[str, str]]:
