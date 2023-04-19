@@ -7,12 +7,12 @@ from notifier.database.drivers.mysql import MySqlDriver
 from notifier.database.utils import resolve_driver_from_config
 from notifier.types import (
     AuthConfig,
-    CachedUserConfig,
     LocalConfig,
     PostReplyInfo,
     RawPost,
     RawUserConfig,
     Subscription,
+    SubscriptionCardinality,
     SupportedWikiConfig,
     ThreadInfo,
 )
@@ -34,6 +34,22 @@ def construct(
     return [dict(zip(keys, values)) for values in all_values]
 
 
+def subs(
+    thread_id: str,
+    post_id: str = None,
+    direction: SubscriptionCardinality = 1,
+) -> List[Subscription]:
+    """Shorthand for constructing a single (un)subscription for a user."""
+    return construct(
+        ["thread_id", "post_id", "sub"], [(thread_id, post_id, direction)]
+    )
+
+
+def u(id: int, name: str, subs, unsubs, *, last_ts=1):
+    """Shorthand for making a user shorthand for construct."""
+    return (str(id), name, "hourly", "en", "pm", last_ts, "", subs, unsubs)
+
+
 @pytest.fixture(scope="module")
 def sample_database(
     notifier_config: LocalConfig, notifier_auth: AuthConfig
@@ -50,14 +66,6 @@ def sample_database(
         password=notifier_auth["mysql_password"],
     )
     db.scrub_database()
-    subs: List[Subscription] = construct(
-        ["thread_id", "post_id", "sub"],
-        [("t-1", None, 1), ("t-3", "p-32", 1)],
-    )
-    unsubs: List[Subscription] = construct(
-        ["thread_id", "post_id", "sub"],
-        [("t-4", None, -1)],
-    )
     sample_user_configs: List[RawUserConfig] = construct(
         [
             "user_id",
@@ -70,7 +78,20 @@ def sample_database(
             "subscriptions",
             "unsubscriptions",
         ],
-        [("1", "UserR1", "hourly", "en", "pm", 1, "", subs, unsubs)],
+        [
+            u(
+                1,
+                "UserR1",
+                construct(
+                    ["thread_id", "post_id", "sub"],
+                    [("t-1", None, 1), ("t-3", "p-32", 1)],
+                ),
+                construct(
+                    ["thread_id", "post_id", "sub"],
+                    [("t-4", None, -1)],
+                ),
+            )
+        ],
     )
     sample_wikis: List[SupportedWikiConfig] = construct(
         ["id", "name", "secure"], [("my-wiki", "My Wiki", 1)]
@@ -292,55 +313,23 @@ def test_get_notifiable_users(sample_database: BaseDatabaseDriver):
         # Users scoped to this test are named like "Thread5User-<description>"
         [
             # Participated, but is manually unsubbed
-            (
-                "50",
-                "T5U-Unsub",
-                "hourly",
-                "en",
-                "pm",
-                1,
-                "",
-                [],
-                construct(
-                    ["thread_id", "post_id", "sub"], [("t-5", None, -1)]
-                ),
-            ),
+            u(50, "T5U-Unsub", [], subs("t-5", None, -1)),
             # Did not participate, but is manually subbed
-            (
-                "51",
-                "T5U-!P-Sub",
-                "hourly",
-                "en",
-                "pm",
-                1,
-                "",
-                construct(["thread_id", "post_id", "sub"], [("t-5", None, 1)]),
-                [],
-            ),
+            u(51, "T5U-!P-Sub", subs("t-5"), []),
             # Posted but was not replied to
-            ("52", "T5U-Lonely", "hourly", "en", "pm", 1, "", [], []),
+            u(52, "T5U-Lonely", [], []),
             # Started the thread
-            ("53", "T5U-Starter", "hourly", "en", "pm", 1, "", [], []),
+            u(53, "T5U-Starter", [], []),
             # Posted one reply, then replied to that reply
-            ("54", "T5U-SelfRep", "hourly", "en", "pm", 1, "", [], []),
+            u(54, "T5U-SelfRep", [], []),
             # Posted and was replied to
-            ("55", "T5U-Poster", "hourly", "en", "pm", 1, "", [], []),
+            u(55, "T5U-Poster", [], []),
             # Posted and was replied to, but is unsubbed from their post
-            (
-                "56",
-                "T5U-UnsubPost",
-                "hourly",
-                "en",
-                "pm",
-                1,
-                "",
-                [],
-                construct(
-                    ["thread_id", "post_id", "sub"], [("t-5", "p-54", -1)]
-                ),
-            ),
+            u(56, "T5U-UnsubPost", [], subs("t-5", "p-54", -1)),
             # Posted and was replied to, but has been notified already
-            ("57", "T5U-PrevNotif", "hourly", "en", "pm", 200, "", [], []),
+            u(57, "T5U-PrevNotif", [], [], last_ts=200),
+            # Irrelevant user who is subbed elsewhere
+            u(58, "T5U-Irrel", subs("t-1"), []),
         ],
     )
     sample_threads: List[ThreadInfo] = construct(
