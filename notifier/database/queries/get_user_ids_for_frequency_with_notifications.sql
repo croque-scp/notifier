@@ -28,9 +28,9 @@ WHERE
       )
       LEFT JOIN
       manual_sub AS user_manual_sub_to_thread ON (
-        thread_sub.user_id = user_config.user_id
-        AND thread_sub.thread_id = thread.id
-        AND thread_sub.post_id IS NULL
+        user_manual_sub_to_thread.user_id = user_config.user_id
+        AND user_manual_sub_to_thread.thread_id = thread.id
+        AND user_manual_sub_to_thread.post_id IS NULL
       )
     WHERE
       -- Remove deleted posts
