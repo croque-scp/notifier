@@ -107,6 +107,7 @@ def sample_database(
             "created_timestamp",
         ],
         [
+            ("t-0", "Null thread", "my-wiki", None, None, "system", 0),
             ("t-1", "Thread 1", "my-wiki", None, None, "UserR1", 10),
             ("t-2", "Thread 2", "my-wiki", None, None, "UserR1", 13),
             ("t-3", "Thread 3", "my-wiki", None, None, "UserD1", 16),
@@ -329,7 +330,7 @@ def test_get_notifiable_users(sample_database: BaseDatabaseDriver):
             # Posted and was replied to, but has been notified already
             u(57, "T5U-PrevNotif", [], [], last_ts=200),
             # Irrelevant user who is subbed elsewhere
-            u(58, "T5U-Irrel", subs("t-1"), []),
+            u(58, "T5U-Irrel", subs("t-0"), []),
         ],
     )
     sample_threads: List[ThreadInfo] = construct(
