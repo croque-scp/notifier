@@ -1,4 +1,4 @@
-from typing import Any, List, Tuple
+from typing import Any, Callable, List, Optional, Set, Tuple
 
 import pytest
 
@@ -7,7 +7,9 @@ from notifier.database.drivers.mysql import MySqlDriver
 from notifier.database.utils import resolve_driver_from_config
 from notifier.types import (
     AuthConfig,
+    CachedUserConfig,
     LocalConfig,
+    PostReplyInfo,
     RawPost,
     RawUserConfig,
     Subscription,
@@ -16,8 +18,19 @@ from notifier.types import (
 )
 
 
-def construct(keys: List[str], all_values: List[Tuple[Any, ...]]):
-    """pass"""
+def construct(
+    keys: List[str],
+    all_values: List[Tuple[Any, ...]],
+    *,
+    verify: Optional[Callable[[Any], bool]] = None,
+):
+    """Constructs a DB entry from the given keys and value sets.
+
+    Can also run a verification check on each value set given.
+    """
+    if verify:
+        for values in all_values:
+            assert verify(values)
     return [dict(zip(keys, values)) for values in all_values]
 
 
@@ -57,7 +70,7 @@ def sample_database(
             "subscriptions",
             "unsubscriptions",
         ],
-        [("1", "MyUser", "hourly", "en", "pm", 1, "", subs, unsubs)],
+        [("1", "UserR1", "hourly", "en", "pm", 1, "", subs, unsubs)],
     )
     sample_wikis: List[SupportedWikiConfig] = construct(
         ["id", "name", "secure"], [("my-wiki", "My Wiki", 1)]
@@ -73,10 +86,10 @@ def sample_database(
             "created_timestamp",
         ],
         [
-            ("t-1", "Thread 1", "my-wiki", None, None, "MyUser", 10, "p-11"),
-            ("t-2", "Thread 2", "my-wiki", None, None, "MyUser", 13, "p-21"),
-            ("t-3", "Thread 3", "my-wiki", None, None, "AUser", 16, "p-31"),
-            ("t-4", "Thread 4", "my-wiki", None, None, "MyUser", 50, "p-41"),
+            ("t-1", "Thread 1", "my-wiki", None, None, "UserR1", 10),
+            ("t-2", "Thread 2", "my-wiki", None, None, "UserR1", 13),
+            ("t-3", "Thread 3", "my-wiki", None, None, "UserD1", 16),
+            ("t-4", "Thread 4", "my-wiki", None, None, "UserR1", 50),
         ],
     )
     sample_thread_first_posts = [
@@ -97,19 +110,22 @@ def sample_database(
             "username",
         ],
         [
-            ("p-11", "t-1", None, 10, "Post 11", "", "1", "MyUser"),
-            ("p-12", "t-1", None, 20, "Post 12", "", "2", "AUser"),
-            ("p-111", "t-1", "p-11", 30, "Post 111", "", "2", "AUser"),
-            ("p-21", "t-2", None, 13, "Post 21", "", "1", "MyUser"),
-            ("p-211", "t-2", "p-21", 17, "Post 211", "", "2", "AUser"),
-            ("p-212", "t-2", "p-21", 20, "Post 212", "", "3", "BUser"),
-            ("p-2121", "t-2", "p-212", 23, "Post 2121", "", "1", "MyUser"),
-            ("p-31", "t-3", None, 16, "Post 31", "", "2", "AUser"),
-            ("p-32", "t-3", None, 21, "Post 32", "", "3", "BUser"),
-            ("p-321", "t-3", "p-32", 31, "Post 321", "", "2", "AUser"),
-            ("p-41", "t-4", None, 50, "Post 41", "", "1", "MyUser"),
-            ("p-411", "t-4", "p-41", 60, "Post 411", "", "3", "BUser"),
-            ("p-42", "t-4", None, 65, "Post 42", "", "3", "BUser"),
+            ("p-11", "t-1", None, 10, "Post 11", "", "1", "UserR1"),
+            ("p-111", "t-1", "p-11", 30, "Post 111", "", "2", "UserD1"),
+            ("p-12", "t-1", None, 20, "Post 12", "", "2", "UserD1"),
+            #
+            ("p-21", "t-2", None, 13, "Post 21", "", "1", "UserR1"),
+            ("p-211", "t-2", "p-21", 17, "Post 211", "", "2", "UserD1"),
+            ("p-212", "t-2", "p-21", 20, "Post 212", "", "3", "UserD2"),
+            ("p-2121", "t-2", "p-212", 23, "Post 2121", "", "1", "UserR1"),
+            #
+            ("p-31", "t-3", None, 16, "Post 31", "", "2", "UserD1"),
+            ("p-32", "t-3", None, 21, "Post 32", "", "3", "UserD2"),
+            ("p-321", "t-3", "p-32", 31, "Post 321", "", "2", "UserD1"),
+            #
+            ("p-41", "t-4", None, 50, "Post 41", "", "1", "UserR1"),
+            ("p-411", "t-4", "p-41", 60, "Post 411", "", "3", "UserD2"),
+            ("p-42", "t-4", None, 65, "Post 42", "", "3", "UserD2"),
         ],
     )
     db.store_user_configs(sample_user_configs)
@@ -123,7 +139,7 @@ def sample_database(
     return db
 
 
-def titles(posts):
+def titles(posts: List[PostReplyInfo]) -> Set[str]:
     """Get a set of post titles from a list of posts."""
     return set(p["title"] for p in posts)
 
@@ -252,3 +268,144 @@ def test_initial_notified_timestamp(sample_database: MySqlDriver):
             },
         )
         check_timestamp(2)
+
+
+def test_get_notifiable_users(sample_database: BaseDatabaseDriver):
+    """Test that the notifiable users list returns the correct set of users.
+
+    The notifiable users utility lists directly from the database the set of
+    users who have unsent notifications waiting for them, for a given channel.
+    """
+    # Let's add another test thread and some more subscribed users
+    sample_user_configs: List[RawUserConfig] = construct(
+        [
+            "user_id",
+            "username",
+            "frequency",
+            "language",
+            "delivery",
+            "user_base_notified",
+            "tags",
+            "subscriptions",
+            "unsubscriptions",
+        ],
+        # Users scoped to this test are named like "Thread5User-<description>"
+        [
+            # Participated, but is manually unsubbed
+            (
+                "50",
+                "T5U-Unsub",
+                "hourly",
+                "en",
+                "pm",
+                1,
+                "",
+                [],
+                construct(
+                    ["thread_id", "post_id", "sub"], [("t-5", None, -1)]
+                ),
+            ),
+            # Did not participate, but is manually subbed
+            (
+                "51",
+                "T5U-!P-Sub",
+                "hourly",
+                "en",
+                "pm",
+                1,
+                "",
+                construct(["thread_id", "post_id", "sub"], [("t-5", None, 1)]),
+                [],
+            ),
+            # Posted but was not replied to
+            ("52", "T5U-Lonely", "hourly", "en", "pm", 1, "", [], []),
+            # Started the thread
+            ("53", "T5U-Starter", "hourly", "en", "pm", 1, "", [], []),
+            # Posted one reply, then replied to that reply
+            ("54", "T5U-SelfRep", "hourly", "en", "pm", 1, "", [], []),
+            # Posted and was replied to
+            ("55", "T5U-Poster", "hourly", "en", "pm", 1, "", [], []),
+            # Posted and was replied to, but is unsubbed from their post
+            (
+                "56",
+                "T5U-UnsubPost",
+                "hourly",
+                "en",
+                "pm",
+                1,
+                "",
+                [],
+                construct(
+                    ["thread_id", "post_id", "sub"], [("t-5", "p-54", -1)]
+                ),
+            ),
+            # Posted and was replied to, but has been notified already
+            ("57", "T5U-PrevNotif", "hourly", "en", "pm", 200, "", [], []),
+        ],
+    )
+    sample_threads: List[ThreadInfo] = construct(
+        [
+            "id",
+            "title",
+            "wiki_id",
+            "category_id",
+            "category_name",
+            "creator_username",
+            "created_timestamp",
+        ],
+        [("t-5", "Thread 5", "my-wiki", None, None, "T5U-Starter", 100)],
+    )
+
+    def verify_post_author_id_matches_username(post: Tuple[Any, ...]) -> bool:
+        """Check that the user ID+name pair match one of the scoped configs."""
+        return any(
+            post[6] == user["user_id"] and post[7] == user["username"]
+            for user in sample_user_configs
+        )
+
+    sample_posts: List[RawPost] = construct(
+        [
+            "id",
+            "thread_id",
+            "parent_post_id",
+            "posted_timestamp",
+            "title",
+            "snippet",
+            "user_id",
+            "username",
+        ],
+        [
+            ("p-51", "t-5", None, 100, "Post 51", "", "53", "T5U-Starter"),
+            ("p-52", "t-5", None, 101, "Post 52", "", "55", "T5U-Poster"),
+            ("p-521", "t-5", "p-52", 102, "Post 521", "", "52", "T5U-Lonely"),
+            ("p-53", "t-5", None, 103, "Post 53", "", "54", "T5U-SelfRep"),
+            ("p-531", "t-5", "p-53", 104, "Post 531", "", "54", "T5U-SelfRep"),
+            ("p-54", "t-5", None, 106, "Post 54", "", "56", "T5U-UnsubPost"),
+            ("p-541", "t-5", "p-54", 105, "Post 541", "", "52", "T5U-Lonely"),
+            ("p-55", "t-5", None, 106, "Post 55", "", "50", "T5U-Unsub"),
+            ("p-551", "t-5", "p-55", 107, "Post 551", "", "52", "T5U-Lonely"),
+            ("p-56", "t-5", None, 108, "Post 56", "", "57", "T5U-PrevNotif"),
+            ("p-561", "t-5", "p-56", 109, "Post 561", "", "52", "T5U-Lonely"),
+        ],
+        verify=verify_post_author_id_matches_username,
+    )
+    sample_database.store_user_configs(
+        sample_user_configs, overwrite_existing=False
+    )
+    for thread in sample_threads:
+        sample_database.store_thread(thread)
+    sample_database.store_thread_first_post("t-5", "p-51")
+    for post in sample_posts:
+        sample_database.store_post(post)
+
+    users_expected_to_have_notifications = {
+        "51",  # T5U-!P-Sub
+        "53",  # T5U-Starter
+        "55",  # T5U-Poster
+    }
+
+    users_with_notifications = sample_database.get_notifiable_users("hourly")
+
+    assert (
+        set(users_with_notifications) == users_expected_to_have_notifications
+    )
