@@ -92,10 +92,14 @@ class BaseDatabaseDriver(ABC):
         """
 
     @abstractmethod
-    def store_user_configs(self, user_configs: List[RawUserConfig]) -> None:
+    def store_user_configs(
+        self, user_configs: List[RawUserConfig], *, overwrite_existing=True
+    ) -> None:
         """Caches user notification configurations.
 
         :param user_configs: List of configurations for all users.
+        :param overwrite_existing: Whether to overwrite the existing set of
+        user configs. Default true. If false, will append.
         """
 
     @abstractmethod
