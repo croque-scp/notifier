@@ -41,50 +41,32 @@ WHERE
         -- Replies to posts made by the user
         OR parent_post.user_id = user_config.user_id
 
-        -- Posts in threads subscribed to
+        -- Posts in threads subscribed to and replies to posts subscribed to
         OR EXISTS (
           SELECT NULL FROM
             manual_sub
           WHERE
             manual_sub.user_id = user_config.user_id
             AND manual_sub.thread_id = thread.id
-            AND manual_sub.post_id IS NULL
+            AND (
+              manual_sub.post_id IS NULL  -- Threads
+              OR manual_sub.post_id = parent_post.id  -- Post replies
+            )
             AND manual_sub.sub = 1
         )
-
-        -- Replies to posts subscribed to
-        OR EXISTS (
-          SELECT NULL FROM
-            manual_sub
-          WHERE
-            manual_sub.user_id = user_config.user_id
-            AND manual_sub.thread_id = thread.id
-            AND manual_sub.post_id = parent_post.id
-            AND manual_sub.sub = 1
-        )
-
-        -- Optimisation: The above 2 subqueries could be merged
       )
 
-      -- Remove posts in threads unsubscribed from
+      -- Remove posts/replies in/to threads/posts unsubscribed from
       AND NOT EXISTS (
         SELECT NULL FROM
           manual_sub
         WHERE
           manual_sub.user_id = user_config.user_id
           AND manual_sub.thread_id = thread.id
-          AND manual_sub.post_id IS NULL
-          AND manual_sub.sub = -1
-      )
-
-      -- Remove replies to posts unsubscribed from
-      AND NOT EXISTS (
-        SELECT NULL FROM
-          manual_sub
-        WHERE
-          manual_sub.user_id = user_config.user_id
-          AND manual_sub.thread_id = thread.id
-          AND manual_sub.post_id = parent_post.id
+          AND (
+            manual_sub.post_id IS NULL  -- Threads
+            OR manual_sub.post_id = parent_post.id  -- Post replies
+          )
           AND manual_sub.sub = -1
       )
   )
