@@ -388,6 +388,7 @@ def test_get_notifiable_users(sample_database: BaseDatabaseDriver):
         sample_database.store_post(post)
 
     users_expected_to_have_notifications = {
+        "1",  # UserR1 from base sample DB
         "51",  # T5U-!P-Sub
         "53",  # T5U-Starter
         "55",  # T5U-Poster

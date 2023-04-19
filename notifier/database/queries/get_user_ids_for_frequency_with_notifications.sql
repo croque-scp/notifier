@@ -14,24 +14,12 @@ WHERE
       post
       INNER JOIN
       thread ON thread.id = post.thread_id
-      INNER JOIN
+      LEFT JOIN
       post AS parent_post ON parent_post.id = post.parent_post_id
       INNER JOIN
       thread_first_post ON thread_first_post.thread_id = thread.id
       INNER JOIN
       post AS first_post_in_thread ON first_post_in_thread.id = thread_first_post.post_id
-      LEFT JOIN
-      manual_sub AS user_manual_sub_to_post ON (
-        user_manual_sub_to_post.user_id = user_config.user_id
-        AND user_manual_sub_to_post.thread_id = thread.id
-        AND user_manual_sub_to_post.post_id = parent_post.id
-      )
-      LEFT JOIN
-      manual_sub AS user_manual_sub_to_thread ON (
-        user_manual_sub_to_thread.user_id = user_config.user_id
-        AND user_manual_sub_to_thread.thread_id = thread.id
-        AND user_manual_sub_to_thread.post_id IS NULL
-      )
     WHERE
       -- Remove deleted posts
       post.is_deleted = 0
@@ -47,19 +35,56 @@ WHERE
 
       -- Only posts matching thread or post subscription criteria
       AND (
-        -- Posts in threads subscribed to
-        user_manual_sub_to_thread.sub = 1
-
         -- Posts in threads started by the user
-        OR first_post_in_thread.user_id = user_config.user_id
-
-        -- Replies to posts subscribed to
-        OR user_manual_sub_to_post.sub = 1
+        first_post_in_thread.user_id = user_config.user_id
 
         -- Replies to posts made by the user
         OR parent_post.user_id = user_config.user_id
+
+        -- Posts in threads subscribed to
+        OR EXISTS (
+          SELECT NULL FROM
+            manual_sub
+          WHERE
+            manual_sub.user_id = user_config.user_id
+            AND manual_sub.thread_id = thread.id
+            AND manual_sub.post_id IS NULL
+            AND manual_sub.sub = 1
+        )
+
+        -- Replies to posts subscribed to
+        OR EXISTS (
+          SELECT NULL FROM
+            manual_sub
+          WHERE
+            manual_sub.user_id = user_config.user_id
+            AND manual_sub.thread_id = thread.id
+            AND manual_sub.post_id = parent_post.id
+            AND manual_sub.sub = 1
+        )
+
+        -- Optimisation: The above 2 subqueries could be merged
       )
 
       -- Remove posts in threads unsubscribed from
-      AND (user_manual_sub_to_thread.sub <> -1 OR user_manual_sub_to_thread.sub IS NULL)
+      AND NOT EXISTS (
+        SELECT NULL FROM
+          manual_sub
+        WHERE
+          manual_sub.user_id = user_config.user_id
+          AND manual_sub.thread_id = thread.id
+          AND manual_sub.post_id IS NULL
+          AND manual_sub.sub = -1
+      )
+
+      -- Remove replies to posts unsubscribed from
+      AND NOT EXISTS (
+        SELECT NULL FROM
+          manual_sub
+        WHERE
+          manual_sub.user_id = user_config.user_id
+          AND manual_sub.thread_id = thread.id
+          AND manual_sub.post_id = parent_post.id
+          AND manual_sub.sub = -1
+      )
   )

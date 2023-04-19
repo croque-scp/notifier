@@ -41,7 +41,7 @@ COPY conftest.py .
 COPY config/ config/
 COPY tests/ tests/
 COPY notifier/ notifier/
-ENTRYPOINT ["pytest", "-vx"]
+ENTRYPOINT ["pytest", "-vvx"]
 
 
 FROM amazon/aws-lambda-python:3.8 AS execute_lambda
