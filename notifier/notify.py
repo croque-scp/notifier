@@ -70,12 +70,14 @@ def pick_channels_to_notify(force_channels: List[str] = None) -> List[str]:
 
 
 def notify(
+    *,
     config: LocalConfig,
     auth: AuthConfig,
     active_channels: List[str],
     database: BaseDatabaseDriver,
     limit_wikis: List[str] = None,
     force_initial_search_timestamp: int = None,
+    dry_run=False,
 ):
     """Main task executor. Should be called as often as the most frequent
     notification digest.
@@ -90,35 +92,52 @@ def notify(
         logger.warning("No active channels; aborting")
         return
 
-    connection = Connection(config, database.get_supported_wikis())
+    connection = Connection(
+        config, database.get_supported_wikis(), dry_run=dry_run
+    )
 
-    logger.info("Getting remote config...")
-    get_global_config(config, database, connection)
-    logger.info("Getting user config...")
-    get_user_config(config, database, connection)
+    if dry_run:
+        logger.info("Dry run: skipping remote config acquisition")
+    else:
+        logger.info("Getting remote config...")
+        get_global_config(config, database, connection)
+        logger.info("Getting user config...")
+        get_user_config(config, database, connection)
 
-    # Refresh the connection to add any newly-configured wikis
-    connection = Connection(config, database.get_supported_wikis())
+        # Refresh the connection to add any newly-configured wikis
+        connection = Connection(config, database.get_supported_wikis())
 
-    logger.info("Getting new posts...")
-    get_new_posts(database, connection, limit_wikis)
+    if dry_run:
+        logger.info("Dry run: skipping new post acquisition")
+    else:
+        logger.info("Getting new posts...")
+        get_new_posts(database, connection, limit_wikis)
 
     # Record the 'current' timestamp immediately after downloading posts
     current_timestamp = int(time.time())
     # Get the password from keyring for login
     wikidot_password = auth["wikidot_password"]
-    connection.login(config["wikidot_username"], wikidot_password)
+
+    if dry_run:
+        logger.info("Dry run: skipping Wikidot login")
+    else:
+        connection.login(config["wikidot_username"], wikidot_password)
 
     logger.info("Notifying...")
     notify_active_channels(
         active_channels,
-        current_timestamp,
-        config,
-        auth,
-        database,
-        connection,
-        force_initial_search_timestamp,
+        current_timestamp=current_timestamp,
+        config=config,
+        auth=auth,
+        database=database,
+        connection=connection,
+        force_initial_search_timestamp=force_initial_search_timestamp,
+        dry_run=dry_run,
     )
+
+    if dry_run:
+        logger.info("Dry run: skipping cleanup")
+        return
 
     # Notifications have been sent, so perform time-insensitive maintenance
     logger.info("Cleaning up...")
@@ -137,40 +156,46 @@ def notify(
 
 def notify_active_channels(
     active_channels: Iterable[str],
+    *,
     current_timestamp: int,
     config: LocalConfig,
     auth: AuthConfig,
     database: BaseDatabaseDriver,
     connection: Connection,
     force_initial_search_timestamp: int = None,
+    dry_run=False,
 ):
     """Prepare and send notifications to all activated channels."""
     digester = Digester(config["path"]["lang"])
-    emailer = Emailer(config["gmail_username"], auth["gmail_password"])
+    emailer = Emailer(
+        config["gmail_username"], auth["gmail_password"], dry_run=dry_run
+    )
     for channel in active_channels:
         # Should this be asynchronous + parallel?
         notify_channel(
             channel,
-            current_timestamp,
-            force_initial_search_timestamp,
+            current_timestamp=current_timestamp,
+            force_initial_search_timestamp=force_initial_search_timestamp,
             config=config,
             database=database,
             connection=connection,
             digester=digester,
             emailer=emailer,
+            dry_run=dry_run,
         )
 
 
 def notify_channel(
     channel: str,
+    *,
     current_timestamp: int,
     force_initial_search_timestamp: int = None,
-    *,
     config: LocalConfig,
     database: BaseDatabaseDriver,
     connection: Connection,
     digester: Digester,
     emailer: Emailer,
+    dry_run=False,
 ):
     """Compiles and sends notifications for all users in a given channel."""
     logger.info("Activating channel %s", {"channel": channel})
@@ -187,15 +212,16 @@ def notify_channel(
         try:
             notified_users += notify_user(
                 user,
-                channel,
-                current_timestamp,
-                force_initial_search_timestamp,
+                channel=channel,
+                current_timestamp=current_timestamp,
+                force_initial_search_timestamp=force_initial_search_timestamp,
                 config=config,
                 database=database,
                 connection=connection,
                 digester=digester,
                 emailer=emailer,
                 addresses=addresses,
+                dry_run=dry_run,
             )
         except SMTPAuthenticationError as error:
             logger.error(
@@ -228,16 +254,17 @@ def notify_channel(
 
 def notify_user(
     user: CachedUserConfig,
+    *,
     channel: str,
     current_timestamp: int,
     force_initial_search_timestamp: int = None,
-    *,
     config: LocalConfig,
     database: BaseDatabaseDriver,
     connection: Connection,
     digester: Digester,
     emailer: Emailer,
     addresses: EmailAddresses,
+    dry_run=False,
 ) -> int:
     """Compiles and sends a notification for a single user.
 
@@ -302,6 +329,14 @@ def notify_user(
 
     # Compile the digest
     subject, body = digester.for_user(user, posts)
+
+    if dry_run:
+        logger.info(
+            "Dry run: not sending or recording notification %s",
+            {"for_user": user["username"]},
+        )
+        # Still return true to indicate that the user would have been notified
+        return True
 
     # Send the digests via PM to PM-subscribed users
     pm_inform_tag = "restricted-inbox"

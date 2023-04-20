@@ -12,11 +12,12 @@ def cli():
     """Run main procedure as a command-line tool."""
     args = read_command_line_arguments()
     main(
-        read_local_config(args.config),
-        read_local_auth(args.auth),
-        args.execute_now,
-        args.limit_wikis,
-        args.force_initial_search_timestamp,
+        config=read_local_config(args.config),
+        auth=read_local_auth(args.auth),
+        execute_now=args.execute_now,
+        limit_wikis=args.limit_wikis,
+        force_initial_search_timestamp=args.force_initial_search_timestamp,
+        dry_run=args.dry_run,
     )
 
 
@@ -48,6 +49,13 @@ def read_command_line_arguments():
         "--force-initial-search-timestamp",
         type=int,
         help="""The lower timestamp to use when searching for posts.""",
+    )
+    parser.add_argument(
+        "--dry-run",
+        action="store_true",
+        default=False,
+        help="""A dry run will skip remote config acquisition, new post
+        acquisition, and will not actually send any notifications.""",
     )
 
     return parser.parse_args()

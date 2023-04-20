@@ -46,9 +46,9 @@ def lambda_handler(event, context):
 
     logger.debug("Lambda: starting main procedure")
     main(
-        read_local_config(local_config_path),
-        read_local_auth(local_auth_path),
-        [],
+        config=read_local_config(local_config_path),
+        auth=read_local_auth(local_auth_path),
+        execute_now=[],
         force_current_time=force_current_time,
     )
     logger.info("Lambda finished")
