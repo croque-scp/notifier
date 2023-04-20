@@ -16,15 +16,15 @@ SELECT
 FROM
   post
   INNER JOIN
-  thread ON post.thread_id = thread.id
+  thread ON thread.id = post.thread_id
   INNER JOIN
-  wiki ON thread.wiki_id = wiki.id
+  wiki ON wiki.id = thread.wiki_id
   INNER JOIN
   thread_first_post ON thread_first_post.thread_id = thread.id
   INNER JOIN
-  post AS first_post ON thread_first_post.post_id = first_post.id
+  post AS first_post_in_thread ON first_post_in_thread.id = thread_first_post.post_id
   LEFT JOIN
-  category ON thread.category_id = category.id
+  category ON category.id = thread.category_id
   LEFT JOIN
   manual_sub AS thread_sub ON (
     thread_sub.user_id = %(user_id)s
@@ -54,7 +54,7 @@ WHERE
     thread_sub.sub = 1
 
     -- Get posts in threads started by the user
-    OR first_post.user_id = %(user_id)s
+    OR first_post_in_thread.user_id = %(user_id)s
   )
 
   -- Remove posts in threads unsubscribed from

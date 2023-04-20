@@ -20,13 +20,13 @@ SELECT
 FROM
   post
   INNER JOIN
-  thread ON post.thread_id = thread.id
+  thread ON thread.id = post.thread_id
   INNER JOIN
-  wiki ON thread.wiki_id = wiki.id
+  wiki ON wiki.id = thread.wiki_id
   INNER JOIN
-  post AS parent_post ON post.parent_post_id = parent_post.id
+  post AS parent_post ON parent_post.id = post.parent_post_id
   LEFT JOIN
-  category ON thread.category_id = category.id
+  category ON category.id = thread.category_id
   LEFT JOIN
   manual_sub AS post_sub ON (
     post_sub.user_id = %(user_id)s

@@ -7,7 +7,7 @@ services:
       context: .
       dockerfile: ./Dockerfile
       target: test
-    command: "--notifier-config config/config.toml --notifier-auth config/auth.compose.toml"
+    command: "--notifier-config config/config.toml --notifier-auth config/auth.compose.toml ${PYTEST_ARGS-}"
     links:
       - database
     depends_on:

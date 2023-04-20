@@ -319,10 +319,23 @@ class MySqlDriver(BaseDatabaseDriver, BaseDatabaseWithSqlFileCache):
             ]
         return user_configs
 
-    def store_user_configs(self, user_configs: List[RawUserConfig]) -> None:
+    def get_notifiable_users(self, frequency: str) -> List[str]:
+        user_ids = [
+            cast(str, row["user_id"])
+            for row in self.execute_named(
+                "get_user_ids_for_frequency_with_notifications",
+                {"frequency": frequency},
+            ).fetchall()
+        ]
+        return user_ids
+
+    def store_user_configs(
+        self, user_configs: List[RawUserConfig], *, overwrite_existing=True
+    ) -> None:
         with self.transaction() as cursor:
-            # Overwrite all current configs
-            self.execute_named("delete_user_configs", None, cursor)
+            if overwrite_existing:
+                # Overwrite all current configs
+                self.execute_named("delete_user_configs", None, cursor)
             for user_config in user_configs:
                 self.execute_named(
                     "store_user_config",

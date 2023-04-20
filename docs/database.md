@@ -33,7 +33,7 @@ Create the MySQL Server container:
 docker create --name notifier_mysql \
   -p 3306:3306 \
   -e MYSQL_ROOT_PASSWORD=root \
-  mysql:5.6.17
+  mysql:5.7.4
 ```
 
 For an ephemeral, development-only, containerised MySQL installation I'm
