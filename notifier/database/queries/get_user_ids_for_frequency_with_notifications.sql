@@ -28,7 +28,7 @@ WHERE
       AND post.user_id <> user_config.user_id
 
       -- Only posts posted since the user was last notified
-      AND post.posted_timestamp >= user_last_notified.notified_timestamp
+      AND post.posted_timestamp > user_last_notified.notified_timestamp
 
       -- Remove deleted threads
       AND thread.is_deleted = 0
