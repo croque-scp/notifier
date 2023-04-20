@@ -205,6 +205,22 @@ def notify_channel(
         "Found users for channel %s",
         {"user_count": len(user_configs), "channel": channel},
     )
+    # Filter the users only to those with notifications waiting
+    logger.debug("Filtering users without notifications waiting...")
+    user_count_pre_filter = len(user_configs)
+    notifiable_user_ids = database.get_notifiable_users(channel)
+    user_configs = [
+        user for user in user_configs if user["user_id"] in notifiable_user_ids
+    ]
+    logger.debug(
+        "Filtered users without notifications waiting %s",
+        {
+            "from_count": user_count_pre_filter,
+            "to_count": len(user_configs),
+            "removed_count": user_count_pre_filter - len(user_configs),
+            "users_with_waiting_notifs_count": len(notifiable_user_ids),
+        },
+    )
     # Notify each user on this frequency channel
     notified_users = 0
     addresses: EmailAddresses = {}
