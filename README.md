@@ -50,6 +50,13 @@ To start the notifier service locally:
 poetry run python3 -m notifier path_to_config_file path_to_auth_file
 ```
 
+Or with Docker:
+
+```shell
+docker build --target execute --tag notifier:execute .
+docker run --rm notifier:execute path_to_config_file path_to_auth_file
+```
+
 The config file that my notifier instance uses is `config/config.toml`. A
 sample auth file with dummy secrets, used for CI tests, can be found at
 `config/auth.ci.toml`.
