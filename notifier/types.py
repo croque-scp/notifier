@@ -218,6 +218,12 @@ class ActivationLogDump(TypedDict):
     """Structure of the JSON public log dump, one per activation."""
 
     start_timestamp: int
+    config_start_timestamp: int
+    config_end_timestamp: int
+    getpost_start_timestamp: int
+    getpost_end_timestamp: int
+    notify_start_timestamp: int
+    notify_end_timestamp: int
     end_timestamp: int
     sites_count: int
     user_count: int

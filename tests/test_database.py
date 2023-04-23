@@ -167,13 +167,19 @@ def sample_database(
     sample_activation_log: List[ActivationLogDump] = construct(
         [
             "start_timestamp",
+            "config_start_timestamp",
+            "config_end_timestamp",
+            "getpost_start_timestamp",
+            "getpost_end_timestamp",
+            "notify_start_timestamp",
+            "notify_end_timestamp",
             "end_timestamp",
             "sites_count",
             "user_count",
             "downloaded_post_count",
             "downloaded_thread_count",
         ],
-        [(30, 33, 1, 10, 100, 70)],
+        [(10, 11, 12, 13, 14, 15, 16, 17, 1, 2, 3, 4)],
     )
     db.store_user_configs(sample_user_configs)
     db.store_supported_wikis(sample_wikis)

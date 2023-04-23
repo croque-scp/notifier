@@ -1,5 +1,6 @@
 from datetime import datetime, timedelta
 import logging
+import time
 
 import pycron
 
@@ -14,6 +15,11 @@ def override_current_time(time: str):
     global now
     now = datetime.fromisoformat(time.replace("Z", "+00:00"))
     logger.info(f"Current time forcibly overridden with {time}")
+
+
+def timestamp() -> int:
+    """Returns the current timestamp."""
+    return int(time.time())
 
 
 def channel_is_now(crontab: str):

@@ -16,10 +16,11 @@ from notifier.dumps import upload_log_dump_to_s3
 from notifier.emailer import Emailer
 from notifier.newposts import get_new_posts
 from notifier.overrides import apply_overrides
-from notifier.timing import channel_is_now, channel_will_be_next
+from notifier.timing import channel_is_now, channel_will_be_next, timestamp
 from notifier.types import (
     AuthConfig,
     CachedUserConfig,
+    ChannelLogDump,
     EmailAddresses,
     LocalConfig,
     NewPostsInfo,
@@ -88,6 +89,8 @@ def notify(
     getting data for new posts) and then triggers the relevant notification
     schedules.
     """
+    activation_start_timestamp = timestamp()
+
     # If there are no active channels, which shouldn't happen, there is
     # nothing to do
     if len(active_channels) == 0:
@@ -98,6 +101,7 @@ def notify(
         config, database.get_supported_wikis(), dry_run=dry_run
     )
 
+    config_start_timestamp = timestamp()
     if dry_run:
         logger.info("Dry run: skipping remote config acquisition")
     else:
@@ -108,27 +112,28 @@ def notify(
 
         # Refresh the connection to add any newly-configured wikis
         connection = Connection(config, database.get_supported_wikis())
+    config_end_timestamp = timestamp()
 
+    getpost_start_timestamp = timestamp()
     if dry_run:
         logger.info("Dry run: skipping new post acquisition")
     else:
         logger.info("Getting new posts...")
         get_new_posts(database, connection, limit_wikis)
-
-    # Record the 'current' timestamp immediately after downloading posts
-    current_timestamp = int(time.time())
-    # Get the password from keyring for login
-    wikidot_password = auth["wikidot_password"]
+    # The timestamp immediately after downloading posts will be used as the
+    # upper bound of posts to notify users about
+    getpost_end_timestamp = timestamp()
 
     if dry_run:
         logger.info("Dry run: skipping Wikidot login")
     else:
-        connection.login(config["wikidot_username"], wikidot_password)
+        connection.login(config["wikidot_username"], auth["wikidot_password"])
 
+    notify_start_timestamp = timestamp()
     logger.info("Notifying...")
     notify_active_channels(
         active_channels,
-        current_timestamp=current_timestamp,
+        current_timestamp=getpost_end_timestamp,
         config=config,
         auth=auth,
         database=database,
@@ -136,14 +141,9 @@ def notify(
         force_initial_search_timestamp=force_initial_search_timestamp,
         dry_run=dry_run,
     )
+    notify_end_timestamp = timestamp()
 
     # Notifications have been sent, so perform time-insensitive maintenance
-
-    if dry_run:
-        logger.info("Dry run: skipping uploading log dump")
-    else:
-        logger.info("Uploading log dumps...")
-        upload_log_dump_to_s3(config, database)
 
     if dry_run:
         logger.info("Dry run: skipping cleanup")
@@ -161,6 +161,12 @@ def notify(
     logger.info("Purging invalid user config pages")
     delete_prepared_invalid_user_pages(config, connection)
     rename_invalid_user_config_pages(config, connection)
+
+    activation_end_timestamp = timestamp()
+
+    assert not dry_run
+    logger.info("Uploading log dumps...")
+    upload_log_dump_to_s3(config, database)
 
 
 def notify_active_channels(
@@ -180,7 +186,6 @@ def notify_active_channels(
         config["gmail_username"], auth["gmail_password"], dry_run=dry_run
     )
     for channel in active_channels:
-        # Should this be asynchronous + parallel?
         notify_channel(
             channel,
             current_timestamp=current_timestamp,
@@ -208,7 +213,7 @@ def notify_channel(
 ):
     """Compiles and sends notifications for all users in a given channel."""
     logger.info("Activating channel %s", {"channel": channel})
-    channel_start_timestamp = int(time.time())
+    channel_start_timestamp = timestamp()
     # Get config sans subscriptions for users who would be notified
     user_configs = database.get_user_configs(channel)
     logger.debug(
@@ -279,17 +284,20 @@ def notify_channel(
             )
             continue
 
-    database.store_channel_log_dump(
-        {
+    if dry_run:
+        logger.info("Dry run: not recording channel activation log")
+    else:
+        channel_log_dump: ChannelLogDump = {
             "channel": channel,
             "start_timestamp": channel_start_timestamp,
-            "end_timestamp": int(time.time()),
+            "end_timestamp": timestamp(),
             "user_count": len(user_configs),
             "notified_user_count": notified_users,
             "notified_post_count": notified_posts,
             "notified_thread_count": notified_threads,
         }
-    )
+        logger.info("Recording channel activation log %s", channel_log_dump)
+        database.store_channel_log_dump(channel_log_dump)
     logger.info(
         "Finished notifying channel %s",
         {"channel": channel, "users_notified_count": notified_users},

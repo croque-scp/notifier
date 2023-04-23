@@ -471,6 +471,12 @@ class MySqlDriver(BaseDatabaseDriver, BaseDatabaseWithSqlFileCache):
             "store_activation_log_dump",
             {
                 "start_timestamp": log["start_timestamp"],
+                "config_start_timestamp": log["config_start_timestamp"],
+                "config_end_timestamp": log["config_end_timestamp"],
+                "getpost_start_timestamp": log["getpost_start_timestamp"],
+                "getpost_end_timestamp": log["getpost_end_timestamp"],
+                "notify_start_timestamp": log["notify_start_timestamp"],
+                "notify_end_timestamp": log["notify_end_timestamp"],
                 "end_timestamp": log["end_timestamp"],
                 "sites_count": log["sites_count"],
                 "user_count": log["user_count"],
