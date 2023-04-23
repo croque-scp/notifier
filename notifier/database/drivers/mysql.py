@@ -478,10 +478,13 @@ class MySqlDriver(BaseDatabaseDriver, BaseDatabaseWithSqlFileCache):
                 "notify_start_timestamp": log["notify_start_timestamp"],
                 "notify_end_timestamp": log["notify_end_timestamp"],
                 "end_timestamp": log["end_timestamp"],
-                "sites_count": log["sites_count"],
+                "new_post_count": log["new_post_count"],
+                "new_thread_count": log["new_thread_count"],
+                "checked_thread_count": log["checked_thread_count"],
+                "site_count": log["site_count"],
                 "user_count": log["user_count"],
-                "downloaded_post_count": log["downloaded_post_count"],
-                "downloaded_thread_count": log["downloaded_thread_count"],
+                "post_count": log["post_count"],
+                "thread_count": log["thread_count"],
             },
         )
 

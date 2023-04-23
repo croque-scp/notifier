@@ -7,10 +7,15 @@ SELECT
   notify_start_timestamp,
   notify_end_timestamp,
   end_timestamp,
-  sites_count,
+
+  new_post_count,
+  new_thread_count,
+  checked_thread_count,
+
+  site_count,
   user_count,
-  downloaded_post_count,
-  downloaded_thread_count
+  post_count,
+  thread_count
 FROM
   activation_log_dump
 WHERE

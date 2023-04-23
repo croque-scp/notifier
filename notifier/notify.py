@@ -1,5 +1,4 @@
 import logging
-import time
 from smtplib import SMTPAuthenticationError
 from typing import Iterable, List, Tuple, cast
 
@@ -12,7 +11,7 @@ from notifier.deletions import (
     rename_invalid_user_config_pages,
 )
 from notifier.digest import Digester
-from notifier.dumps import upload_log_dump_to_s3
+from notifier.dumps import record_activation_log
 from notifier.emailer import Emailer
 from notifier.newposts import get_new_posts
 from notifier.overrides import apply_overrides
@@ -119,7 +118,7 @@ def notify(
         logger.info("Dry run: skipping new post acquisition")
     else:
         logger.info("Getting new posts...")
-        get_new_posts(database, connection, limit_wikis)
+        downloaded_thread_count, downloaded_post_count = get_new_posts(database, connection, limit_wikis)
     # The timestamp immediately after downloading posts will be used as the
     # upper bound of posts to notify users about
     getpost_end_timestamp = timestamp()
@@ -166,7 +165,24 @@ def notify(
 
     assert not dry_run
     logger.info("Uploading log dumps...")
-    upload_log_dump_to_s3(config, database)
+    record_activation_log(
+        config,
+        database,
+        {
+            "start_timestamp": activation_start_timestamp,
+            "config_start_timestamp": config_start_timestamp,
+            "config_end_timestamp": config_end_timestamp,
+            "getpost_start_timestamp": getpost_start_timestamp,
+            "getpost_end_timestamp": getpost_end_timestamp,
+            "notify_start_timestamp": notify_start_timestamp,
+            "notify_end_timestamp": notify_end_timestamp,
+            "end_timestamp": activation_end_timestamp,
+            "sites_count": 
+            "user_count": 
+            "downloaded_post_count": 
+            "downloaded_thread_count": 
+        },
+    )
 
 
 def notify_active_channels(

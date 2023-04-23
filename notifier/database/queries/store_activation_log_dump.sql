@@ -9,10 +9,15 @@ INSERT INTO
     notify_start_timestamp,
     notify_end_timestamp,
     end_timestamp,
-    sites_count,
+
+    new_post_count,
+    new_thread_count,
+    checked_thread_count,
+
+    site_count,
     user_count,
-    downloaded_post_count,
-    downloaded_thread_count
+    post_count,
+    thread_count
   )
   VALUES
   (
@@ -24,8 +29,13 @@ INSERT INTO
     %(notify_start_timestamp)s,
     %(notify_end_timestamp)s,
     %(end_timestamp)s,
-    %(sites_count)s,
+
+    %(new_post_count)s,
+    %(new_thread_count)s,
+    %(checked_thread_count)s,
+
+    %(site_count)s,
     %(user_count)s,
-    %(downloaded_post_count)s,
-    %(downloaded_thread_count)s
+    %(post_count)s,
+    %(thread_count)s
   )

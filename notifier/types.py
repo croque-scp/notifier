@@ -214,8 +214,8 @@ class ChannelLogDump(TypedDict):
     notified_thread_count: int
 
 
-class ActivationLogDump(TypedDict):
-    """Structure of the JSON public log dump, one per activation."""
+class ActivationLogDumpTimestamps(TypedDict):
+    """Timestamps of stages of the notifier process for an activation."""
 
     start_timestamp: int
     config_start_timestamp: int
@@ -225,10 +225,31 @@ class ActivationLogDump(TypedDict):
     notify_start_timestamp: int
     notify_end_timestamp: int
     end_timestamp: int
-    sites_count: int
+
+
+class ActivationLogDumpDownloadInfo(TypedDict):
+    """Info about the post download stage of the activation."""
+
+    new_post_count: int
+    new_thread_count: int
+    checked_thread_count: int
+
+
+class ActivationLogDumpCumulativeInfo(TypedDict):
+    """Cumulative general stats as of the activation."""
+
+    site_count: int
     user_count: int
-    downloaded_post_count: int
-    downloaded_thread_count: int
+    post_count: int
+    thread_count: int
+
+
+class ActivationLogDump(
+    ActivationLogDumpTimestamps,
+    ActivationLogDumpDownloadInfo,
+    ActivationLogDumpCumulativeInfo,
+):
+    """Structure of the JSON public log dump, one per activation."""
 
 
 class LogDump(TypedDict):

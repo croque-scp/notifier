@@ -7,13 +7,21 @@ import boto3
 from dateutil import tz
 
 from notifier.database.drivers.base import BaseDatabaseDriver
-from notifier.types import LocalConfig
+from notifier.types import ActivationLogDump, LocalConfig
 
 logger = logging.getLogger(__name__)
 
 HALF_AN_HOUR_S = 60 * 30
 ONE_DAY_S = 60 * 60 * 24
 ENTRY_RETAIN_LIMIT = ONE_DAY_S * 7 * 3
+
+
+def record_activation_log(
+    config: LocalConfig,
+    database: BaseDatabaseDriver,
+    activation: ActivationLogDump,
+) -> None:
+    """Records and uploads a notifier activation log."""
 
 
 def upload_log_dump_to_s3(

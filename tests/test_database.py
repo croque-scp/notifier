@@ -164,23 +164,23 @@ def sample_database(
         ],
         [("hourly", 30, 31, 5, 2, 10, 2), ("daily", 32, 33, 2, 0, 0, 0)],
     )
-    sample_activation_log: List[ActivationLogDump] = construct(
-        [
-            "start_timestamp",
-            "config_start_timestamp",
-            "config_end_timestamp",
-            "getpost_start_timestamp",
-            "getpost_end_timestamp",
-            "notify_start_timestamp",
-            "notify_end_timestamp",
-            "end_timestamp",
-            "sites_count",
-            "user_count",
-            "downloaded_post_count",
-            "downloaded_thread_count",
-        ],
-        [(10, 11, 12, 13, 14, 15, 16, 17, 1, 2, 3, 4)],
-    )
+    sample_activation_log: ActivationLogDump = {
+        "start_timestamp": 0,
+        "config_start_timestamp": 0,
+        "config_end_timestamp": 0,
+        "getpost_start_timestamp": 0,
+        "getpost_end_timestamp": 0,
+        "notify_start_timestamp": 0,
+        "notify_end_timestamp": 0,
+        "end_timestamp": 0,
+        "new_post_count": 0,
+        "new_thread_count": 0,
+        "checked_thread_count": 0,
+        "site_count": 0,
+        "user_count": 0,
+        "post_count": 0,
+        "thread_count": 0,
+    }
     db.store_user_configs(sample_user_configs)
     db.store_supported_wikis(sample_wikis)
     for thread in sample_threads:
@@ -191,8 +191,7 @@ def sample_database(
         db.store_post(post)
     for channel_log in sample_channel_log:
         db.store_channel_log_dump(channel_log)
-    for activation_log in sample_activation_log:
-        db.store_activation_log_dump(activation_log)
+    db.store_activation_log_dump(sample_activation_log)
     return db
 
 
