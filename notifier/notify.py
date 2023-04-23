@@ -32,12 +32,12 @@ logger = logging.getLogger(__name__)
 # Notification channels with frequency names mapping to the crontab of that
 # frequency.
 notification_channels = {
-    "hourly": "0 * * * *",
-    "8hourly": "0 */8 * * *",
-    "daily": "0 0 * * *",
-    "weekly": "0 0 * * 0",
-    "monthly": "0 0 1 * *",
     "test": "x x x x x",  # pycron accepts this value but it never passes
+    "monthly": "0 15 1 * *",
+    "weekly": "0 14 * * 0",
+    "daily": "0 13 * * *",
+    "8hourly": "0 4,12,20 * * *",
+    "hourly": "0 * * * *",
 }
 
 
@@ -72,12 +72,14 @@ def pick_channels_to_notify(force_channels: List[str] = None) -> List[str]:
 
 
 def notify(
+    *,
     config: LocalConfig,
     auth: AuthConfig,
     active_channels: List[str],
     database: BaseDatabaseDriver,
     limit_wikis: List[str] = None,
     force_initial_search_timestamp: int = None,
+    dry_run=False,
 ):
     """Main task executor. Should be called as often as the most frequent
     notification digest.
@@ -92,40 +94,61 @@ def notify(
         logger.warning("No active channels; aborting")
         return
 
-    connection = Connection(config, database.get_supported_wikis())
+    connection = Connection(
+        config, database.get_supported_wikis(), dry_run=dry_run
+    )
 
-    logger.info("Getting remote config...")
-    get_global_config(config, database, connection)
-    logger.info("Getting user config...")
-    get_user_config(config, database, connection)
+    if dry_run:
+        logger.info("Dry run: skipping remote config acquisition")
+    else:
+        logger.info("Getting remote config...")
+        get_global_config(config, database, connection)
+        logger.info("Getting user config...")
+        get_user_config(config, database, connection)
 
-    # Refresh the connection to add any newly-configured wikis
-    connection = Connection(config, database.get_supported_wikis())
+        # Refresh the connection to add any newly-configured wikis
+        connection = Connection(config, database.get_supported_wikis())
 
-    logger.info("Getting new posts...")
-    get_new_posts(database, connection, limit_wikis)
+    if dry_run:
+        logger.info("Dry run: skipping new post acquisition")
+    else:
+        logger.info("Getting new posts...")
+        get_new_posts(database, connection, limit_wikis)
 
     # Record the 'current' timestamp immediately after downloading posts
     current_timestamp = int(time.time())
     # Get the password from keyring for login
     wikidot_password = auth["wikidot_password"]
-    connection.login(config["wikidot_username"], wikidot_password)
+
+    if dry_run:
+        logger.info("Dry run: skipping Wikidot login")
+    else:
+        connection.login(config["wikidot_username"], wikidot_password)
 
     logger.info("Notifying...")
     notify_active_channels(
         active_channels,
-        current_timestamp,
-        config,
-        auth,
-        database,
-        connection,
-        force_initial_search_timestamp,
+        current_timestamp=current_timestamp,
+        config=config,
+        auth=auth,
+        database=database,
+        connection=connection,
+        force_initial_search_timestamp=force_initial_search_timestamp,
+        dry_run=dry_run,
     )
 
-    logger.info("Uploading log dumps...")
-    upload_log_dump_to_s3(config, database)
+    # Notifications have been sent, so perform time-insensitive maintenance
 
-    # Perform time-insensitive maintenance
+    if dry_run:
+        logger.info("Dry run: skipping uploading log dump")
+    else:
+        logger.info("Uploading log dumps...")
+        upload_log_dump_to_s3(config, database)
+
+    if dry_run:
+        logger.info("Dry run: skipping cleanup")
+        return
+
     logger.info("Cleaning up...")
 
     for frequency in ["weekly", "monthly"]:
@@ -142,40 +165,46 @@ def notify(
 
 def notify_active_channels(
     active_channels: Iterable[str],
+    *,
     current_timestamp: int,
     config: LocalConfig,
     auth: AuthConfig,
     database: BaseDatabaseDriver,
     connection: Connection,
     force_initial_search_timestamp: int = None,
+    dry_run=False,
 ):
     """Prepare and send notifications to all activated channels."""
     digester = Digester(config["path"]["lang"])
-    emailer = Emailer(config["gmail_username"], auth["gmail_password"])
+    emailer = Emailer(
+        config["gmail_username"], auth["gmail_password"], dry_run=dry_run
+    )
     for channel in active_channels:
         # Should this be asynchronous + parallel?
         notify_channel(
             channel,
-            current_timestamp,
-            force_initial_search_timestamp,
+            current_timestamp=current_timestamp,
+            force_initial_search_timestamp=force_initial_search_timestamp,
             config=config,
             database=database,
             connection=connection,
             digester=digester,
             emailer=emailer,
+            dry_run=dry_run,
         )
 
 
 def notify_channel(
     channel: str,
+    *,
     current_timestamp: int,
     force_initial_search_timestamp: int = None,
-    *,
     config: LocalConfig,
     database: BaseDatabaseDriver,
     connection: Connection,
     digester: Digester,
     emailer: Emailer,
+    dry_run=False,
 ):
     """Compiles and sends notifications for all users in a given channel."""
     logger.info("Activating channel %s", {"channel": channel})
@@ -186,6 +215,22 @@ def notify_channel(
         "Found users for channel %s",
         {"user_count": len(user_configs), "channel": channel},
     )
+    # Filter the users only to those with notifications waiting
+    logger.debug("Filtering users without notifications waiting...")
+    user_count_pre_filter = len(user_configs)
+    notifiable_user_ids = database.get_notifiable_users(channel)
+    user_configs = [
+        user for user in user_configs if user["user_id"] in notifiable_user_ids
+    ]
+    logger.debug(
+        "Filtered users without notifications waiting %s",
+        {
+            "from_count": user_count_pre_filter,
+            "to_count": len(user_configs),
+            "removed_count": user_count_pre_filter - len(user_configs),
+            "users_with_waiting_notifs_count": len(notifiable_user_ids),
+        },
+    )
     # Notify each user on this frequency channel
     notified_users = 0
     notified_posts = 0
@@ -195,15 +240,16 @@ def notify_channel(
         try:
             sent, post_count, thread_count = notify_user(
                 user,
-                channel,
-                current_timestamp,
-                force_initial_search_timestamp,
+                channel=channel,
+                current_timestamp=current_timestamp,
+                force_initial_search_timestamp=force_initial_search_timestamp,
                 config=config,
                 database=database,
                 connection=connection,
                 digester=digester,
                 emailer=emailer,
                 addresses=addresses,
+                dry_run=dry_run,
             )
             if sent:
                 notified_users += 1
@@ -252,24 +298,27 @@ def notify_channel(
 
 def notify_user(
     user: CachedUserConfig,
+    *,
     channel: str,
     current_timestamp: int,
     force_initial_search_timestamp: int = None,
-    *,
     config: LocalConfig,
     database: BaseDatabaseDriver,
     connection: Connection,
     digester: Digester,
     emailer: Emailer,
     addresses: EmailAddresses,
+    dry_run=False,
 ) -> Tuple[bool, int, int]:
     """Compiles and sends a notification for a single user.
 
-    Returns a tuple containing the following: a boolean indicating whether
-    the notification was successful, the number of posts notified about,
-    and the number of threads notified about. The latter values will be 0
-    in the case that the notification was not successful, even if there
-    were posts to notify about (e.g. if the user has an invalid config).
+    Returns a tuple containing the following:
+        1. a boolean indicating whether the notification was successful
+        2. the number of posts notified about
+        3. the number of threads notified about.
+    The latter values will be 0 in the case that the notification was not
+    successful, even if there were posts to notify about (e.g. if the user has
+    an invalid config).
 
     :param addresses: A dict of email addresses to use for sending emails
     to. Should be set to an empty dict initially; if this is the case, this
@@ -331,6 +380,14 @@ def notify_user(
     # Compile the digest
     subject, body = digester.for_user(user, posts)
 
+    if dry_run:
+        logger.info(
+            "Dry run: not sending or recording notification %s",
+            {"for_user": user["username"]},
+        )
+        # Still return true to indicate that the user would have been notified
+        return True, post_count, count_threads(posts)
+
     # Send the digests via PM to PM-subscribed users
     pm_inform_tag = "restricted-inbox"
     if user["delivery"] == "pm":
@@ -342,7 +399,7 @@ def notify_user(
             connection.send_message(user["user_id"], subject, body)
         except RestrictedInbox:
             # If the inbox is restricted, inform the user
-            logger.warning(
+            logger.debug(
                 "Aborting notification %s",
                 {
                     "for user": user["username"],
@@ -381,7 +438,7 @@ def notify_user(
             # This user requested to be notified via email but
             # hasn't added the notification account as a contact,
             # meaning their email address is unknown
-            logger.warning(
+            logger.debug(
                 "Aborting notification %s",
                 {
                     "for user": user["username"],

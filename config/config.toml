@@ -14,7 +14,7 @@ database_name = "wikidot_notifier"
 # . -> cwd
 # @ -> package root
 # ? -> this config file
-lang = "@/lang.toml"
+lang = "?/../lang.toml"
 
 [log_dump_s3]
 bucket_name = "wdnotifier"

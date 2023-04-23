@@ -1,0 +1,19 @@
+{
+  "name": "Python 3",
+  "build": { "dockerfile": "Dockerfile" },
+  "features": {
+    "ghcr.io/devcontainers-contrib/features/poetry:2": {
+      "version": "latest"
+    }
+  },
+  "postCreateCommand": "poetry install",
+  "customizations": {
+    "vscode": {
+      "settings": {
+        "python.linting.pylintPath": "/workspace/.venv/bin/pylint"
+      },
+      "extensions": ["ms-azuretools.vscode-docker", "ms-python.black-formatter"]
+    }
+  },
+  "remoteUser": "root"
+}

@@ -1,0 +1,32 @@
+version: '3.8'
+
+services:
+  notifier:
+    image: notifier:test
+    build:
+      context: .
+      dockerfile: ./Dockerfile
+      target: test
+    command: "--notifier-config config/config.toml --notifier-auth config/auth.compose.toml ${PYTEST_ARGS-}"
+    links:
+      - database
+    depends_on:
+      database:
+        condition: service_healthy
+
+  database:
+    image: mysql:5.7.4
+    command: mysqld --datadir=/var/lib/mysql --user=mysql --init-file /data/application/init.sql
+    volumes:
+      - ./tests/init.sql:/data/application/init.sql
+    ports:
+      - "3306:3306"
+    environment:
+      - MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD-root}
+      - MYSQL_DATABASE=${MYSQL_DATABASE-wikidot_notifier_test}
+    healthcheck:
+      test: ["CMD", "mysqladmin" ,"ping", "-uroot", "-proot"]
+      interval: 3s
+      timeout: 3s
+      retries: 10
+      start_period: 20s

@@ -19,62 +19,51 @@ SELECT
   category.name AS category_name
 FROM
   post
+  INNER JOIN
+  thread ON thread.id = post.thread_id
+  INNER JOIN
+  wiki ON wiki.id = thread.wiki_id
+  INNER JOIN
+  post AS parent_post ON parent_post.id = post.parent_post_id
   LEFT JOIN
-  thread ON post.thread_id = thread.id
+  category ON category.id = thread.category_id
   LEFT JOIN
-  wiki ON thread.wiki_id = wiki.id
+  manual_sub AS post_sub ON (
+    post_sub.user_id = %(user_id)s
+    AND post_sub.thread_id = thread.id
+    AND post_sub.post_id = parent_post.id
+  )
   LEFT JOIN
-  post AS parent_post ON post.parent_post_id = parent_post.id
-  LEFT JOIN
-  category ON thread.category_id = category.id
+  post AS user_response_child_post ON (
+    user_response_child_post.parent_post_id = post.id
+    AND user_response_child_post.user_id = %(user_id)s
+  )
 WHERE
-  (
+  -- Remove deleted posts
+  post.is_deleted = 0
+
+  -- Remove posts made by the user
+  AND post.user_id <> %(user_id)s
+
+  -- Remove posts not posted in the current frequency channel
+  AND post.posted_timestamp BETWEEN %(lower_timestamp)s AND %(upper_timestamp)s
+
+  -- Select only posts in non-deleted threads
+  AND thread.is_deleted = 0
+
+  AND (
     -- Get replies to posts subscribed to
-    EXISTS (
-      SELECT NULL FROM
-        manual_sub
-      WHERE
-        manual_sub.post_id = parent_post.id
-        AND manual_sub.thread_id = thread.id
-        AND manual_sub.user_id = %(user_id)s
-        AND manual_sub.sub = 1
-    )
+    post_sub.sub = 1
 
     -- Get replies to posts made by the user
     OR parent_post.user_id = %(user_id)s
   )
 
-  -- Select only posts in non-deleted threads
-  AND thread.is_deleted = 0
-
-  -- Remove deleted posts
-  AND post.is_deleted = 0
-
   -- Remove replies to posts unsubscribed from
-  AND NOT EXISTS (
-    SELECT NULL FROM
-      manual_sub
-    WHERE
-      manual_sub.post_id = parent_post.id
-      AND manual_sub.thread_id = thread.id
-      AND manual_sub.user_id = %(user_id)s
-      AND manual_sub.sub = -1
-  )
-
-  -- Remove posts not posted in the current frequency channel
-  AND post.posted_timestamp BETWEEN %(lower_timestamp)s AND %(upper_timestamp)s
-
-  -- Remove posts made by the user
-  AND post.user_id <> %(user_id)s
+  AND (post_sub.sub <> -1 OR post_sub.sub IS NULL)
 
   -- Remove posts the user already responded to
-  AND NOT EXISTS (
-    SELECT NULL FROM
-      post AS child_post
-    WHERE
-      child_post.parent_post_id = post.id
-      AND child_post.user_id = %(user_id)s
-  )
+  AND user_response_child_post.id IS NULL
 ORDER BY
   wiki.id,
   category.id,

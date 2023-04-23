@@ -61,7 +61,9 @@ def read_local_config(config_path: str) -> LocalConfig:
         # Paths section
         assert_key(config, "path", dict)
         assert_key(config["path"], "lang", str)
-        config["path"]["lang"] = replace_path_alias(config["path"]["lang"])
+        config["path"]["lang"] = str(
+            Path(replace_path_alias(config["path"]["lang"])).resolve()
+        )
 
         return True
 

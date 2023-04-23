@@ -123,7 +123,7 @@ def test_pluralise():
 def test_fake_digest(fake_user: CachedUserConfig, fake_posts: NewPostsInfo):
     """Construct a digest from fake data and compare it to the expected
     output."""
-    digester = Digester(str(Path.cwd() / "notifier" / "lang.toml"))
+    digester = Digester(str(Path.cwd() / "config" / "lang.toml"))
     lexicon = digester.make_lexicon(fake_user["language"])
     digest = "\n".join(make_wikis_digest(fake_posts, lexicon))
     print(digest)

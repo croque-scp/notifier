@@ -4,4 +4,4 @@ __pycache__
 build
 dist
 lambda.zip
-/auth.local.toml
+config/auth.local.toml

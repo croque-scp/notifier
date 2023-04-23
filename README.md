@@ -17,6 +17,18 @@ service outside of that circumstance.
 
 ## Installation
 
+### With Docker
+
+Requires Docker.
+
+The Dockerfile specifies a number of stages. For local testing, set the target stage to 'execute':
+
+```shell
+docker build --target execute --tag notifier:latest .
+```
+
+### Locally
+
 Requires at least Python 3.8.
 
 Via [Poetry](https://python-poetry.org/):
@@ -44,15 +56,28 @@ instructions.
 
 ## Local execution
 
-To start the notifier service locally:
+To start the notifier service in a Docker container:
+
+```shell
+docker run --rm notifier:latest path_to_config_file path_to_auth_file
+```
+
+Or locally:
 
 ```shell
 poetry run python3 -m notifier path_to_config_file path_to_auth_file
 ```
 
-The config file that my notifier instance uses is `config.toml`. A sample
-auth file with dummy secrets, used for CI tests, can be found at
-`.github/auth.ci.toml`.
+Or with Docker:
+
+```shell
+docker build --target execute --tag notifier:execute .
+docker run --rm notifier:execute path_to_config_file path_to_auth_file
+```
+
+The config file that my notifier instance uses is `config/config.toml`. A
+sample auth file with dummy secrets, used for CI tests, can be found at
+`config/auth.ci.toml`.
 
 The service will run continuously and activate an automatically-determined
 set of notification channels each hour.
@@ -111,7 +136,9 @@ poetry run mypy notifier
 
 ## Testing
 
-Run tests:
+### Testing locally
+
+To run tests locally:
 
 ```shell
 poetry run pytest --notifier-config path_to_config_file --notifier-auth path_to_auth_file
@@ -122,3 +149,12 @@ described above. Database tests (`tests/test_database.py`) require that
 this database already exist.
 
 I recommend using a MySQL server on localhost for tests.
+
+### Testing with Docker
+
+A Docker Compose setup is present that will spin up a temporary MySQL database
+and run tests against it:
+
+```shell
+docker compose -f docker-compose.test.yml up --build --abort-on-container-exit
+```

@@ -1,5 +1,6 @@
 import logging
 import re
+import time
 from json import JSONDecodeError
 from typing import Iterable, Iterator, List, Match, Optional, Union, cast
 
@@ -43,14 +44,32 @@ class RestrictedInbox(Exception):
     inbox is restricted."""
 
 
+class OngoingConnectionError(Exception):
+    """Indicates a persistent connection error that could not be resolved
+    by trying it multiple times."""
+
+
 class Connection:
     """Connection to Wikidot facilitating communications with it."""
 
+    PAGINATION_DELAY_S = 1.0
+    MODULE_ATTEMPT_LIMIT = 3
+
     def __init__(
-        self, config: LocalConfig, supported_wikis: List[SupportedWikiConfig]
+        self,
+        config: LocalConfig,
+        supported_wikis: List[SupportedWikiConfig],
+        *,
+        dry_run=False,
     ):
         """Connect to Wikidot."""
-        self._session = requests.sessions.Session()
+        self.dry_run = dry_run
+        if self.dry_run:
+            # Theoretically the session will never be used in a dry run
+            logger.info("Dry run: Wikidot requests will be rejected")
+            self._session = cast(requests.sessions.Session, object())
+        else:
+            self._session = requests.sessions.Session()
         self.supported_wikis = supported_wikis
         # Always add the 'base' wiki, if it's not already present
         if not any(
@@ -77,6 +96,11 @@ class Connection:
 
     def post(self, url, **kwargs):
         """Make a POST request."""
+        if self.dry_run:
+            logger.warn(
+                "Dry run: Wikidot request was rejected %s", {"to": url}
+            )
+            return
         return self._session.request("POST", url, **kwargs)
 
     def module(
@@ -95,13 +119,46 @@ class Connection:
         token7 = self._session.cookies.get(
             "wikidot_token7", "7777777", domain=f"{wiki_id}.wikidot.com"
         )
-        response_raw = self.post(
-            "http{}://{}.wikidot.com/ajax-module-connector.php".format(
-                "s" if secure else "", wiki_id
-            ),
-            data=dict(moduleName=module_name, wikidot_token7=token7, **kwargs),
-            cookies={"wikidot_token7": token7},
-        )
+
+        # Try the module a few times with increasing delay in case it fails
+        for attempt_count in range(self.MODULE_ATTEMPT_LIMIT):
+            attempt_delay = 2**attempt_count * self.PAGINATION_DELAY_S
+            logger.debug(
+                "Trying module connection %s",
+                {
+                    "attempt_number": attempt_count + 1,
+                    "attempt_delay_s": attempt_delay,
+                    "max_attempts": self.MODULE_ATTEMPT_LIMIT,
+                },
+            )
+            time.sleep(attempt_delay)
+            try:
+                response_raw = self.post(
+                    "http{}://{}.wikidot.com/ajax-module-connector.php".format(
+                        "s" if secure else "", wiki_id
+                    ),
+                    data=dict(
+                        moduleName=module_name, wikidot_token7=token7, **kwargs
+                    ),
+                    cookies={"wikidot_token7": token7},
+                )
+                # Successful response, break to parsing
+                break
+            except ConnectionError as error:
+                will_retry = attempt_count > self.MODULE_ATTEMPT_LIMIT
+                logger.debug(
+                    "Module connection failed %s",
+                    {
+                        "attempt_number": attempt_count + 1,
+                        "attempt_delay_s": attempt_delay,
+                        "max_attempts": self.MODULE_ATTEMPT_LIMIT,
+                        "will_retry": will_retry,
+                    },
+                    exc_info=error,
+                )
+                if not will_retry:
+                    raise OngoingConnectionError from error
+
         try:
             response = response_raw.json()
         except JSONDecodeError:

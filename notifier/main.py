@@ -10,22 +10,29 @@ from notifier.notify import (
     notify,
     pick_channels_to_notify,
 )
-from notifier.timing import now
+from notifier.timing import now, override_current_time
 from notifier.types import AuthConfig, LocalConfig
 
 logger = logging.getLogger(__name__)
 
 
 def main(
+    *,
     config: LocalConfig,
     auth: AuthConfig,
     execute_now: List[str] = None,
     limit_wikis: List[str] = None,
     force_initial_search_timestamp: int = None,
+    force_current_time: str = None,
+    dry_run=False,
 ):
-    """Main executor, supposed to be called via command line."""
+    """Main notifier application entrypoint."""
 
     logger.info("The current time is %s", now)
+
+    if force_current_time is not None:
+        override_current_time(force_current_time)
+        logger.info("The current time is %s", now)
 
     # Database stores forum posts and caches subscriptions
     DatabaseDriver = resolve_driver_from_config(config["database"]["driver"])
@@ -40,7 +47,7 @@ def main(
         logger.info("Wikis will be limited to %s", limit_wikis)
 
     if execute_now is None:
-        logger.info("Starting in scheduled mode")
+        logger.info("execute_now not present. Starting in scheduled mode")
 
         # Scheduler is responsible for executing tasks at the right times
         scheduler = BlockingScheduler()
@@ -48,12 +55,13 @@ def main(
         # Schedule the task
         scheduler.add_job(
             lambda: notify(
-                config,
-                auth,
-                pick_channels_to_notify(),
-                database,
-                limit_wikis,
-                force_initial_search_timestamp,
+                config=config,
+                auth=auth,
+                active_channels=pick_channels_to_notify(),
+                database=database,
+                limit_wikis=limit_wikis,
+                force_initial_search_timestamp=force_initial_search_timestamp,
+                dry_run=dry_run,
             ),
             CronTrigger.from_crontab(notification_channels["hourly"]),
         )
@@ -61,19 +69,22 @@ def main(
         # Start the service
         scheduler.start()
     else:
-        logger.info("Starting in instant execution mode")
+        logger.info(
+            "execute_now list provided. Starting in instant execution mode"
+        )
 
         # Choose which channels to activate
         channels = pick_channels_to_notify(execute_now)
 
         # Run immediately and once only
         notify(
-            config,
-            auth,
-            channels,
-            database,
-            limit_wikis,
-            force_initial_search_timestamp,
+            config=config,
+            auth=auth,
+            active_channels=channels,
+            database=database,
+            limit_wikis=limit_wikis,
+            force_initial_search_timestamp=force_initial_search_timestamp,
+            dry_run=dry_run,
         )
 
         print("Finished")
