@@ -1,3 +1,5 @@
+-- Start timestamps are marked unique to prompt MySQL into using them as the clustered index
+
 CREATE TABLE IF NOT EXISTS channel_log_dump (
   channel                 VARCHAR(10)       NOT NULL, -- like user_config.frequency
   start_timestamp         INT UNSIGNED      NOT NULL UNIQUE,
