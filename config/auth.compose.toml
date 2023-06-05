@@ -1,5 +1,5 @@
 wikidot_password = ""
 gmail_password = ""
 mysql_host = "database"
-mysql_username = "root"
-mysql_password = "root"
+mysql_username = "notifier"
+mysql_password = "notifier"
