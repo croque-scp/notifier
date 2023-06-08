@@ -3,29 +3,15 @@
 notifier uses MySQL. It and the database need to be set up before it can
 operate, or before tests can be run.
 
-This document assumes some familiarity with
-[Docker](https://www.docker.com/).
+notifier uses the latest stable release of MySQL as of the time of writing, 8.0.33.
+
+Running in the cloud, Docker is no longer needed and introduces an unnecessary performance overhead for production. Spin up a dedicated server of some kind and install MySQL directly onto it.
 
 ## Setting up MySQL
 
-notifier is designed to use [Amazon Aurora Serverless
-v1](https://aws.amazon.com/rds/aurora/serverless/) during production. The
-latest version of MySQL supported by Aurora Serverless is 5.6.10 (for
-reference, the latest version of MySQL at the time of writing is 8.0.26).
-For this reason, a compatible version of MySQL is needed for local
-development.
+### Locally
 
-(Note 2023-02-25: The database has been upgraded to MySQL 5.7 as part of a
-mandatory Aurora engine upgrade.)
-
-[Docker](https://www.docker.com/) is used for pinning the MySQL version,
-and to avoid this version conflicting with any MySQL already installed on
-your system.
-
-The earliest version of MySQL 5.6 available in the official MySQL Docker
-registry is 5.6.17; therefore, although it's not ideal, I recommend running
-tests locally against this version of MySQL. This is also the version that
-[I use in CI](/.github/workflows/tests.yml).
+Running on your local machine, I advise running MySQL in a [Docker](https://www.docker.com/) container. This is to avoid this version conflicting with any MySQL already installed on your system, and to make it easy to pin a required version.
 
 Create the MySQL Server container:
 
@@ -62,6 +48,14 @@ docker inspect \
 ```
 
 Once inside the database server, you can create the database.
+
+### In the cloud
+
+Left as an exercise for the reader.
+
+I recommend installing from source if possible to get the latest version.
+
+If deploying the database as an AWS EC2 on a private VPS, you can cheat and get internet connectivity to download the necessary files by temporarily assigning it an Elastic IP. Just remember to dissociate _and release_ it afterwards.
 
 ## Creating the database
 
