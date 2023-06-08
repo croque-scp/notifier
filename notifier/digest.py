@@ -118,7 +118,8 @@ class Digester:
             "daily": lexicon["frequency_daily"],
             "weekly": lexicon["frequency_weekly"],
             "monthly": lexicon["frequency_monthly"],
-        }.get(user["frequency"], "")
+            "test": lexicon["frequency_test"],
+        }.get(user["frequency"], "undefined")
         intro = lexicon["intro"].format(
             frequency=frequency,
             link_site=lexicon["link_site"],
