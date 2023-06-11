@@ -1,7 +1,7 @@
 #!/usr/bin/env sh
 
 cleanup() {
-  docker compose -f docker-compose.test.yml stop
+  docker compose -f docker-compose.test.yml down
 }
 trap cleanup EXIT
 

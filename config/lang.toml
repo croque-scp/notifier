@@ -5,6 +5,8 @@ link_unsubscribe = "{link_site}/faq#stop"
 link_info_learning = "{link_site}/faq#learning"
 link_info_automatic = "{link_site}/faq#auto"
 
+frequency_test = "< TEST (which you have opted into) >"
+
 body = """
 {intro}
 
