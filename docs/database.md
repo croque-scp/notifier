@@ -16,10 +16,7 @@ Running on your local machine, I advise running MySQL in a [Docker](https://www.
 Create the MySQL Server container:
 
 ```shell
-docker create --name notifier_mysql \
-  -p 3306:3306 \
-  -e MYSQL_ROOT_PASSWORD=root \
-  mysql:5.7.4
+docker create --name notifier_mysql -p 3306:3306 -e MYSQL_ROOT_PASSWORD=root mysql:8.0.33
 ```
 
 For an ephemeral, development-only, containerised MySQL installation I'm
@@ -32,7 +29,7 @@ Start the container:
 docker start notifier_mysql
 ```
 
-To access the database using the MySQL client:
+To access the database from the local command line using the MySQL client, use `127.0.0.1` the local loopback interface (`localhost` doesn't work in my experience):
 
 ```shell
 mysql -h127.0.0.1 -uroot -proot
@@ -42,12 +39,17 @@ If `127.0.0.1` doesn't work you may need to find the IP of the Docker
 container and use that instead:
 
 ```shell
-docker inspect \
-  -f '{{range.NetworkSettings.Networks}}{{.IPAddress}}{{end}}' \
-  notifier_mysql
+docker inspect -f '{{range.NetworkSettings.Networks}}{{.IPAddress}}{{end}}' notifier_mysql
 ```
 
 Once inside the database server, you can create the database.
+
+If you want to connect to the database from inside a _different_ Docker container (e.g. a container running the main notifier Python application), '`127.0.0.1`' pinged from inside that container will refer to itself, not to the database container. You will need to connect the two containers via a Docker network. There are plenty of methods of doing that but the easiest in my opinion is adding a `--network` flag to the command used to launch the 2nd container, instructing it to use the database's network stack:
+
+```shell
+docker run --network=container:notifier_mysql ...
+```
+
 
 ### In the cloud
 
