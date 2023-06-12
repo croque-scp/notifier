@@ -157,14 +157,19 @@ def get_user_from_nametag(nametag: Tag) -> Tuple[Optional[str], Optional[str]]:
     classes = nametag.get_attribute_list("class")
     if "avatarhover" in classes:
         user_id = None
+        username = nametag.get_text()
         # Get user ID from JavaScript click event handler
         click_handler = nametag.contents[0].get_attribute_list("onclick")[0]
         if click_handler is not None:
             # Click handler is not present for guest accounts
             match = re.search(r"[0-9]+", click_handler)
             if match:
+                # Real user
                 user_id = match[0]
-        username = nametag.get_text()
+        else:
+            # Guest account
+            if username.endswith(suffix := " (guest)"):
+                username = username[: -len(suffix)]
         return user_id, username
     if "deleted" in classes:
         return nametag.get_attribute_list("data-id")[0], None
