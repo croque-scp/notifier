@@ -1,12 +1,16 @@
 version: '3.8'
 
 services:
-  notifier:
+  notifier_without_db:
     image: notifier:test
     build:
       context: .
       dockerfile: ./Dockerfile
       target: test
+    command: "--notifier-config config/config.toml --notifier-auth config/auth.compose.toml --ignore=tests/test_database.py ${PYTEST_ARGS-}"
+
+  notifier:
+    extends: notifier_without_db
     command: "--notifier-config config/config.toml --notifier-auth config/auth.compose.toml ${PYTEST_ARGS-}"
     links:
       - database
