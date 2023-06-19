@@ -22,23 +22,34 @@ logger = logging.getLogger(__name__)
 def lambda_handler(event, context):
     """Handler for an AWS Lambda.
 
-    :param event: A list of config paths. First item is the path to the
-    main config, second item is the path to the authentication config. This
-    must be set in the EventBridge event as a JSON constant.
+    :param event: Event parameter passed to the lambda. Expected to contain the
+    paths to the config file and auth file. May also contain the start time.
     """
     logger.info("Starting Lambda")
     print("Handler received event:", event)
     del context
-    if not isinstance(event, list):
-        raise ValueError("Event should be a list of configs")
-    if not len(event) == 2:
-        raise ValueError("Config list should contain 2 items")
-    local_config_path, local_auth_path = event
+
+    if not isinstance(event, dict):
+        raise ValueError("Event should be a dict")
+
+    if "config_path" not in event:
+        raise ValueError("Missing key config_path in event")
+    local_config_path = event["config_path"]
+
+    if "auth_path" not in event:
+        raise ValueError("Missing key auth_path in event")
+    local_auth_path = event["auth_path"]
+
+    force_current_time = None
+    if "force_current_time" in event:
+        force_current_time = event["force_current_time"]
+
     logger.debug("Lambda: starting main procedure")
     main(
-        read_local_config(local_config_path),
-        read_local_auth(local_auth_path),
-        [],
+        config=read_local_config(local_config_path),
+        auth=read_local_auth(local_auth_path),
+        execute_now=[],
+        force_current_time=force_current_time,
     )
     logger.info("Lambda finished")
     return 0

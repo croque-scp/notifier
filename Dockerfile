@@ -5,9 +5,6 @@ ENV PYTHONUNBUFFERED=1
 
 WORKDIR /app
 
-
-FROM base as build
-
 ENV PIP_DEFAULT_TIMEOUT=100
 ENV PIP_DISABLE_PIP_VERSION_CHECK=1
 ENV PIP_NO_CACHE_DIR=1
@@ -20,26 +17,31 @@ COPY pyproject.toml poetry.lock ./
 RUN poetry config virtualenvs.in-project true
 RUN poetry install --no-interaction --no-root
 
+
+FROM base as build
+
 COPY . .
 
 RUN poetry build
 
 
 FROM base AS execute
+ENV PATH=/app/.venv/bin:$PATH
 COPY --from=build /app/dist .
 COPY --from=build /app/.venv ./.venv
 RUN ./.venv/bin/pip install *.whl
 COPY ./config ./config
-ENV PATH=/app/.venv/bin:$PATH
 ENTRYPOINT ["python", "-m", "notifier"]
 
 
-FROM execute AS test
-RUN apt-get update && apt-get install -y default-mysql-client
+FROM base AS test
 ENV PATH=/app/.venv/bin:$PATH
+RUN apt-get update && apt-get install -y default-mysql-client
 COPY conftest.py .
+COPY config/ config/
 COPY tests/ tests/
-ENTRYPOINT ["pytest", "-vx"]
+COPY notifier/ notifier/
+ENTRYPOINT ["pytest", "-vvx"]
 
 
 FROM amazon/aws-lambda-python:3.8 AS execute_lambda

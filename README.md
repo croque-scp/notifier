@@ -17,6 +17,18 @@ service outside of that circumstance.
 
 ## Installation
 
+### With Docker
+
+Requires Docker.
+
+The Dockerfile specifies a number of stages. For local testing, set the target stage to 'execute':
+
+```shell
+docker build --target execute --tag notifier:latest .
+```
+
+### Locally
+
 Requires at least Python 3.8.
 
 Via [Poetry](https://python-poetry.org/):
@@ -35,19 +47,27 @@ See [docs/auth.md](/docs/auth.md) for more information and instructions.
 
 ## Database setup
 
-For local development and testing, notifier requires a database to be set
-up on a version of MySQL that is compatible with Amazon Aurora Serverless
-v1.
-
-See [docs/database.md](/docs/database.md) for more information and
-instructions.
+For local development and testing, notifier requires a MySQL database. See [docs/database.md](/docs/database.md) for more information and instructions.
 
 ## Local execution
 
-To start the notifier service locally:
+To start the notifier service in a Docker container:
+
+```shell
+docker run --rm notifier:latest path_to_config_file path_to_auth_file
+```
+
+Or locally:
 
 ```shell
 poetry run python3 -m notifier path_to_config_file path_to_auth_file
+```
+
+Or with Docker:
+
+```shell
+docker build --target execute --tag notifier:execute .
+docker run --rm notifier:execute path_to_config_file path_to_auth_file
 ```
 
 The config file that my notifier instance uses is `config/config.toml`. A
@@ -113,7 +133,7 @@ poetry run mypy notifier
 
 ### Testing locally
 
-To run tests locally:
+To run tests directly on your machine:
 
 ```shell
 poetry run pytest --notifier-config path_to_config_file --notifier-auth path_to_auth_file

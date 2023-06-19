@@ -17,7 +17,7 @@
         "python.linting.enabled": true,
         "python.linting.mypyArgs": []
       },
-      "extensions": ["ms-azuretools.vscode-docker"]
+      "extensions": ["ms-azuretools.vscode-docker", "ms-python.black-formatter"]
     }
   },
   "remoteUser": "root"

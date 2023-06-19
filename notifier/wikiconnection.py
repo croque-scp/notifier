@@ -56,10 +56,20 @@ class Connection:
     MODULE_ATTEMPT_LIMIT = 3
 
     def __init__(
-        self, config: LocalConfig, supported_wikis: List[SupportedWikiConfig]
+        self,
+        config: LocalConfig,
+        supported_wikis: List[SupportedWikiConfig],
+        *,
+        dry_run=False,
     ):
         """Connect to Wikidot."""
-        self._session = requests.sessions.Session()
+        self.dry_run = dry_run
+        if self.dry_run:
+            # Theoretically the session will never be used in a dry run
+            logger.info("Dry run: Wikidot requests will be rejected")
+            self._session = cast(requests.sessions.Session, object())
+        else:
+            self._session = requests.sessions.Session()
         self.supported_wikis = supported_wikis
         # Always add the 'base' wiki, if it's not already present
         if not any(
@@ -86,6 +96,11 @@ class Connection:
 
     def post(self, url, **kwargs):
         """Make a POST request."""
+        if self.dry_run:
+            logger.warn(
+                "Dry run: Wikidot request was rejected %s", {"to": url}
+            )
+            return
         return self._session.request("POST", url, **kwargs)
 
     def module(
