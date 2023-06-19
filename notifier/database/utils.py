@@ -2,7 +2,20 @@ import logging
 from abc import ABC
 from importlib import import_module
 from pathlib import Path
-from typing import Any, Callable, List, Literal, Optional, Tuple, Type, Union
+from typing import (
+    Any,
+    Callable,
+    Dict,
+    List,
+    Literal,
+    Optional,
+    Tuple,
+    Type,
+    TypeVar,
+    TypedDict,
+    Union,
+    cast,
+)
 
 from notifier.database.drivers.base import BaseDatabaseDriver
 
@@ -31,13 +44,16 @@ def resolve_driver_from_config(driver_path: str) -> Type[BaseDatabaseDriver]:
     logger.debug(
         "Found database driver class %s", {"class": repr(driver_class)}
     )
-    return driver_class
+    return cast(Type[BaseDatabaseDriver], driver_class)
+
+
+CacheValueType = TypeVar("CacheValueType")
 
 
 def try_cache(
     *,
-    get: Callable,
-    store: Callable,
+    get: Callable[[], CacheValueType],
+    store: Callable[[CacheValueType], None],
     do_not_store: Optional[Any] = None,
     catch: Optional[Tuple[Type[Exception], ...]] = None,
 ) -> None:
@@ -74,8 +90,8 @@ def try_cache(
     """
     if catch is None:
         catch = tuple()
-    value = do_not_store
     try:
+        value = do_not_store
         value = get()
     except catch as error:
         logger.error(
@@ -83,8 +99,9 @@ def try_cache(
             {"get": get.__name__},
             exc_info=error,
         )
-    if value != do_not_store:
-        store(value)
+    if value == do_not_store:
+        return
+    store(cast(CacheValueType, value))
 
 
 class BaseDatabaseWithSqlFileCache(ABC):
@@ -101,13 +118,19 @@ class BaseDatabaseWithSqlFileCache(ABC):
     queries_dir = Path(__file__).parent / "queries"
     migrations_dir = Path(__file__).parent / "migrations"
 
-    def __init__(self):
+    class SqlFileCache(TypedDict):
+        script: bool
+        query: str
+
+    def __init__(self) -> None:
         self.clear_query_file_cache()
 
-    def clear_query_file_cache(self):
+    def clear_query_file_cache(self) -> None:
         """Clears the cache of query files, causing subsequent calls to
         them to re-read the query from the filesystem."""
-        self.query_cache = {}
+        self.query_cache: Dict[
+            str, BaseDatabaseWithSqlFileCache.SqlFileCache
+        ] = {}
 
     def read_query_file(self, query_name: str) -> None:
         """Reads the contents of a query file from the filesystem and

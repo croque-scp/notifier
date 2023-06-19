@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import Optional
+from typing import Optional, cast
 
 from bs4 import BeautifulSoup
 from bs4.element import Tag
@@ -11,13 +11,16 @@ def test_get_user_from_nametag() -> None:
     @dataclass
     class UserTag:
         description: str
-        tag_raw: Tag
+        tag_raw: str
         expected_user_id: Optional[str]
         expected_username: Optional[str]
 
-        def __post_init__(self):
-            self.tag = BeautifulSoup(self.tag_raw, "html.parser").find(
-                class_="printuser"
+        def __post_init__(self) -> None:
+            self.tag = cast(
+                Tag,
+                BeautifulSoup(self.tag_raw, "html.parser").find(
+                    class_="printuser"
+                ),
             )
 
             # Usernames have a 20 character limit
