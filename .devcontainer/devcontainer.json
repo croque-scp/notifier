@@ -15,7 +15,8 @@
         "python.analysis.extraPaths": [".venv/bin"],
         "python.linting.mypyEnabled": true,
         "python.linting.enabled": true,
-        "python.linting.mypyArgs": []
+        "python.linting.mypyArgs": [],
+        "python.linting.mypyPath": "./venv/bin/mypy"
       },
       "extensions": ["ms-azuretools.vscode-docker", "ms-python.black-formatter"]
     }
