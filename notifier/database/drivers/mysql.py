@@ -325,6 +325,7 @@ class MySqlDriver(BaseDatabaseDriver, BaseDatabaseWithSqlFileCache):
         return user_configs
 
     def get_notifiable_users(self, frequency: str) -> List[str]:
+        self.execute_named("cache_post_context")
         user_ids = [
             cast(str, row["user_id"])
             for row in self.execute_named(

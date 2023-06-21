@@ -1,12 +1,16 @@
 version: '3.8'
 
 services:
-  notifier:
+  notifier_without_db:
     image: notifier:test
     build:
       context: .
       dockerfile: ./Dockerfile
       target: test
+    command: "--notifier-config config/config.toml --notifier-auth config/auth.compose.toml --ignore=tests/test_database.py ${PYTEST_ARGS-}"
+
+  notifier:
+    extends: notifier_without_db
     command: "--notifier-config config/config.toml --notifier-auth config/auth.compose.toml ${PYTEST_ARGS-}"
     links:
       - database
@@ -15,17 +19,18 @@ services:
         condition: service_healthy
 
   database:
-    image: mysql:5.7.4
-    command: mysqld --datadir=/var/lib/mysql --user=mysql --init-file /data/application/init.sql
-    volumes:
-      - ./tests/init.sql:/data/application/init.sql
+    image: mysql:8.0.33
+    command: --default-authentication-plugin=mysql_native_password
     ports:
       - "3306:3306"
     environment:
-      - MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD-root}
-      - MYSQL_DATABASE=${MYSQL_DATABASE-wikidot_notifier_test}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD-root}
+      MYSQL_DATABASE: ${MYSQL_DATABASE-wikidot_notifier_test}
+      MYSQL_USER: 'notifier'
+      MYSQL_PASSWORD: 'notifier'
+      MYSQL_ROOT_HOST: '0.0.0.0'
     healthcheck:
-      test: ["CMD", "mysqladmin" ,"ping", "-uroot", "-proot"]
+      test: ["CMD", "mysqladmin" ,"status", "-uroot", "-proot"]
       interval: 3s
       timeout: 3s
       retries: 10

@@ -47,12 +47,7 @@ See [docs/auth.md](/docs/auth.md) for more information and instructions.
 
 ## Database setup
 
-For local development and testing, notifier requires a database to be set
-up on a version of MySQL that is compatible with Amazon Aurora Serverless
-v1.
-
-See [docs/database.md](/docs/database.md) for more information and
-instructions.
+For local development and testing, notifier requires a MySQL database. See [docs/database.md](/docs/database.md) for more information and instructions.
 
 ## Local execution
 
@@ -138,7 +133,7 @@ poetry run mypy notifier
 
 ### Testing locally
 
-To run tests locally:
+To run tests directly on your machine:
 
 ```shell
 poetry run pytest --notifier-config path_to_config_file --notifier-auth path_to_auth_file

@@ -22,6 +22,11 @@ def timestamp() -> int:
     return int(time.time())
 
 
+def delay():
+    """Pause for a moment."""
+    time.sleep(5)
+
+
 def channel_is_now(crontab: str):
     """Checks if the given notification channel should be activated right
     now."""

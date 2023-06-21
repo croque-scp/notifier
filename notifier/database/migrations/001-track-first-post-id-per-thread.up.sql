@@ -15,7 +15,7 @@ FROM
     SELECT first_post.id FROM
       post AS first_post
     GROUP BY
-      first_post.thread_id
+      first_post.thread_id, first_post.id
     HAVING
       MIN(first_post.posted_timestamp)
       AND first_post.thread_id = thread.id

@@ -173,15 +173,15 @@ Create a second new security group:
 
 ## Creating the database
 
-As discussed in [docs/database.md](/docs/database.md), notifier is designed
+The database for notifier was originally (2021-07-22) designed to run on Amazon Aurora Serverless v1, and the original setup instructions remain below. As of 2023-03-19, the database no longer runs on Aurora Serverless v1, it now runs on an EC2. This is considerably cheaper.
+
+### On Aurora Serverless v1
+
+As discussed in [docs/database.md](/docs/database.md), notifier ~~is~~ was designed
 to use Amazon Aurora Serverless v1. notifier only runs once an hour, so it
 doesn't make sense to pay for provisioning an always-available database for
 the 55 minutes per hour that it's not in use. The notifier codebase is
 compatible with MySQL 5.6.10a.
-
-As of 2023-03-19, the database no longer runs on Aurora Serverless v1, it now runs on an EC2. This is considerably cheaper.
-
-### On Aurora Serverless v1
 
 (Note 2023-02-25: The database has been upgraded to MySQL 5.7 as part of a
 mandatory Aurora engine upgrade.)
@@ -190,7 +190,7 @@ In the RDS section of the console, create a new database with the following
 settings:
 
 - Use the *Standard create* creation method. Choose the Amazon Aurora
-  database engine, with MySQL 5.6.10 compatibility. Set the capacity type
+  database engine, with MySQL 5.7 compatibility. Set the capacity type
   to serverless.
 - Give a name to the database cluster &mdash; I named mine
   `wikidotnotifierbdcluster` (it normalises to lowercase).
@@ -217,7 +217,9 @@ databases.
 
 ### On an EC2
 
-Aurora Serverless v1 is overpriced and it may be cheaper to run the database on an EC2 instance.
+It is cheaper to run the database as an EC2 instance rather than using an Aurora RDS database, even if it is 'serverless'.
+
+(Note 2023-06-11: The database has been upgraded to MySQL 8.0.33 and as of the time of writing is set up on a `c6g.medium` instance, as mentioned as a possibility below. Original setup instructions for MySQL 5.7 and `t3.nano` are retained below for posterity.)
 
 In the EC2 section of the console:
 
@@ -294,7 +296,7 @@ hostname of the DB cluster and `<user>` with the cluster's admin username
 mysql -h<HOST> -u<user> -p
 ```
 
-Once connected, confirm that the MySQL version is 5.6.10.
+Once connected, confirm the MySQL version.
 
 Use the MySQL client to set up the database and user identity for the
 notifier service as instructed in [docs/database.md](/docs/database.md):
@@ -458,7 +460,6 @@ There are three ways of enabling a Lambda in a VPC to access the internet,
   - If you choose `t3a.nano` as the instance type, which at the time of
     writing is charged at $0.0047 per hour,<sup>6</sup> this will cost
     roughly $3.50 per month.
-  - Congratulations, your serverless solution is no longer serverless!
 - You can assign Elastic IPs to the Lambda's network interfaces, which
   enables them to access the internet.<sup>7</sup> I don't understand how
   or why this works, but it does. AWS does not recommend this solution
@@ -471,6 +472,7 @@ There are three ways of enabling a Lambda in a VPC to access the internet,
     have already alleviated this concern by setting the Lambda's
     concurrency limit to 1 &mdash; it *should* never need additional
     interfaces.
+    - At the time of writing this bullet point (2023-06-11, almost 2 years after writing the above on 2021-09-18), the above solution has needed maintenance exactly 0 times.
   - To implement this solution:
     - Find *Network interfaces* in the EC2 console. Locate any ENIs that
       are associated with the `WikidotNotifierAccessToInternet` security
