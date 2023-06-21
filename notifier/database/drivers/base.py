@@ -89,6 +89,10 @@ class BaseDatabaseDriver(ABC):
         """
 
     @abstractmethod
+    def count_user_configs(self) -> int:
+        """Count the number of subscribed users."""
+
+    @abstractmethod
     def get_notifiable_users(self, frequency: str) -> List[str]:
         """Get the list of IDs for users subscribed to the given channel
         frequency who have at least one notification waiting for them.
@@ -120,6 +124,10 @@ class BaseDatabaseDriver(ABC):
     @abstractmethod
     def get_supported_wikis(self) -> List[SupportedWikiConfig]:
         """Get a list of supported wikis."""
+
+    @abstractmethod
+    def count_supported_wikis(self) -> int:
+        """Count the number of supported wikis."""
 
     @abstractmethod
     def store_supported_wikis(self, wikis: List[SupportedWikiConfig]) -> None:

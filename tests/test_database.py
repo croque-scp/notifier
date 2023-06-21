@@ -221,6 +221,12 @@ def post_replies(new_posts_for_user):
     return new_posts_for_user[1]
 
 
+def test_counting(sample_database: BaseDatabaseDriver):
+    """Test that the driver can count."""
+    assert sample_database.count_supported_wikis() == 1
+    assert sample_database.count_user_configs() == 1
+
+
 def test_get_replied_posts(post_replies):
     """Test that the post replies are as expected."""
     assert titles(post_replies) == {
