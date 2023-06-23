@@ -6,7 +6,8 @@ from notifier.digest import (
     Digester,
     make_wikis_digest,
     pluralise,
-    process_long_strings,
+    process_long_lexicon_strings,
+    process_long_string,
 )
 from notifier.formatter import convert_syntax
 from notifier.overrides import apply_overrides, override_applies_to_post
@@ -94,9 +95,9 @@ def fake_posts(fake_user: CachedUserConfig) -> NewPostsInfo:
     }
 
 
-def test_long_string_processor():
+def test_long_string_processor() -> None:
     """Test the algorithm for removing newlines from long strings."""
-    p = process_long_strings
+    p = process_long_string
     tests = [
         ("test", "test"),
         ("|test", "test"),
@@ -104,13 +105,20 @@ def test_long_string_processor():
         ("|\n1\n2\n", "1 2"),
         ("|\n1\n\n2\n", "1\n\n2"),
         ("|\n1<>2\n", "1\n2"),
-        ({1: "test", 2: "|\ntest\n"}, {1: "test", 2: "test"}),
     ]
     for i, o in tests:
         assert p(i) == o
 
 
-def test_pluralise():
+def test_lexicon_processor() -> None:
+    """Test processing long strings in a lexicon."""
+    assert process_long_lexicon_strings({"1": "test", "2": "|\ntest\n"}) == {
+        "1": "test",
+        "2": "test",
+    }
+
+
+def test_pluralise() -> None:
     """Test the pluralisation string replacement algorithm."""
     assert pluralise("plural(0|s|m)") == "m"
     assert pluralise("plural(1|s|m)") == "s"
@@ -120,7 +128,9 @@ def test_pluralise():
     assert pluralise("plural(X|s|m)plural(1|y god|olasses)") == "my god"
 
 
-def test_fake_digest(fake_user: CachedUserConfig, fake_posts: NewPostsInfo):
+def test_fake_digest(
+    fake_user: CachedUserConfig, fake_posts: NewPostsInfo
+) -> None:
     """Construct a digest from fake data and compare it to the expected
     output."""
     digester = Digester(str(Path.cwd() / "config" / "lang.toml"))
@@ -140,7 +150,7 @@ def test_fake_digest(fake_user: CachedUserConfig, fake_posts: NewPostsInfo):
     print(convert_syntax(digest, "email"))
 
 
-def test_overrides(fake_posts: NewPostsInfo):
+def test_overrides(fake_posts: NewPostsInfo) -> None:
     """Check that application of overrides to mute notifications globally
     works."""
     overrides: GlobalOverridesConfig = {

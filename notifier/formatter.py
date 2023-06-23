@@ -1,18 +1,20 @@
 import re
 import time
-from re import Match, Pattern
-from typing import Callable, List, Tuple, Union, cast
+from typing import Callable, List, Tuple, Union, cast, Pattern, Match
 
 from notifier.types import DeliveryMethod
 
 
-def r(regex: str) -> Pattern:
+def r(regex: str) -> Pattern[str]:
     """Compiles a regular expression."""
     return re.compile(regex, flags=re.MULTILINE)
 
 
 ReplacementList = List[
-    Union[Tuple[str, str], Tuple[Pattern, Union[str, Callable[[Match], str]]]]
+    Union[
+        Tuple[str, str],
+        Tuple[Pattern[str], Union[str, Callable[[Match[str]], str]]],
+    ]
 ]
 
 replacements_to_html: ReplacementList = [

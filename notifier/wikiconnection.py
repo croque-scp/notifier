@@ -2,7 +2,7 @@ import logging
 import re
 import time
 from json import JSONDecodeError
-from typing import Iterable, Iterator, List, Match, Optional, Union, cast
+from typing import Any, Iterable, Iterator, List, Match, Optional, Union, cast
 
 import requests
 from bs4 import BeautifulSoup
@@ -60,7 +60,7 @@ class Connection:
         config: LocalConfig,
         supported_wikis: List[SupportedWikiConfig],
         *,
-        dry_run=False,
+        dry_run: bool = False,
     ):
         """Connect to Wikidot."""
         self.dry_run = dry_run
@@ -94,17 +94,17 @@ class Connection:
             }
             self.supported_wikis.append(self.config_wiki)
 
-    def post(self, url, **kwargs):
+    def post(self, url: str, **request_kwargs: Any) -> Any:
         """Make a POST request."""
         if self.dry_run:
-            logger.warn(
-                "Dry run: Wikidot request was rejected %s", {"to": url}
+            logger.warning(
+                "Dry run: Wikidot request was not sent %s", {"to": url}
             )
-            return
-        return self._session.request("POST", url, **kwargs)
+            return None
+        return self._session.request("POST", url, **request_kwargs)
 
     def module(
-        self, wiki_id: str, module_name: str, **kwargs
+        self, wiki_id: str, module_name: str, **module_kwargs: Any
     ) -> WikidotResponse:
         """Call a Wikidot module."""
         # Check whether HTTP or HTTPS should be used for this wiki's AJAX
@@ -116,7 +116,7 @@ class Connection:
             if wiki["id"] == wiki_id
         )
         # If we're logged in, grab the token7, otherwise make one up
-        token7 = self._session.cookies.get(
+        token7 = self._session.cookies.get(  # type:ignore # there is a mistake in the stubs somewhere causing RequestsCookieJar.get to appear as dict.get
             "wikidot_token7", "7777777", domain=f"{wiki_id}.wikidot.com"
         )
 
@@ -138,7 +138,9 @@ class Connection:
                         "s" if secure else "", wiki_id
                     ),
                     data=dict(
-                        moduleName=module_name, wikidot_token7=token7, **kwargs
+                        moduleName=module_name,
+                        wikidot_token7=token7,
+                        **module_kwargs,
                     ),
                     cookies={"wikidot_token7": token7},
                 )
@@ -168,7 +170,7 @@ class Connection:
                     "wiki_id": wiki_id,
                     "secure": secure,
                     "module_name": module_name,
-                    "request_kwargs": kwargs,
+                    "module_kwargs": module_kwargs,
                     "status": response_raw.status_code,
                     "response_text": response_raw.text,
                 },
@@ -189,12 +191,12 @@ class Connection:
                     "wiki_id": wiki_id,
                     "secure": secure,
                     "module_name": module_name,
-                    "request_kwargs": kwargs,
+                    "module_kwargs": module_kwargs,
                     "response": response,
                 },
             )
             raise RuntimeError(response.get("message") or response["status"])
-        return response
+        return cast(WikidotResponse, response)
 
     def paginated_module(
         self,
@@ -203,8 +205,8 @@ class Connection:
         *,
         index_key: str,
         starting_index: int,
-        index_increment=1,
-        **kwargs,
+        index_increment: int = 1,
+        **module_kwargs: Any,
     ) -> Iterator[WikidotResponse]:
         """Generator that iterates pages of a paginated module response.
 
@@ -223,12 +225,12 @@ class Connection:
         logger.debug(
             "Paginated module %s",
             {
-                "index": kwargs.get(index_key, starting_index),
+                "index": module_kwargs.get(index_key, starting_index),
                 "module_name": module_name,
                 "wiki_id": wiki,
             },
         )
-        first_page = self.module(wiki, module_name, **kwargs)
+        first_page = self.module(wiki, module_name, **module_kwargs)
         yield first_page
         page_count = count_pages(first_page["body"])
         # Iterate through the remaining pages
@@ -237,19 +239,19 @@ class Connection:
         # End at the final page plus one because range() is head exclusive
         # (this assumes that the index is 1-based)
         for page_index in range(starting_index + 1, page_count + 1):
-            kwargs.update({index_key: page_index * index_increment})
+            module_kwargs.update({index_key: page_index * index_increment})
             logger.debug(
                 "Paginated module %s",
                 {
-                    "index": kwargs[index_key],
+                    "index": module_kwargs[index_key],
                     "module_name": module_name,
                     "wiki_id": wiki,
                 },
             )
-            yield self.module(wiki, module_name, **kwargs)
+            yield self.module(wiki, module_name, **module_kwargs)
 
     def listpages(
-        self, wiki_id: str, *, module_body: str, **kwargs
+        self, wiki_id: str, *, module_body: str, **module_kwargs: Any
     ) -> Iterable[Tag]:
         """Execute a ListPages search against a wiki and return all results
         as soup."""
@@ -264,7 +266,7 @@ class Connection:
                 index_increment=250,
                 perPage=250,
                 module_body=module_body,
-                **kwargs,
+                **module_kwargs,
             )
             for soup in cast(
                 Iterable[Tag],
@@ -433,7 +435,7 @@ class Connection:
         )
         page = self._session.get(page_url).text
         return int(
-            cast(Match, re.search(r"pageId = ([0-9]+);", page)).group(1)
+            cast(Match[str], re.search(r"pageId = ([0-9]+);", page)).group(1)
         )
 
     def rename_page(self, wiki_id: str, from_slug: str, to_slug: str) -> None:

@@ -2,7 +2,6 @@ import re
 from collections import defaultdict
 from functools import lru_cache
 from itertools import groupby
-from re import Match
 from typing import (
     Any,
     Callable,
@@ -12,9 +11,10 @@ from typing import (
     List,
     Optional,
     Sequence,
+    Set,
     Tuple,
-    TypeVar,
     cast,
+    Match,
 )
 
 import tomlkit
@@ -29,6 +29,9 @@ from notifier.types import (
     PostReplyInfo,
     ThreadPostInfo,
 )
+
+Lexicon = Dict[str, str]
+Lexicons = Dict[str, Lexicon]
 
 
 def make_thread_url(
@@ -51,14 +54,14 @@ class Digester:
     """Constructs notification digests."""
 
     def __init__(self, lang_path: str):
-        # Read the strings from the lexicon file
+        # Read the strings from the lang file into a lexicon
         with open(lang_path, "r", encoding="utf-8") as lang_file:
-            self.lexicon = dict(tomlkit.parse(lang_file.read()))
-        # Process long strings (marked with a leading pipe)
-        self.lexicon = process_long_strings(self.lexicon)
+            self.lexicons = cast(
+                Lexicons, dict(tomlkit.parse(lang_file.read()))
+            )
 
     @lru_cache(maxsize=None)
-    def make_lexicon(self, lang: str):
+    def make_lexicon(self, lang: str) -> Lexicon:
         """Constructs a subset of the full lexicon for a given language.
 
         These lexicons are cached per language, which will be necessarily
@@ -68,10 +71,12 @@ class Digester:
         # a non-en language, its keys should override all of en's, but in
         # case they don't, en's are used as a fallback.
         lexicon = {
-            **self.lexicon.get("base", {}),
-            **self.lexicon.get("en", {}),
-            **self.lexicon.get(lang, {}),
+            **self.lexicons.get("base", {}),
+            **self.lexicons.get("en", {}),
+            **self.lexicons.get(lang, {}),
         }
+        # Process long strings (marked with a leading pipe)
+        lexicon = process_long_lexicon_strings(lexicon)
         return lexicon
 
     def for_user(
@@ -154,7 +159,7 @@ class Digester:
         return subject, body
 
 
-def make_wikis_digest(new_posts: NewPostsInfo, lexicon: dict) -> List[str]:
+def make_wikis_digest(new_posts: NewPostsInfo, lexicon: Lexicon) -> List[str]:
     """Makes the notification list."""
     thread_posts = new_posts["thread_posts"]
     post_replies = new_posts["post_replies"]
@@ -164,7 +169,7 @@ def make_wikis_digest(new_posts: NewPostsInfo, lexicon: dict) -> List[str]:
     grouped_replies = group_posts(post_replies, "wiki_id")
     # Iterate wikis by notification count
     for wiki_id in frequent_ids(grouped_posts, grouped_replies):
-        posts = cast(List[ThreadPostInfo], grouped_posts[wiki_id])
+        posts = grouped_posts[wiki_id]
         replies = cast(List[PostReplyInfo], grouped_replies[wiki_id])
         first_post = (posts + cast(List[PostInfo], replies))[0]
         digests.append(
@@ -181,7 +186,7 @@ def make_wikis_digest(new_posts: NewPostsInfo, lexicon: dict) -> List[str]:
 def make_categories_digest(
     thread_posts: Sequence[ThreadPostInfo],
     post_replies: Sequence[PostReplyInfo],
-    lexicon: dict,
+    lexicon: Lexicon,
 ) -> List[str]:
     """Makes the notification list for categories in a given wiki."""
     digests: List[str] = []
@@ -189,7 +194,7 @@ def make_categories_digest(
     grouped_replies = group_posts(post_replies, "category_id")
     # Sort categories by notification count
     for category_id in frequent_ids(grouped_posts, grouped_replies):
-        posts = cast(List[ThreadPostInfo], grouped_posts[category_id])
+        posts = grouped_posts[category_id]
         replies = cast(List[PostReplyInfo], grouped_replies[category_id])
         first_post = (posts + cast(List[PostInfo], replies))[0]
         threads = make_threads_digest(posts, replies, lexicon)
@@ -210,7 +215,7 @@ def make_categories_digest(
 def make_threads_digest(
     thread_posts: Sequence[ThreadPostInfo],
     post_replies: Sequence[PostReplyInfo],
-    lexicon: dict,
+    lexicon: Lexicon,
 ) -> List[str]:
     """Makes the notification list for threads in a given category."""
     digests: List[str] = []
@@ -223,7 +228,7 @@ def make_threads_digest(
     grouped_replies = group_posts(post_replies, "thread_id")
     # Iterate over the thread IDs sorted by notification count
     for thread_id in frequent_ids(grouped_posts, grouped_replies):
-        posts = cast(List[ThreadPostInfo], grouped_posts[thread_id])
+        posts = grouped_posts[thread_id]
         replies = cast(List[PostReplyInfo], grouped_replies[thread_id])
         # For each thread, there is necessarily at least one post in either
         # the thread posts or the post replies
@@ -263,7 +268,7 @@ def make_threads_digest(
 
 
 def make_post_replies_digest(
-    post_replies: Iterable[PostReplyInfo], lexicon: dict
+    post_replies: Iterable[PostReplyInfo], lexicon: Lexicon
 ) -> List[str]:
     """Makes the notification list for replies in a given thread."""
     digests: List[str] = []
@@ -297,12 +302,14 @@ def make_post_replies_digest(
     return digests
 
 
-def make_posts_digest(posts: Iterable[PostInfo], lexicon: dict) -> List[str]:
+def make_posts_digest(
+    posts: Iterable[PostInfo], lexicon: Lexicon
+) -> List[str]:
     """Makes the notification list for new posts."""
     return [make_post_digest(post, lexicon) for post in posts]
 
 
-def make_post_digest(post: PostInfo, lexicon: dict) -> str:
+def make_post_digest(post: PostInfo, lexicon: Lexicon) -> str:
     """Makes a notification for a single post."""
     return lexicon["post"].format(
         post_url=make_thread_url(
@@ -315,30 +322,33 @@ def make_post_digest(post: PostInfo, lexicon: dict) -> str:
     )
 
 
-lex_or_string = TypeVar("lex_or_string", str, Dict)
+def process_long_lexicon_strings(lexicon: Lexicon) -> Lexicon:
+    """Process long strings in the given lexicon."""
+    return {
+        key: process_long_string(string) for key, string in lexicon.items()
+    }
 
 
-def process_long_strings(lexicon: lex_or_string) -> lex_or_string:
-    """Process long strings in the main lexicon.
+def process_long_string(string: str) -> str:
+    """Process a long string.
 
-    Strings marked for concatenation are indicated with a leading pipe.
+    Strings marked for concatenation in the lexicon are indicated with a
+    leading pipe.
     """
-    if isinstance(lexicon, str):
-        if lexicon.startswith("|"):
-            lexicon = (
-                # Remove the pipe
-                lexicon.lstrip("|\n")
-                # Save double newlines for later
-                .replace("\n\n", "<<>>")
-                # Remove single newlines
-                .replace("\n", " ")
-                # Recover double newlines
-                .replace("<<>>", "\n\n")
-                # Insert manual single newlines
-                .replace("<>", "\n")
-            )
-        return lexicon.strip()
-    return {key: process_long_strings(value) for key, value in lexicon.items()}
+    if string.startswith("|"):
+        string = (
+            # Remove the pipe
+            string.lstrip("|\n")
+            # Save double newlines for later
+            .replace("\n\n", "<<>>")
+            # Remove single newlines
+            .replace("\n", " ")
+            # Recover double newlines
+            .replace("<<>>", "\n\n")
+            # Insert manual single newlines
+            .replace("<>", "\n")
+        )
+    return string.strip()
 
 
 def pluralise(string: str) -> str:
@@ -351,11 +361,11 @@ def pluralise(string: str) -> str:
     return plural.sub(make_plural, string)
 
 
-def make_plural(match: Match) -> str:
+def make_plural(match: Match[str]) -> str:
     """Returns the single or plural result from a pluralisation match."""
-    amount, single, multiple = match.groups()
+    amount_str, single, multiple = match.groups()
     try:
-        amount = int(amount)
+        amount = int(amount_str)
     except ValueError:
         return multiple
     if amount == 1:
@@ -397,8 +407,11 @@ def frequent_ids(*post_groups: DefaultDict[str, List[PostInfo]]) -> List[str]:
     """From a set of dicts containing grouped posts, return the keys from
     all provided dicts sorted by the number of posts that each key maps to,
     in descending order."""
+    ids: Set[str] = set()
     return sorted(
-        set().union(*cast(Iterable, [group.keys() for group in post_groups])),
+        ids.union(
+            *cast(Iterable[str], [group.keys() for group in post_groups])
+        ),
         key=lambda id: sum(len(group[id]) for group in post_groups),
         reverse=True,
     )

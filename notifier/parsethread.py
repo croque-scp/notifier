@@ -159,7 +159,9 @@ def get_user_from_nametag(nametag: Tag) -> Tuple[Optional[str], Optional[str]]:
         user_id = None
         username = nametag.get_text()
         # Get user ID from JavaScript click event handler
-        click_handler = nametag.contents[0].get_attribute_list("onclick")[0]
+        click_handler = cast(Tag, nametag.contents[0]).get_attribute_list(
+            "onclick"
+        )[0]
         if click_handler is not None:
             # Click handler is not present for guest accounts
             match = re.search(r"[0-9]+", click_handler)

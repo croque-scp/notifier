@@ -2,9 +2,10 @@ import json
 import logging
 from contextlib import contextmanager
 from itertools import chain
-from typing import Iterable, Iterator, List, Tuple, cast
+from typing import Any, Dict, Iterable, Iterator, List, Optional, Tuple, cast
 
 import pymysql
+from pymysql import Connection
 from pymysql.constants.CLIENT import MULTI_STATEMENTS
 from pymysql.cursors import DictCursor
 
@@ -38,7 +39,7 @@ class MySqlDriver(BaseDatabaseDriver, BaseDatabaseWithSqlFileCache):
         BaseDatabaseWithSqlFileCache.__init__(self)
 
         logger.info("Connecting to database...")
-        self.conn = pymysql.connect(
+        self.conn: Connection[DictCursor] = pymysql.connect(
             host=host,
             user=username,
             password=password,
@@ -54,7 +55,7 @@ class MySqlDriver(BaseDatabaseDriver, BaseDatabaseWithSqlFileCache):
 
         self.apply_migrations()
 
-    def __del__(self):
+    def __del__(self) -> None:
         self.conn.close()
 
     @contextmanager
@@ -78,8 +79,8 @@ class MySqlDriver(BaseDatabaseDriver, BaseDatabaseWithSqlFileCache):
     def execute_named(
         self,
         query_name: str,
-        params: Iterable = None,
-        cursor: DictCursor = None,
+        params: Optional[Dict[str, Any]] = None,
+        cursor: Optional[DictCursor] = None,
     ) -> DictCursor:
         """Execute a named query against the database. The query is read
         either from file or the cache.
@@ -100,7 +101,7 @@ class MySqlDriver(BaseDatabaseDriver, BaseDatabaseWithSqlFileCache):
         cursor.execute(query, {} if params is None else params)
         return cursor
 
-    def scrub_database(self):
+    def scrub_database(self) -> None:
         logger.info("Scrubbing database")
         if not self.database_name.endswith("_test"):
             raise RuntimeError("Don't scrub the production database")
@@ -172,7 +173,7 @@ class MySqlDriver(BaseDatabaseDriver, BaseDatabaseWithSqlFileCache):
             current_version = next_version
         logger.info("Applied migrations")
 
-    def create_tables(self):
+    def create_tables(self) -> None:
         with self.transaction() as cursor:
             self.execute_named("create_tables", None, cursor)
 
@@ -331,7 +332,10 @@ class MySqlDriver(BaseDatabaseDriver, BaseDatabaseWithSqlFileCache):
         return user_ids
 
     def store_user_configs(
-        self, user_configs: List[RawUserConfig], *, overwrite_existing=True
+        self,
+        user_configs: List[RawUserConfig],
+        *,
+        overwrite_existing: bool = True,
     ) -> None:
         with self.transaction() as cursor:
             if overwrite_existing:
@@ -447,6 +451,6 @@ class MySqlDriver(BaseDatabaseDriver, BaseDatabaseWithSqlFileCache):
         )
 
 
-def __instantiate():
+def __instantiate() -> None:
     """Raises a typing error if the driver has missing methods."""
     MySqlDriver("", host="", username="", password="")

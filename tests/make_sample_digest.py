@@ -2,7 +2,7 @@ import sys
 from pathlib import Path
 
 from notifier.digest import Digester
-from tests.test_digest import fake_posts, fake_user
+from tests.test_digest import fake_posts, fake_user  # type:ignore
 
 if __name__ == "__main__":
     lang = sys.argv[1]

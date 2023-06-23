@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import Iterable, List, Tuple
+from typing import Any, Iterable, List, Tuple
 
 from notifier.types import (
     CachedUserConfig,
@@ -17,11 +17,11 @@ class BaseDatabaseDriver(ABC):
     any implementations."""
 
     @abstractmethod
-    def __init__(self, database_name: str, **kwargs):
+    def __init__(self, database_name: str, **kwargs: Any):
         """Sets up and connects to the database."""
 
     @abstractmethod
-    def scrub_database(self):
+    def scrub_database(self) -> None:
         """Purges all information from the database. Should only ever be
         used to clear the test database."""
 
@@ -93,7 +93,10 @@ class BaseDatabaseDriver(ABC):
 
     @abstractmethod
     def store_user_configs(
-        self, user_configs: List[RawUserConfig], *, overwrite_existing=True
+        self,
+        user_configs: List[RawUserConfig],
+        *,
+        overwrite_existing: bool = True,
     ) -> None:
         """Caches user notification configurations.
 
