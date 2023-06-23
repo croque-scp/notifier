@@ -1,7 +1,6 @@
 import re
 import time
-from re import Match, Pattern
-from typing import AnyStr, Callable, List, Tuple, Union, cast
+from typing import Callable, List, Tuple, Union, cast, Pattern, Match
 
 from notifier.types import DeliveryMethod
 

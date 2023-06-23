@@ -2,7 +2,6 @@ import re
 from collections import defaultdict
 from functools import lru_cache
 from itertools import groupby
-from re import Match
 from typing import (
     Any,
     Callable,
@@ -15,6 +14,7 @@ from typing import (
     Set,
     Tuple,
     cast,
+    Match,
 )
 
 import tomlkit

@@ -5,6 +5,7 @@ from itertools import chain
 from typing import Any, Dict, Iterable, Iterator, List, Optional, Tuple, cast
 
 import pymysql
+from pymysql import Connection
 from pymysql.constants.CLIENT import MULTI_STATEMENTS
 from pymysql.cursors import DictCursor
 
@@ -38,7 +39,7 @@ class MySqlDriver(BaseDatabaseDriver, BaseDatabaseWithSqlFileCache):
         BaseDatabaseWithSqlFileCache.__init__(self)
 
         logger.info("Connecting to database...")
-        self.conn = pymysql.connect(
+        self.conn: Connection[DictCursor] = pymysql.connect(
             host=host,
             user=username,
             password=password,
