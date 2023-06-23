@@ -24,7 +24,7 @@ def main(
     limit_wikis: Optional[List[str]] = None,
     force_initial_search_timestamp: Optional[int] = None,
     force_current_time: Optional[str] = None,
-    dry_run=False,
+    dry_run: bool = False,
 ) -> None:
     """Main notifier application entrypoint."""
 

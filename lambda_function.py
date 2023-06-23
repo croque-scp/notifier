@@ -1,4 +1,5 @@
 import logging
+from typing import Any, Dict
 
 from notifier.config.local import read_local_auth, read_local_config
 from notifier.main import main
@@ -19,7 +20,7 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 
-def lambda_handler(event, context):
+def lambda_handler(event: Dict[str, str], context: Any) -> int:
     """Handler for an AWS Lambda.
 
     :param event: Event parameter passed to the lambda. Expected to contain the

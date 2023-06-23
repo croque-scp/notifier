@@ -79,7 +79,7 @@ def notify(
     database: BaseDatabaseDriver,
     limit_wikis: Optional[List[str]] = None,
     force_initial_search_timestamp: Optional[int] = None,
-    dry_run=False,
+    dry_run: bool = False,
 ) -> None:
     """Main task executor. Should be called as often as the most frequent
     notification digest.
@@ -165,7 +165,7 @@ def notify_active_channels(
     database: BaseDatabaseDriver,
     connection: Connection,
     force_initial_search_timestamp: Optional[int] = None,
-    dry_run=False,
+    dry_run: bool = False,
 ) -> None:
     """Prepare and send notifications to all activated channels."""
     digester = Digester(config["path"]["lang"])
@@ -197,7 +197,7 @@ def notify_channel(
     connection: Connection,
     digester: Digester,
     emailer: Emailer,
-    dry_run=False,
+    dry_run: bool = False,
 ) -> None:
     """Compiles and sends notifications for all users in a given channel."""
     logger.info("Activating channel %s", {"channel": channel})
@@ -282,7 +282,7 @@ def notify_user(
     digester: Digester,
     emailer: Emailer,
     addresses: EmailAddresses,
-    dry_run=False,
+    dry_run: bool = False,
 ) -> int:
     """Compiles and sends a notification for a single user.
 

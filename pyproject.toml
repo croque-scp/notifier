@@ -46,6 +46,8 @@ disable = [
   "missing-module-docstring", # filenames are good enough
   "redefined-outer-name", # for pytest
   "broad-except", # I understand the risks, but sometimes this is useful
+  "line-too-long", # black can handle itself
+  "consider-using-f-string", # f strings are way too brittle in 3.9
 ]
 
 [tool.mypy]
