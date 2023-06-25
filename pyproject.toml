@@ -16,23 +16,23 @@ feedparser = "^6.0.8"
 emoji = "^1.4.2"
 yagmail = {extras = ["all"], version = "^0.14.256"}
 SecretStorage = "^3.3.1"
-PyMySQL = "^1.0.2"
-boto3 = "^1.18.41"
+pymysql = "^1.0.3"
+boto3 = "^1.26.160"
 python-dateutil = "^2.8.2"
-boto3-stubs = {extras = ["essential"], version = "^1.21.30"}
 
-[tool.poetry.dev-dependencies]
+
+[tool.poetry.group.dev.dependencies]
 black = "^22.3.0"
 pytest = "^6.2.4"
 isort = "^5.9.2"
 pylint = "^2.9.6"
 mypy = "^0.910"
-types-requests = "^2.25.0"
-types-beautifulsoup4 = "^4.9.1"
-types-PyMySQL = "^1.0.2"
-types-emoji = "^1.2.4"
-typing-extensions = "^4.1.1"
 boto3-stubs = "^1.21.30"
+types-beautifulsoup4 = "^4.12.0.5"
+types-requests = "^2.31.0.1"
+typing-extensions = "^4.6.3"
+types-emoji = "^2.1.0.3"
+types-pymysql = "^1.0.19.7"
 
 [tool.black]
 line-length = 79
@@ -49,7 +49,36 @@ disable = [
   "missing-module-docstring", # filenames are good enough
   "redefined-outer-name", # for pytest
   "broad-except", # I understand the risks, but sometimes this is useful
+  "line-too-long", # black can handle itself
+  "consider-using-f-string", # f strings are way too brittle in 3.9
 ]
+
+[tool.mypy]
+strict = true
+
+[[tool.mypy.overrides]]
+module = "yagmail.*"
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+module = "apscheduler.*"
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+module = "boto3.*"
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+module = "feedparser.*"
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+module = "pycron.*"
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+module = "tomlkit.*"
+implicit_reexport = true
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]

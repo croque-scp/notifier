@@ -1,5 +1,5 @@
 import logging
-from typing import List, Tuple, cast
+from typing import List, Optional, Tuple, cast
 
 import feedparser
 
@@ -18,7 +18,7 @@ new_posts_rss = "http://{}.wikidot.com/feed/forum/posts.xml"
 def get_new_posts(
     database: BaseDatabaseDriver,
     connection: Connection,
-    limit_wikis: List[str] = None,
+    limit_wikis: Optional[List[str]] = None,
 ) -> Tuple[int, int]:
     """For each configured wiki, retrieve and store new posts.
 
@@ -177,21 +177,6 @@ def fetch_posts_with_context(
                 "cumulative_full_thread_count": len(full_threads_already_seen),
             },
         )
-
-
-def fetch_post_context(connection: Connection, wiki_id: str, thread_id: str):
-    """Lookup the context of a post in its Wikidot thread.
-
-    Bind the target post's parent post ID, if any, and then return the list
-    of raw post information for all posts in the context.
-    """
-    connection.paginated_module(
-        wiki_id,
-        "forum/ForumViewThreadModule",
-        index_key="pageNo",
-        starting_index=1,
-        t=thread_id.lstrip("t-"),
-    )
 
 
 def fetch_new_posts_rss(wiki_id: str) -> List[Tuple[str, str]]:

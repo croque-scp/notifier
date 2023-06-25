@@ -10,7 +10,11 @@ class Emailer:  # pylint: disable=too-few-public-methods
     """Responsible for sending emails."""
 
     def __init__(
-        self, gmail_username: str, gmail_password: str, *, dry_run=False
+        self,
+        gmail_username: str,
+        gmail_password: str,
+        *,
+        dry_run: bool = False,
     ):
         self.dry_run = dry_run
         if dry_run:

@@ -1,6 +1,6 @@
 import json
 import logging
-from typing import Dict, List, Tuple
+from typing import Any, Dict, List, Tuple, cast
 
 import boto3
 import requests
@@ -101,7 +101,7 @@ def parse_raw_wiki_config(raw_config: str) -> SupportedWikiConfig:
     assert "id" in config
     assert "secure" in config
     assert config["secure"] in (0, 1)
-    return config
+    return cast(SupportedWikiConfig, config)
 
 
 class AWS:
@@ -111,7 +111,7 @@ class AWS:
     client = None
 
     @staticmethod
-    def _get_client(region_name: str):
+    def _get_client(region_name: str) -> Any:
         """Makes or retrieves a connection client."""
         if AWS.client is None:
             AWS.session = boto3.session.Session()

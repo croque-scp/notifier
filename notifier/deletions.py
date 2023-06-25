@@ -31,7 +31,7 @@ StrictPostId = Tuple[str, str, str]
 
 def clear_deleted_posts(
     frequency: str, database: BaseDatabaseDriver, connection: Connection
-):
+) -> None:
     """Remove deleted posts from the database.
 
     For each thread that a user on the given channel would soon be

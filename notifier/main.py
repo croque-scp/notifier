@@ -1,5 +1,5 @@
 import logging
-from typing import List
+from typing import List, Optional
 
 from apscheduler.schedulers.blocking import BlockingScheduler
 from apscheduler.triggers.cron import CronTrigger
@@ -20,12 +20,12 @@ def main(
     *,
     config: LocalConfig,
     auth: AuthConfig,
-    execute_now: List[str] = None,
-    limit_wikis: List[str] = None,
-    force_initial_search_timestamp: int = None,
-    force_current_time: str = None,
-    dry_run=False,
-):
+    execute_now: Optional[List[str]] = None,
+    limit_wikis: Optional[List[str]] = None,
+    force_initial_search_timestamp: Optional[int] = None,
+    force_current_time: Optional[str] = None,
+    dry_run: bool = False,
+) -> None:
     """Main notifier application entrypoint."""
 
     logger.info("The current time is %s", now)

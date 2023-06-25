@@ -10,9 +10,23 @@
   "customizations": {
     "vscode": {
       "settings": {
-        "python.linting.pylintPath": "/workspace/.venv/bin/pylint"
+        "python.defaultInterpreterPath": "./.venv/bin/python",
+        "python.linting.pylintPath": "./.venv/bin/pylint",
+        "python.analysis.extraPaths": [".venv/bin"],
+        "python.linting.mypyEnabled": true,
+        "python.linting.enabled": true,
+        "python.linting.mypyArgs": ["--strict", "--show-column-numbers"],
+        "python.linting.mypyPath": "./venv/bin/mypy",
+        "mypy.runUsingActiveInterpreter": true
       },
-      "extensions": ["ms-azuretools.vscode-docker", "ms-python.black-formatter"]
+      "extensions": [
+        "ms-azuretools.vscode-docker",
+        "ms-python.black-formatter",
+        "matangover.mypy",
+        "ms-python.vscode-pylance",
+        "ms-python.python",
+        "ms-python.pylint"
+      ]
     }
   },
   "remoteUser": "root"

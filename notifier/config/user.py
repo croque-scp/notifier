@@ -40,7 +40,7 @@ def get_user_config(
     local_config: LocalConfig,
     database: BaseDatabaseDriver,
     connection: Connection,
-):
+) -> None:
     """Retrieve remote user config."""
     try_cache(
         get=lambda: find_valid_user_configs(local_config, connection),
@@ -133,7 +133,7 @@ def parse_raw_user_config(
     config["unsubscriptions"] = parse_subscriptions(
         config.get("unsubscriptions", ""), -1
     )
-    return cast(RawUserConfig, config), slug
+    return cast(RawUserConfig, dict(config)), slug
 
 
 def parse_subscriptions(
