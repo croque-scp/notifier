@@ -33,7 +33,7 @@ logger = logging.getLogger(__name__)
 class MySqlDriver(BaseDatabaseDriver, BaseDatabaseWithSqlFileCache):
     """Database powered by MySQL."""
 
-    conn: pymysql.Connect
+    conn: pymysql.Connect[DictCursor]
 
     def __init__(
         self, database_name: str, *, host: str, username: str, password: str
@@ -326,7 +326,13 @@ class MySqlDriver(BaseDatabaseDriver, BaseDatabaseWithSqlFileCache):
         return user_configs
 
     def count_user_configs(self) -> int:
-        return self.execute_named("count_user_configs").fetchone()["count"]
+        return cast(
+            int,
+            (
+                self.execute_named("count_user_configs").fetchone()
+                or {"count": 0}
+            )["count"],
+        )
 
     def get_notifiable_users(self, frequency: str) -> List[str]:
         self.execute_named("cache_post_context")

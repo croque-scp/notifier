@@ -28,7 +28,7 @@ def upload_log_dump_to_s3(
     config: LocalConfig,
     database: BaseDatabaseDriver,
     entry_retain_limit: float = ENTRY_RETAIN_LIMIT,
-):
+) -> None:
     """Uploads an aggregated log dump."""
     # Acquire the dump object from S3
     s3 = boto3.resource("s3")
