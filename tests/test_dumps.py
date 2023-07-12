@@ -4,6 +4,7 @@ from typing import cast
 
 import pytest
 from _pytest.monkeypatch import MonkeyPatch
+from mypy_boto3_s3 import S3ServiceResource
 from mypy_boto3_s3.service_resource import Object
 
 from notifier.database.drivers.base import BaseDatabaseDriver
@@ -16,14 +17,14 @@ def test_upload_dry_run(
     notifier_config: LocalConfig,
     sample_database: BaseDatabaseDriver,
     monkeypatch: MonkeyPatch,
-):
+) -> None:
     """Test generating a log dump and uploading it, but without actually
     touching S3."""
 
-    def fake_object_put(**kwargs):
+    def fake_object_put(**kwargs) -> None:
         assert len(json.loads(kwargs["Body"])["channels"]) == 2
 
-    def fake_s3_resource(_resource: str):
+    def fake_s3_resource(_resource: str) -> S3ServiceResource:
         s3 = lambda: None
         bucket = lambda: None
         dump_object = cast(Object, lambda: None)

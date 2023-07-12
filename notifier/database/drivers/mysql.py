@@ -407,6 +407,15 @@ class MySqlDriver(BaseDatabaseDriver, BaseDatabaseWithSqlFileCache):
         wikis = self.execute_named("get_supported_wikis").fetchall()
         return cast(List[SupportedWikiConfig], list(wikis))
 
+    def count_supported_wikis(self) -> int:
+        return cast(
+            int,
+            (
+                self.execute_named("count_supported_wikis").fetchone()
+                or {"count": 0}
+            )["count"],
+        )
+
     def store_supported_wikis(self, wikis: List[SupportedWikiConfig]) -> None:
         # Destroy all existing wikis in preparation for overwrite
         with self.transaction() as cursor:
