@@ -4,18 +4,12 @@ INSERT INTO
     channel,
     start_timestamp,
     end_timestamp,
-    user_count,
-    notified_user_count,
-    notified_post_count,
-    notified_thread_count
+    notified_user_count
   )
   VALUES
   (
     %(channel)s,
     %(start_timestamp)s,
     %(end_timestamp)s,
-    %(user_count)s,
-    %(notified_user_count)s,
-    %(notified_post_count)s,
-    %(notified_thread_count)s
+    %(notified_user_count)s
   )

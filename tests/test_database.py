@@ -269,19 +269,13 @@ def sample_database(
             "channel": "hourly",
             "start_timestamp": 30,
             "end_timestamp": 31,
-            "user_count": 5,
             "notified_user_count": 2,
-            "notified_post_count": 10,
-            "notified_thread_count": 2,
         },
         {
             "channel": "daily",
             "start_timestamp": 32,
             "end_timestamp": 33,
-            "user_count": 2,
             "notified_user_count": 0,
-            "notified_post_count": 0,
-            "notified_thread_count": 0,
         },
     ]
     sample_activation_log: ActivationLogDump = {
@@ -293,13 +287,6 @@ def sample_database(
         "notify_start_timestamp": 0,
         "notify_end_timestamp": 0,
         "end_timestamp": 0,
-        "new_post_count": 0,
-        "new_thread_count": 0,
-        "checked_thread_count": 0,
-        "site_count": 0,
-        "user_count": 0,
-        "post_count": 0,
-        "thread_count": 0,
     }
     db.store_user_configs(sample_user_configs)
     db.store_supported_wikis(sample_wikis)
