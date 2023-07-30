@@ -7,7 +7,7 @@ services:
       context: .
       dockerfile: ./Dockerfile
       target: test
-    command: "--notifier-config config/config.toml --notifier-auth config/auth.compose.toml --ignore=tests/test_database.py --ignore=tests/test_dumps.py ${PYTEST_ARGS-}"
+    command: "--notifier-config config/config.toml --notifier-auth config/auth.compose.toml -m 'not needs_database' ${PYTEST_ARGS-}"
 
   notifier:
     extends: notifier_without_db

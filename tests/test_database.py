@@ -347,12 +347,14 @@ def post_replies(
     return new_posts_for_user[1]
 
 
+@pytest.mark.needs_database
 def test_counting(sample_database: BaseDatabaseDriver) -> None:
     """Test that the driver can count."""
     assert sample_database.count_supported_wikis() == 1
     assert sample_database.count_user_configs() == 1
 
 
+@pytest.mark.needs_database
 def test_get_replied_posts(post_replies: List[PostReplyInfo]) -> None:
     """Test that the post replies are as expected."""
     assert titles(post_replies) == {
@@ -363,6 +365,7 @@ def test_get_replied_posts(post_replies: List[PostReplyInfo]) -> None:
     }
 
 
+@pytest.mark.needs_database
 def test_get_post_reply_even_if_ignored_thread(
     post_replies: List[PostReplyInfo],
 ) -> None:
@@ -370,6 +373,7 @@ def test_get_post_reply_even_if_ignored_thread(
     assert "Post 411" in titles(post_replies)
 
 
+@pytest.mark.needs_database
 def test_ignore_already_responded_post(
     post_replies: List[PostReplyInfo], thread_posts: List[ThreadPostInfo]
 ) -> None:
@@ -378,6 +382,7 @@ def test_ignore_already_responded_post(
     assert "Post 212" not in titles(post_replies) | titles(thread_posts)
 
 
+@pytest.mark.needs_database
 def test_ignore_own_post_in_thread(thread_posts: List[ThreadPostInfo]) -> None:
     """Test that the user is not notified of their own posts to a thread."""
     assert titles(thread_posts).isdisjoint(
@@ -385,6 +390,7 @@ def test_ignore_own_post_in_thread(thread_posts: List[ThreadPostInfo]) -> None:
     )
 
 
+@pytest.mark.needs_database
 def test_prioritise_reply_deduplication(
     thread_posts: List[ThreadPostInfo],
 ) -> None:
@@ -393,21 +399,25 @@ def test_prioritise_reply_deduplication(
     assert titles(thread_posts).isdisjoint({"Post 111", "Post 211"})
 
 
+@pytest.mark.needs_database
 def test_get_posts_in_threads(thread_posts: List[ThreadPostInfo]) -> None:
     """Test that thread posts are as expected."""
     assert titles(thread_posts) == {"Post 12"}
 
 
+@pytest.mark.needs_database
 def test_respect_ignored_thread(thread_posts: List[ThreadPostInfo]) -> None:
     """Test that posts in ignored threads do not appear as thread posts."""
     assert titles(thread_posts).isdisjoint({"Post 41", "Post 42"})
 
 
+@pytest.mark.needs_database
 def test_new_threads(sample_database: BaseDatabaseDriver) -> None:
     """Test that the utility for checking if threads exists works."""
     assert sample_database.find_new_threads(["t-1", "t-2", "t-99"]) == ["t-99"]
 
 
+@pytest.mark.needs_database
 def test_deleted_thread(sample_database: BaseDatabaseDriver) -> None:
     """Test that marking a thread as deleted works and that it then does
     not appear in notifications."""
@@ -418,6 +428,7 @@ def test_deleted_thread(sample_database: BaseDatabaseDriver) -> None:
     assert "p-111" not in [reply["id"] for reply in posts["post_replies"]]
 
 
+@pytest.mark.needs_database
 def test_deleted_post(sample_database: BaseDatabaseDriver) -> None:
     """Test that marking a post as deleted works and that it then does
     not appear in notifications."""
@@ -431,6 +442,7 @@ def test_deleted_post(sample_database: BaseDatabaseDriver) -> None:
     assert "p-211" not in [reply["id"] for reply in posts["post_replies"]]
 
 
+@pytest.mark.needs_database
 def test_initial_notified_timestamp(sample_database: MySqlDriver) -> None:
     """Test that the initial last notified timestamp for a user is set."""
     with sample_database.transaction() as cursor:
@@ -464,6 +476,7 @@ def test_initial_notified_timestamp(sample_database: MySqlDriver) -> None:
         check_timestamp(2)
 
 
+@pytest.mark.needs_database
 def test_get_notifiable_users(sample_database: BaseDatabaseDriver) -> None:
     """Test that the notifiable users list returns the correct set of users.
 

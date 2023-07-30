@@ -20,7 +20,6 @@ pymysql = "^1.0.3"
 boto3 = "^1.26.160"
 python-dateutil = "^2.8.2"
 
-
 [tool.poetry.group.dev.dependencies]
 black = "^22.3.0"
 pytest = "^6.2.4"
@@ -80,6 +79,11 @@ ignore_missing_imports = true
 [[tool.mypy.overrides]]
 module = "tomlkit.*"
 implicit_reexport = true
+
+[tool.pytest.ini_options]
+markers = [
+  "needs_database: Tests that require the sample database"
+]
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]
