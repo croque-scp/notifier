@@ -33,7 +33,7 @@ logger = logging.getLogger(__name__)
 class MySqlDriver(BaseDatabaseDriver, BaseDatabaseWithSqlFileCache):
     """Database powered by MySQL."""
 
-    conn: pymysql.Connect[DictCursor]
+    conn: "pymysql.Connection[DictCursor]"
 
     def __init__(
         self, database_name: str, *, host: str, username: str, password: str
@@ -44,7 +44,7 @@ class MySqlDriver(BaseDatabaseDriver, BaseDatabaseWithSqlFileCache):
         BaseDatabaseWithSqlFileCache.__init__(self)
 
         logger.info("Connecting to database...")
-        self.conn: Connection[DictCursor] = pymysql.connect(
+        self.conn: "Connection[DictCursor]" = pymysql.connect(
             host=host,
             user=username,
             password=password,
