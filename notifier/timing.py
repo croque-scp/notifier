@@ -15,7 +15,7 @@ def override_current_time(time: str) -> None:
     """Overrides the current time with the given ISO 8601 string."""
     global now
     now = datetime.fromisoformat(time.replace("Z", "+00:00"))
-    logger.info(f"Current time forcibly overridden with {time}")
+    logger.info("Current time forcibly overridden with %s", time)
 
 
 def timestamp() -> int:

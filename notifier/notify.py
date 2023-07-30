@@ -164,12 +164,7 @@ def notify(
     rename_invalid_user_config_pages(config, connection)
 
     activation_end_timestamp = timestamp()
-
-    assert not dry_run
-    logger.info("Uploading log dumps...")
-    record_activation_log(
-        config,
-        database,
+    database.store_activation_log_dump(
         {
             "start_timestamp": activation_start_timestamp,
             "config_start_timestamp": config_start_timestamp,
@@ -179,8 +174,12 @@ def notify(
             "notify_start_timestamp": notify_start_timestamp,
             "notify_end_timestamp": notify_end_timestamp,
             "end_timestamp": activation_end_timestamp,
-        },
+        }
     )
+
+    assert not dry_run
+    logger.info("Uploading log dumps...")
+    record_activation_log(config, database)
 
 
 def notify_active_channels(
