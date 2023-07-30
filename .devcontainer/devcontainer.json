@@ -16,7 +16,12 @@
         "python.linting.mypyEnabled": true,
         "python.linting.enabled": true,
         "python.linting.mypyArgs": ["--strict", "--show-column-numbers"],
-        "python.linting.mypyPath": "./venv/bin/mypy",
+        "python.linting.mypyPath": "./.venv/bin/mypy",
+        "python.formatting.blackPath": "./.venv/bin/black",
+        "black-formatter.path": [
+          "./.venv/bin/black"
+        ],
+        "editor.defaultFormatter": "ms-python.black-formatter",
         "mypy.runUsingActiveInterpreter": true
       },
       "extensions": [
