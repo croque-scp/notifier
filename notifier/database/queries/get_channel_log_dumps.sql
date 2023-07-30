@@ -2,10 +2,7 @@ SELECT
   channel,
   start_timestamp,
   end_timestamp,
-  user_count,
-  notified_user_count,
-  notified_post_count,
-  notified_thread_count
+  notified_user_count
 FROM
   channel_log_dump
 WHERE

@@ -120,9 +120,7 @@ def notify(
         logger.info("Dry run: skipping new post acquisition")
     else:
         logger.info("Getting new posts...")
-        downloaded_thread_count, downloaded_post_count = get_new_posts(
-            database, connection, limit_wikis
-        )
+        get_new_posts(database, connection, limit_wikis)
     # The timestamp immediately after downloading posts will be used as the
     # upper bound of posts to notify users about
     getpost_end_timestamp = timestamp()
@@ -181,10 +179,6 @@ def notify(
             "notify_start_timestamp": notify_start_timestamp,
             "notify_end_timestamp": notify_end_timestamp,
             "end_timestamp": activation_end_timestamp,
-            "sites_count": database.count_supported_wikis(),
-            "user_count": database.count_user_configs(),
-            "downloaded_post_count": downloaded_post_count,
-            "downloaded_thread_count": downloaded_thread_count,
         },
     )
 
@@ -311,10 +305,7 @@ def notify_channel(
             "channel": channel,
             "start_timestamp": channel_start_timestamp,
             "end_timestamp": timestamp(),
-            "user_count": len(user_configs),
             "notified_user_count": notified_users,
-            "notified_post_count": notified_posts,
-            "notified_thread_count": notified_threads,
         }
         logger.info("Recording channel activation log %s", channel_log_dump)
         database.store_channel_log_dump(channel_log_dump)

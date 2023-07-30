@@ -6,16 +6,7 @@ SELECT
   getpost_end_timestamp,
   notify_start_timestamp,
   notify_end_timestamp,
-  end_timestamp,
-
-  new_post_count,
-  new_thread_count,
-  checked_thread_count,
-
-  site_count,
-  user_count,
-  post_count,
-  thread_count
+  end_timestamp
 FROM
   activation_log_dump
 WHERE

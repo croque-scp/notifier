@@ -481,10 +481,7 @@ class MySqlDriver(BaseDatabaseDriver, BaseDatabaseWithSqlFileCache):
                 "channel": log["channel"],
                 "start_timestamp": log["start_timestamp"],
                 "end_timestamp": log["end_timestamp"],
-                "user_count": log["user_count"],
                 "notified_user_count": log["notified_user_count"],
-                "notified_post_count": log["notified_post_count"],
-                "notified_thread_count": log["notified_thread_count"],
             },
         )
 
@@ -501,13 +498,6 @@ class MySqlDriver(BaseDatabaseDriver, BaseDatabaseWithSqlFileCache):
                 "notify_start_timestamp": log["notify_start_timestamp"],
                 "notify_end_timestamp": log["notify_end_timestamp"],
                 "end_timestamp": log["end_timestamp"],
-                "new_post_count": log["new_post_count"],
-                "new_thread_count": log["new_thread_count"],
-                "checked_thread_count": log["checked_thread_count"],
-                "site_count": log["site_count"],
-                "user_count": log["user_count"],
-                "post_count": log["post_count"],
-                "thread_count": log["thread_count"],
             },
         )
 

@@ -202,20 +202,16 @@ EmailAddresses = Dict[str, str]
 
 
 class ChannelLogDump(TypedDict):
-    """Structure of the JSON public log dump, one per channel activation.
-    All data must be aggregated and anonymised."""
+    """Structure of public stats per channel."""
 
     channel: str
     start_timestamp: int
     end_timestamp: int
-    user_count: int
     notified_user_count: int
-    notified_post_count: int
-    notified_thread_count: int
 
 
-class ActivationLogDumpTimestamps(TypedDict):
-    """Timestamps of stages of the notifier process for an activation."""
+class ActivationLogDump(TypedDict):
+    """Structure of public stats per activation."""
 
     start_timestamp: int
     config_start_timestamp: int
@@ -227,33 +223,8 @@ class ActivationLogDumpTimestamps(TypedDict):
     end_timestamp: int
 
 
-class ActivationLogDumpDownloadInfo(TypedDict):
-    """Info about the post download stage of the activation."""
-
-    new_post_count: int
-    new_thread_count: int
-    checked_thread_count: int
-
-
-class ActivationLogDumpCumulativeInfo(TypedDict):
-    """Cumulative general stats as of the activation."""
-
-    site_count: int
-    user_count: int
-    post_count: int
-    thread_count: int
-
-
-class ActivationLogDump(
-    ActivationLogDumpTimestamps,
-    ActivationLogDumpDownloadInfo,
-    ActivationLogDumpCumulativeInfo,
-):
-    """Structure of the JSON public log dump, one per activation."""
-
-
 class LogDump(TypedDict):
-    """The full log dump as a collection of channel log dumps."""
+    """Full public stats as combination of activations and channels."""
 
     activations: List[ActivationLogDump]
     channels: List[ChannelLogDump]
