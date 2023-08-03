@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <title>Notifier - status indicator</title>
+
+    <script>
+      addEventListener("DOMContentLoaded", async () => {
+        const abortController = new AbortController()
+        const abortTimer = setTimeout(() => abortController.abort(), 10000)
+
+        let recentNotifications
+        try {
+          const response = await fetch(
+            "https://d30oi1o0d99sd7.cloudfront.net/logs/recent_notifications.json",
+            { signal: abortController.signal }
+          )
+          clearTimeout(abortTimer)
+          if (!response.ok) throw new Error(response)
+          recentNotifications = response.json()
+        } catch (error) {
+          console.error("Unable to retrieve notifier stats")
+          throw error
+        }
+
+        
+      })
+    </script>
+
+    <style>
+      :root {
+        font-family: sans-serif;
+        color: white;
+
+        --status-success: #3c1;
+
+        --status-color: var(--status-success);
+      }
+
+      article {
+        display: grid;
+        grid-template-areas: "status header" "status footer";
+        grid-template-columns: 4rem 10rem;
+        grid-template-rows: 1.75rem 2.25rem;
+
+        width: 14rem;
+
+        border-radius: 0.3rem;
+        background-color: #555;
+        box-shadow: 0 0.1rem 0.1rem rgba(0, 0, 0, 0.5);
+        overflow: hidden;
+      }
+
+      aside {
+        position: relative;
+        grid-area: status;
+        background-image: linear-gradient(to bottom, rgb(238, 238, 238, 0.1), transparent, rgb(12, 12, 12, 0.1));
+        background-color: var(--status-color);
+        box-shadow: 0.1rem 0 0.2rem rgba(0, 0, 0, 0.25);
+
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+      }
+
+      header, footer {
+        display: flex;
+        align-items: center;
+        padding: 0.5rem;
+      }
+
+      header {
+        grid-area: header;
+        background-image: linear-gradient(to bottom, rgb(238, 238, 238, 0.1), transparent);
+        justify-content: space-between;
+      }
+
+      header::after {
+        content: "";
+        border-radius: 50%;
+        background-color: var(--status-color);
+        width: 0.75rem;
+        height: 0.75rem;
+        background-image: linear-gradient(to bottom, rgb(238, 238, 238, 0.1), transparent);
+      }
+
+      footer {
+        grid-area: footer;
+        background-image: linear-gradient(to bottom, rgb(12, 12, 12, 0.1), transparent, rgb(238, 238, 238, 0.1));
+        box-shadow: inset 0 0.1rem 0.2rem rgba(0, 0, 0, 0.25);
+      }
+
+      h1 {
+        margin: 0;
+        font-size: 1rem;
+        line-height: 1;
+        font-weight: 600;
+        text-shadow: 0.1rem 0.1rem rgba(0, 0, 0, 0.25);
+      }
+    </style>
+  </head>
+
+  <body>
+    <article>
+      <aside>
+        <img class="notifier-logo" src="assets/envelope.svg">
+        <img class="notifier-status">
+      </aside>
+
+      <header>
+        <h1>Notifier status</h1>
+      </header>
+
+      <footer>
+        <p>
+
+        </p>
+      </footer>
+    </article>
+  </body>
+</html>
