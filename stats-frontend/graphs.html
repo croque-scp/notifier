@@ -111,60 +111,63 @@
           ],
         }
 
-        new Chart(document.getElementById("graph-duration"), {
-          type: "bar",
-          data: durationData,
-          options: {
-            plugins: {
-              title: {
-                display: true,
-                text: "Notifier run durations"
-              },
-              legend: {
+        const durationGraph = new Chart(
+          document.getElementById("graph-duration"),
+          {
+            type: "bar",
+            data: durationData,
+            options: {
+              plugins: {
                 title: {
                   display: true,
-                  text: "Time spent per stage",
-                }
-              }
-            },
-            responsive: true,
-            spanGaps: 1000 * 60 * 60 * 24 * 2,
-            scales: {
-              x: {
-                stacked: true,
-                type: "time",
-                title: {
-                  display: "true",
-                  text: "Date",
+                  text: "Notifier run durations"
                 },
-                ticks: {
-                  autoSkip: false,
-                  maxRotation: 0,
-                  major: {
-                    enabled: true,
-                  },
-                  font(context) {
-                    if (context.tick && context.tick.major) return { weight: "bold" }
+                legend: {
+                  title: {
+                    display: true,
+                    text: "Time spent per stage",
                   }
                 }
               },
-              y: {
-                stacked: true,
-                title: {
-                  display: true,
-                  text: "Duration / min",
+              responsive: true,
+              spanGaps: 1000 * 60 * 60 * 24 * 2,
+              scales: {
+                x: {
+                  stacked: true,
+                  type: "time",
+                  title: {
+                    display: "true",
+                    text: "Date",
+                  },
+                  ticks: {
+                    autoSkip: false,
+                    maxRotation: 0,
+                    major: {
+                      enabled: true,
+                    },
+                    font(context) {
+                      if (context.tick && context.tick.major) return { weight: "bold" }
+                    }
+                  }
+                },
+                y: {
+                  stacked: true,
+                  title: {
+                    display: true,
+                    text: "Duration / min",
+                  }
                 }
-              }
-            },
-            elements: {
-              bar: {
-                borderColor: "white",
-                borderWidth: 0.5,
-                borderSkipped: ["left"],
+              },
+              elements: {
+                bar: {
+                  borderColor: "white",
+                  // borderWidth: 0.5,
+                  borderSkipped: ["left"],
+                }
               }
             }
           }
-        })
+        )
 
         // Notifications count graph
 
@@ -188,58 +191,107 @@
           })
         }
 
-        new Chart(document.getElementById("graph-notifications"), {
-          type: "bar",
-          data: notificationsCountData,
-          options: {
-            plugins: {
-              title: {
-                display: true,
-                text: "Sent notifications"
-              },
-              legend: {
+        const notificationCountGraph = new Chart(
+          document.getElementById("graph-notifications"),
+          {
+            type: "bar",
+            data: notificationsCountData,
+            options: {
+              plugins: {
                 title: {
                   display: true,
-                  text: "Notifications sent per channel",
-                }
-              }
-            },
-            responsive: true,
-            spanGaps: 1000 * 60 * 60 * 24 * 2,
-            scales: {
-              x: {
-                stacked: true,
-                type: "time",
-                title: {
-                  display: "true",
-                  text: "Date",
+                  text: "Sent notifications"
                 },
-                ticks: {
-                  autoSkip: false,
-                  maxRotation: 0,
-                  major: {
-                    enabled: true,
-                  },
-                  font(context) {
-                    if (context.tick && context.tick.major) return { weight: "bold" }
+                legend: {
+                  title: {
+                    display: true,
+                    text: "Notifications sent per channel",
                   }
                 }
               },
-              y: {
-                title: {
-                  display: true,
-                  text: "Notifications sent",
+              responsive: true,
+              spanGaps: 1000 * 60 * 60 * 24 * 2,
+              scales: {
+                x: {
+                  stacked: true,
+                  type: "time",
+                  title: {
+                    display: "true",
+                    text: "Date",
+                  },
+                  ticks: {
+                    autoSkip: false,
+                    maxRotation: 0,
+                    major: {
+                      enabled: true,
+                    },
+                    font(context) {
+                      if (context.tick && context.tick.major) return { weight: "bold" }
+                    }
+                  }
+                },
+                y: {
+                  title: {
+                    display: true,
+                    text: "Notifications sent",
+                  }
                 }
-              }
-            },
-            borderJoinStyle: "round",
+              },
+              borderJoinStyle: "round",
+            }
           }
-        })
+        )
+
+        // Let user pick data period
+
+        function setDataThreshold(threshold) {
+          const latestActivation = recentNotifications.activations.at(-1)
+          let boundary = (latestActivation["start_timestamp"] - threshold) * 1000
+          if (threshold < 0) boundary = ""
+
+          durationGraph.options.scales.x.min = boundary
+          durationGraph.update()
+          notificationCountGraph.options.scales.x.min = boundary
+          notificationCountGraph.update()
+        }
+        document.querySelectorAll("input[name=dataThreshold]").forEach(
+          input => {
+            input.addEventListener("change", () => setDataThreshold(input.value))
+            if (input.checked) setDataThreshold(input.value)
+            input.disabled = false
+          }
+        )
       })
     </script>
+
+    <style>
+      :root {
+        font-family: sans-serif;
+      }
+    </style>
   </head>
   <body>
+    <p>
+      Show data from the last
+      <label>
+        <input type="radio" disabled name="dataThreshold" value="86400" autocomplete="off">
+        day
+      </label>
+      <label>
+        <input type="radio" disabled checked name="dataThreshold" value="604800" autocomplete="off">
+        week
+      </label>
+      <label>
+        <input type="radio" disabled name="dataThreshold" value="2630000" autocomplete="off">
+        month
+      </label>
+      <label>
+        <input type="radio" disabled name="dataThreshold" value="-1" autocomplete="off">
+        3 months (max)
+      </label>
+    </p>
     <canvas id="graph-duration"></canvas>
+    <br>
     <canvas id="graph-notifications"></canvas>
   </body>
 </html>
