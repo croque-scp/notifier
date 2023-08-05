@@ -34,7 +34,12 @@
           },
           missedLots() {
             setRootStatus("failure")
-            setStatusDetails("Service not currently running.")
+            if (detail)
+              setStatusDetails(
+                "Temporarily offline",
+                `Last run ${new Date(detail * 1000).toISOString().split("T")[0]}`,
+              )
+            else setStatusDetails("Offline")
           }
         }[status]()
       }
@@ -115,12 +120,18 @@
         }
 
         // If there are less than X missed notifications, show that number and indicate failure
-        const missedActivationsThreshold = 6
-        if (missedActivations <= missedActivationsThreshold)
+        const missedActivationsThreshold = 24
+        if (missedActivations > 1 && missedActivations <= missedActivationsThreshold)
           return setStatus("missedSeveral", missedActivations)
 
         // If there are more than X missed notifications, indicate that notifier is offline
-        else return setStatus("missedLots")
+        if (missedActivations > missedActivationsThreshold) {
+          // Use last known notification to display date
+          if (latestNotificationTimestamp)
+            return setStatus("missedLots", latestNotificationTimestamp)
+          // If no last notification present (not currently possible?) imply permanently offline
+          else return setStatus("missedLots")
+        }
 
         // That should match all conditions, but fallback just in case
         return setStatus("indeterminate")
