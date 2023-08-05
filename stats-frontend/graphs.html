@@ -7,9 +7,12 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js@^4"></script>
     <script src="https://cdn.jsdelivr.net/npm/luxon@^3"></script>
     <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-luxon@^1"></script>
+    <script src="assets/createResizeIframe.js"></script>
 
     <script>
       addEventListener("DOMContentLoaded", async () => {
+        autoResizeIframe("http://notifications.wikidot.com")
+
         const abortController = new AbortController()
         const abortTimer = setTimeout(() => abortController.abort(), 10000)
 
@@ -267,6 +270,11 @@
     <style>
       :root {
         font-family: sans-serif;
+      }
+
+      html, body {
+        padding: 0;
+        margin: 0;
       }
     </style>
   </head>
