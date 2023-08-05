@@ -1,10 +1,65 @@
 <!DOCTYPE html>
 
-<html>
+<html data-status="loading">
   <head>
     <title>Notifier - status indicator</title>
 
     <script>
+      function setStatus(status, detail) {
+        void {
+          indeterminate() {
+            setRootStatus("indeterminate")
+            setStatusDetails("Couldn't retrieve latest data.")
+          },
+          success() {
+            setRootStatus("success")
+            setStatusDetails(
+              `Last run ended <b>${Math.floor((detail % 3600) / 60)}</b> m ago`,
+              `Next run due ${nextRunDue()}`,
+            )
+          },
+          waiting() {
+            setRootStatus("success")
+            setStatusDetails(
+              "Currently running!",
+              `Estimated <b>~${Math.round(detail / 60)}</b> m`,
+            )
+          },
+          missedSeveral() {
+            setRootStatus("failure")
+            setStatusDetails(
+              `Missed <b>${detail}</b> run${detail > 1 ? "s" : ""}.`,
+              `Next run due ${nextRunDue()}`,
+            )
+          },
+          missedLots() {
+            setRootStatus("failure")
+            setStatusDetails("Service not currently running.")
+          }
+        }[status]()
+      }
+
+      function setStatusDetails(...details) {
+        const statusDetails = document.getElementById("status-details")
+        statusDetails.innerHTML = details.join(" <br> ")
+      }
+
+      function setRootStatus(status) {
+        document.documentElement.dataset.status = status
+      }
+
+      function nextRunDue() {
+        const minsUntilNextRun = Math.round(
+          60 - ((Date.now() / 1000) % 3600) / 60
+        )
+        if (minsUntilNextRun > 0) return `in <b>${minsUntilNextRun}</b> m`
+        return "<b>now</b>"
+      }
+
+      function nearestHour(timestamp) {
+        return Math.floor(timestamp / 3600) * 3600
+      }
+
       addEventListener("DOMContentLoaded", async () => {
         const abortController = new AbortController()
         const abortTimer = setTimeout(() => abortController.abort(), 10000)
@@ -13,18 +68,66 @@
         try {
           const response = await fetch(
             "https://d30oi1o0d99sd7.cloudfront.net/logs/recent_notifications.json",
+            // "assets/sample_notifications.json",
             { signal: abortController.signal }
           )
           clearTimeout(abortTimer)
           if (!response.ok) throw new Error(response)
-          recentNotifications = response.json()
+          recentNotifications = await response.json()
         } catch (error) {
           console.error("Unable to retrieve notifier stats")
+          setStatus("indeterminate")
           throw error
         }
 
-        
+        // Evaluate retrieved notifications
+
+        // Use the current timestamp to work out how many missed activations there are
+        const now = Math.floor(Date.now() / 1000)
+        const latestNotificationTimestamp = Math.max(
+          ...recentNotifications.activations.map(a => a["end_timestamp"])
+        )
+
+        const missedActivations = (
+          nearestHour(now) - nearestHour(latestNotificationTimestamp)
+        ) / 3600
+
+        // If there are 0 missed notifications, success
+        if (missedActivations === 0)
+          return setStatus("success", now - latestNotificationTimestamp)
+
+        // If there is 1 missed notification, but is currently within the first ~quarter hour, we might just be waiting for it - show success but indicate waiting
+        if (missedActivations === 1) {
+          // Take the average of recent notifications to guess the ETA
+          const avgRunTime = 1.2 * (() => {
+            const recentActivations = recentNotifications.activations.slice(-24)
+            const durations = recentActivations.map(
+              a => Math.round((a["end_timestamp"] - a["start_timestamp"]))
+            )
+            return durations.reduce((a, b) => (a + b)) / durations.length
+          })()
+          if (now - nearestHour(now) < avgRunTime)
+            return setStatus("waiting", avgRunTime)
+          
+          // Run might overrun - allow up to 15 mins
+          if (now - nearestHour(now) < 900)
+            return setStatus("waiting", 900)
+        }
+
+        // If there are less than X missed notifications, show that number and indicate failure
+        const missedActivationsThreshold = 6
+        if (missedActivations <= missedActivationsThreshold)
+          return setStatus("missedSeveral", missedActivations)
+
+        // If there are more than X missed notifications, indicate that notifier is offline
+        else return setStatus("missedLots")
+
+        // That should match all conditions, but fallback just in case
+        return setStatus("indeterminate")
       })
+
+      // Temporary, for testing
+      // setTimeout(() => setStatus("indeterminate"), 3000)
     </script>
 
     <style>
@@ -32,16 +135,36 @@
         font-family: sans-serif;
         color: white;
 
-        --status-success: #3c1;
+        --status-color-loading: hsl(0, 0%, 53%);
+        --status-color-success: hsl(109, 75%, 43%);
+        --status-color-failure: hsl(0, 75%, 43%);
 
-        --status-color: var(--status-success);
+        --status-icon-loading: url(assets/loading.svg);
+        --status-icon-success: url(assets/check.svg);
+        --status-icon-failure: url(assets/close.svg);
+        --status-icon-indeterminate: url(assets/indeterminate.svg);
+
+        --status-color: var(--status-color-loading);
+        --status-icon: var(--status-icon-loading);
+      }
+      :root[data-status=success] {
+        --status-color: var(--status-color-success);
+        --status-icon: var(--status-icon-success);
+      }
+      :root[data-status=failure] {
+        --status-color: var(--status-color-failure);
+        --status-icon: var(--status-icon-failure);
+      }
+      :root[data-status=indeterminate] {
+        --status-color: var(--status-color-indeterminate);
+        --status-icon: var(--status-icon-indeterminate);
       }
 
       article {
         display: grid;
         grid-template-areas: "status header" "status footer";
-        grid-template-columns: 4rem 10rem;
-        grid-template-rows: 1.75rem 2.25rem;
+        grid-template-columns: 3.25rem 10.75rem;
+        grid-template-rows: 1.5rem 2.5rem;
 
         width: 14rem;
 
@@ -52,15 +175,18 @@
       }
 
       aside {
-        position: relative;
         grid-area: status;
-        background-image: linear-gradient(to bottom, rgb(238, 238, 238, 0.1), transparent, rgb(12, 12, 12, 0.1));
-        background-color: var(--status-color);
-        box-shadow: 0.1rem 0 0.2rem rgba(0, 0, 0, 0.25);
 
         display: flex;
         flex-direction: column;
         align-items: center;
+        justify-content: center;
+        gap: 0.125rem;
+
+        background-image: linear-gradient(to bottom, rgb(238, 238, 238, 0.2), transparent, rgb(12, 12, 12, 0.1));
+        background-color: var(--status-color);
+        box-shadow: 0.1rem 0 0.2rem rgba(0, 0, 0, 0.25);
+        transition: background-color 0.3s ease;
       }
 
       header, footer {
@@ -81,21 +207,59 @@
         background-color: var(--status-color);
         width: 0.75rem;
         height: 0.75rem;
-        background-image: linear-gradient(to bottom, rgb(238, 238, 238, 0.1), transparent);
+        background-image: linear-gradient(to bottom, rgb(238, 238, 238, 0.2), transparent);
+        box-shadow: 0 0rem 0.2rem rgba(0, 0, 0, 0.25);
       }
 
       footer {
         grid-area: footer;
-        background-image: linear-gradient(to bottom, rgb(12, 12, 12, 0.1), transparent, rgb(238, 238, 238, 0.1));
+        background-image: linear-gradient(to bottom, rgb(12, 12, 12, 0.1), transparent);
         box-shadow: inset 0 0.1rem 0.2rem rgba(0, 0, 0, 0.25);
       }
 
-      h1 {
+      h1, p {
         margin: 0;
-        font-size: 1rem;
+        font-size: 0.875rem;
         line-height: 1;
         font-weight: 600;
         text-shadow: 0.1rem 0.1rem rgba(0, 0, 0, 0.25);
+      }
+
+      p {
+        font-size: 0.8125rem;
+        font-weight: 400;
+        white-space: nowrap;
+        line-height: 1.1;
+      }
+
+      .icon-logo, .icon-status {
+        background-size: contain;
+        background-position: center;
+      }
+      .icon-logo, .icon-status-wrapper {
+        filter: drop-shadow(0.05rem 0.1rem rgba(0, 0, 0, 0.25));
+      }
+
+      .icon-logo {
+        height: 1rem;
+        width: 1rem;
+        background-image: url(assets/envelope.svg);
+      }
+
+      .icon-status {
+        height: 2.25rem;
+        width: 2.25rem;
+        background-image: var(--status-icon);
+      }
+
+      @media (prefers-reduced-motion: no-preference) {
+        :root[data-status=loading] .icon-status {
+          animation: spin 1.5s infinite linear;
+        }
+      }
+      @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
       }
     </style>
   </head>
@@ -103,8 +267,10 @@
   <body>
     <article>
       <aside>
-        <img class="notifier-logo" src="assets/envelope.svg">
-        <img class="notifier-status">
+        <div class="icon-logo"></div>
+        <div class="icon-status-wrapper">
+          <div class="icon-status"></div>
+        </div>
       </aside>
 
       <header>
@@ -112,8 +278,8 @@
       </header>
 
       <footer>
-        <p>
-
+        <p id="status-details">
+          Checking...
         </p>
       </footer>
     </article>
