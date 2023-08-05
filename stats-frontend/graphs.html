@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <title>Notifier - graphs</title>
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@^4"></script>
+    <script src="https://cdn.jsdelivr.net/npm/luxon@^3"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-luxon@^1"></script>
+
+    <script>
+      // Duration graph
+      addEventListener("DOMContentLoaded", async () => {
+        const abortController = new AbortController()
+        const abortTimer = setTimeout(() => abortController.abort(), 10000)
+
+        let recentNotifications
+        try {
+          const response = await fetch(
+            "https://d30oi1o0d99sd7.cloudfront.net/logs/recent_notifications.json",
+            { signal: abortController.signal }
+          )
+          clearTimeout(abortTimer)
+          if (!response.ok) throw new Error(response)
+          recentNotifications = await response.json()
+        } catch (error) {
+          console.error("Unable to retrieve notifier stats")
+          throw error
+        }
+
+        // Process activations into chartable data
+
+        recentNotifications.activations.forEach(activation => {
+          activation.channels = recentNotifications.channels.filter(
+            channel => (
+              channel["start_timestamp"] > activation["start_timestamp"]
+              && channel["end_timestamp"] < activation["end_timestamp"]
+            )
+          )
+        })
+
+        function duration(startPhase, endPhase) {
+          return activation => {
+            return {
+              x: activation["start_timestamp"] * 1000,
+              y: (activation[endPhase] - activation[startPhase] ) / 60,
+            }
+          }
+        }
+
+        const palette = {
+          pink: "#e7298a",
+          green: "#66a61e",
+          yellow: "#e6ab02",
+          purple: "#7570b3",
+          brown: "#a6761d",
+          orange: "#d95f02",
+          teal: "#1b9e77",
+          grey: "#999999",
+        }
+        const channelPalette = {
+          hourly: palette.yellow,
+          "8hourly": palette.orange,
+          daily: palette.green,
+          weekly: palette.brown,
+          monthly: palette.pink,
+        }
+
+        const data = {
+          datasets: [
+            {
+              label: "Configuration",
+              data: recentNotifications.activations.map(
+                duration("start_timestamp", "config_end_timestamp")
+              ),
+              backgroundColor: palette.grey,
+            },
+            {
+              label: "Getting new posts",
+              data: recentNotifications.activations.map(
+                duration("getpost_start_timestamp", "getpost_end_timestamp")
+              ),
+              backgroundColor: palette.teal,
+            },
+            ...Array.from(
+              new Set(recentNotifications.channels.map(c => c["channel"]))
+            ).map(channelName => {
+              return {
+                label: `Notifying ${channelName}`,
+                data: recentNotifications.activations.filter(
+                  a => a.channels.some(c => c["channel"] === channelName)
+                ).map(activation => {
+                  const channel = activation.channels.find(c => c["channel"] === channelName)
+                  return {
+                    x: activation["start_timestamp"] * 1000,
+                    y: (channel["end_timestamp"] - channel["start_timestamp"] ) / 60,
+                  }
+                }),
+                backgroundColor: channelPalette[channelName],
+              }
+            }),
+            {
+              label: "Cleanup",
+              data: recentNotifications.activations.map(
+                duration("notify_end_timestamp", "end_timestamp")
+              ),
+              backgroundColor: palette.purple,
+            },
+          ],
+        }
+
+        // Create chart
+
+        new Chart(document.getElementById("graph-duration"), {
+          type: "bar",
+          data,
+          options: {
+            plugins: {
+              title: {
+                display: true,
+                text: "Notifier run durations"
+              }
+            },
+            responsive: true,
+            spanGaps: 1000 * 60 * 60 * 24 * 2,
+            scales: {
+              x: {
+                stacked: true,
+                type: "time",
+                title: {
+                  display: "true",
+                  text: "Date",
+                },
+                ticks: {
+                  autoSkip: false,
+                  maxRotation: 0,
+                  major: {
+                    enabled: true,
+                  },
+                  font(context) {
+                    if (context.tick && context.tick.major) return { weight: "bold" }
+                  }
+                }
+              },
+              y: {
+                stacked: true,
+                title: {
+                  display: true,
+                  text: "Duration / min",
+                }
+              }
+            },
+            elements: {
+              bar: {
+                borderColor: "white",
+                borderWidth: 0.5,
+                borderSkipped: ["left"],
+              }
+            }
+          }
+        })
+      })
+    </script>
+  </head>
+  <body>
+    <canvas id="graph-duration"></canvas>
+  </body>
+</html>
