@@ -153,3 +153,10 @@ and run tests against it:
 ```shell
 docker compose -f docker-compose.test.yml up --build --abort-on-container-exit
 ```
+
+## Status
+
+Status frontends are located at:
+
+* https://croque-scp.github.io/notifier/status.html
+* https://croque-scp.github.io/notifier/graphs.html
