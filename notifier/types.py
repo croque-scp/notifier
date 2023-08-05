@@ -24,6 +24,13 @@ class DatabaseConfig(TypedDict):
     database_name: str
 
 
+class LogDumpS3Config(TypedDict):
+    """Configuration for uploading a log dump to S3."""
+
+    bucket_name: str
+    object_key: str
+
+
 class LocalConfig(TypedDict):
     """Contents of the local config file."""
 
@@ -35,6 +42,7 @@ class LocalConfig(TypedDict):
     gmail_username: str
     database: DatabaseConfig
     path: LocalConfigPaths
+    log_dump_s3: LogDumpS3Config
 
 
 class SupportedWikiConfig(TypedDict):
@@ -191,3 +199,32 @@ class NewPostsInfo(TypedDict):
 
 # Email addresses keyed by Wikidot usernames.
 EmailAddresses = Dict[str, str]
+
+
+class ChannelLogDump(TypedDict):
+    """Structure of public stats per channel."""
+
+    channel: str
+    start_timestamp: int
+    end_timestamp: int
+    notified_user_count: int
+
+
+class ActivationLogDump(TypedDict):
+    """Structure of public stats per activation."""
+
+    start_timestamp: int
+    config_start_timestamp: int
+    config_end_timestamp: int
+    getpost_start_timestamp: int
+    getpost_end_timestamp: int
+    notify_start_timestamp: int
+    notify_end_timestamp: int
+    end_timestamp: int
+
+
+class LogDump(TypedDict):
+    """Full public stats as combination of activations and channels."""
+
+    activations: List[ActivationLogDump]
+    channels: List[ChannelLogDump]

@@ -1,4 +1,4 @@
-from typing import Any, Callable, Dict, List, Optional, Sequence, Set, Tuple
+from typing import List, Optional, Sequence, Set, Tuple
 
 import pytest
 
@@ -6,7 +6,9 @@ from notifier.database.drivers.base import BaseDatabaseDriver
 from notifier.database.drivers.mysql import MySqlDriver
 from notifier.database.utils import resolve_driver_from_config
 from notifier.types import (
+    ActivationLogDump,
     AuthConfig,
+    ChannelLogDump,
     LocalConfig,
     PostReplyInfo,
     RawPost,
@@ -262,6 +264,30 @@ def sample_database(
             "username": "UserD2",
         },
     ]
+    sample_channel_log: List[ChannelLogDump] = [
+        {
+            "channel": "hourly",
+            "start_timestamp": 30,
+            "end_timestamp": 31,
+            "notified_user_count": 2,
+        },
+        {
+            "channel": "daily",
+            "start_timestamp": 32,
+            "end_timestamp": 33,
+            "notified_user_count": 0,
+        },
+    ]
+    sample_activation_log: ActivationLogDump = {
+        "start_timestamp": 0,
+        "config_start_timestamp": 0,
+        "config_end_timestamp": 0,
+        "getpost_start_timestamp": 0,
+        "getpost_end_timestamp": 0,
+        "notify_start_timestamp": 0,
+        "notify_end_timestamp": 0,
+        "end_timestamp": 0,
+    }
     db.store_user_configs(sample_user_configs)
     db.store_supported_wikis(sample_wikis)
     for thread in sample_threads:
@@ -270,6 +296,9 @@ def sample_database(
         db.store_thread_first_post(thread_id, post_id)
     for post in sample_posts:
         db.store_post(post)
+    for channel_log in sample_channel_log:
+        db.store_channel_log_dump(channel_log)
+    db.store_activation_log_dump(sample_activation_log)
     return db
 
 
@@ -305,6 +334,14 @@ def post_replies(
     return new_posts_for_user[1]
 
 
+@pytest.mark.needs_database
+def test_counting(sample_database: BaseDatabaseDriver) -> None:
+    """Test that the driver can count."""
+    assert sample_database.count_supported_wikis() == 1
+    assert sample_database.count_user_configs() == 1
+
+
+@pytest.mark.needs_database
 def test_get_replied_posts(post_replies: List[PostReplyInfo]) -> None:
     """Test that the post replies are as expected."""
     assert titles(post_replies) == {
@@ -315,6 +352,7 @@ def test_get_replied_posts(post_replies: List[PostReplyInfo]) -> None:
     }
 
 
+@pytest.mark.needs_database
 def test_get_post_reply_even_if_ignored_thread(
     post_replies: List[PostReplyInfo],
 ) -> None:
@@ -322,6 +360,7 @@ def test_get_post_reply_even_if_ignored_thread(
     assert "Post 411" in titles(post_replies)
 
 
+@pytest.mark.needs_database
 def test_ignore_already_responded_post(
     post_replies: List[PostReplyInfo], thread_posts: List[ThreadPostInfo]
 ) -> None:
@@ -330,6 +369,7 @@ def test_ignore_already_responded_post(
     assert "Post 212" not in titles(post_replies) | titles(thread_posts)
 
 
+@pytest.mark.needs_database
 def test_ignore_own_post_in_thread(thread_posts: List[ThreadPostInfo]) -> None:
     """Test that the user is not notified of their own posts to a thread."""
     assert titles(thread_posts).isdisjoint(
@@ -337,6 +377,7 @@ def test_ignore_own_post_in_thread(thread_posts: List[ThreadPostInfo]) -> None:
     )
 
 
+@pytest.mark.needs_database
 def test_prioritise_reply_deduplication(
     thread_posts: List[ThreadPostInfo],
 ) -> None:
@@ -345,21 +386,25 @@ def test_prioritise_reply_deduplication(
     assert titles(thread_posts).isdisjoint({"Post 111", "Post 211"})
 
 
+@pytest.mark.needs_database
 def test_get_posts_in_threads(thread_posts: List[ThreadPostInfo]) -> None:
     """Test that thread posts are as expected."""
     assert titles(thread_posts) == {"Post 12"}
 
 
+@pytest.mark.needs_database
 def test_respect_ignored_thread(thread_posts: List[ThreadPostInfo]) -> None:
     """Test that posts in ignored threads do not appear as thread posts."""
     assert titles(thread_posts).isdisjoint({"Post 41", "Post 42"})
 
 
+@pytest.mark.needs_database
 def test_new_threads(sample_database: BaseDatabaseDriver) -> None:
     """Test that the utility for checking if threads exists works."""
     assert sample_database.find_new_threads(["t-1", "t-2", "t-99"]) == ["t-99"]
 
 
+@pytest.mark.needs_database
 def test_deleted_thread(sample_database: BaseDatabaseDriver) -> None:
     """Test that marking a thread as deleted works and that it then does
     not appear in notifications."""
@@ -370,6 +415,7 @@ def test_deleted_thread(sample_database: BaseDatabaseDriver) -> None:
     assert "p-111" not in [reply["id"] for reply in posts["post_replies"]]
 
 
+@pytest.mark.needs_database
 def test_deleted_post(sample_database: BaseDatabaseDriver) -> None:
     """Test that marking a post as deleted works and that it then does
     not appear in notifications."""
@@ -383,6 +429,7 @@ def test_deleted_post(sample_database: BaseDatabaseDriver) -> None:
     assert "p-211" not in [reply["id"] for reply in posts["post_replies"]]
 
 
+@pytest.mark.needs_database
 def test_initial_notified_timestamp(sample_database: MySqlDriver) -> None:
     """Test that the initial last notified timestamp for a user is set."""
     with sample_database.transaction() as cursor:
@@ -416,6 +463,7 @@ def test_initial_notified_timestamp(sample_database: MySqlDriver) -> None:
         check_timestamp(2)
 
 
+@pytest.mark.needs_database
 def test_get_notifiable_users(sample_database: BaseDatabaseDriver) -> None:
     """Test that the notifiable users list returns the correct set of users.
 

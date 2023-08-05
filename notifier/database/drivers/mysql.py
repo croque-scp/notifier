@@ -12,8 +12,11 @@ from pymysql.cursors import DictCursor
 from notifier.database.drivers.base import BaseDatabaseDriver
 from notifier.database.utils import BaseDatabaseWithSqlFileCache
 from notifier.types import (
+    ActivationLogDump,
     CachedUserConfig,
+    ChannelLogDump,
     GlobalOverridesConfig,
+    LogDump,
     NewPostsInfo,
     PostReplyInfo,
     RawPost,
@@ -30,6 +33,8 @@ logger = logging.getLogger(__name__)
 class MySqlDriver(BaseDatabaseDriver, BaseDatabaseWithSqlFileCache):
     """Database powered by MySQL."""
 
+    conn: "pymysql.Connection[DictCursor]"
+
     def __init__(
         self, database_name: str, *, host: str, username: str, password: str
     ):
@@ -39,7 +44,7 @@ class MySqlDriver(BaseDatabaseDriver, BaseDatabaseWithSqlFileCache):
         BaseDatabaseWithSqlFileCache.__init__(self)
 
         logger.info("Connecting to database...")
-        self.conn: Connection[DictCursor] = pymysql.connect(
+        self.conn: "Connection[DictCursor]" = pymysql.connect(
             host=host,
             user=username,
             password=password,
@@ -320,6 +325,15 @@ class MySqlDriver(BaseDatabaseDriver, BaseDatabaseWithSqlFileCache):
             ]
         return user_configs
 
+    def count_user_configs(self) -> int:
+        return cast(
+            int,
+            (
+                self.execute_named("count_user_configs").fetchone()
+                or {"count": 0}
+            )["count"],
+        )
+
     def get_notifiable_users(self, frequency: str) -> List[str]:
         self.execute_named("cache_post_context")
         user_ids = [
@@ -393,6 +407,15 @@ class MySqlDriver(BaseDatabaseDriver, BaseDatabaseWithSqlFileCache):
         wikis = self.execute_named("get_supported_wikis").fetchall()
         return cast(List[SupportedWikiConfig], list(wikis))
 
+    def count_supported_wikis(self) -> int:
+        return cast(
+            int,
+            (
+                self.execute_named("count_supported_wikis").fetchone()
+                or {"count": 0}
+            )["count"],
+        )
+
     def store_supported_wikis(self, wikis: List[SupportedWikiConfig]) -> None:
         # Destroy all existing wikis in preparation for overwrite
         with self.transaction() as cursor:
@@ -449,6 +472,60 @@ class MySqlDriver(BaseDatabaseDriver, BaseDatabaseWithSqlFileCache):
                 "username": post["username"],
             },
         )
+
+    def store_channel_log_dump(self, log: ChannelLogDump) -> None:
+        """Store a channel log dump."""
+        self.execute_named(
+            "store_channel_log_dump",
+            {
+                "channel": log["channel"],
+                "start_timestamp": log["start_timestamp"],
+                "end_timestamp": log["end_timestamp"],
+                "notified_user_count": log["notified_user_count"],
+            },
+        )
+
+    def store_activation_log_dump(self, log: ActivationLogDump) -> None:
+        """Store an activation log dump."""
+        self.execute_named(
+            "store_activation_log_dump",
+            {
+                "start_timestamp": log["start_timestamp"],
+                "config_start_timestamp": log["config_start_timestamp"],
+                "config_end_timestamp": log["config_end_timestamp"],
+                "getpost_start_timestamp": log["getpost_start_timestamp"],
+                "getpost_end_timestamp": log["getpost_end_timestamp"],
+                "notify_start_timestamp": log["notify_start_timestamp"],
+                "notify_end_timestamp": log["notify_end_timestamp"],
+                "end_timestamp": log["end_timestamp"],
+            },
+        )
+
+    def get_log_dumps_since(self, timestamp_range: Tuple[int, int]) -> LogDump:
+        """Retrieve log dumps stored in the time range."""
+        lower_timestamp, upper_timestamp = timestamp_range
+        return {
+            "activations": cast(
+                List[ActivationLogDump],
+                self.execute_named(
+                    "get_activation_log_dumps",
+                    {
+                        "lower_timestamp": lower_timestamp,
+                        "upper_timestamp": upper_timestamp,
+                    },
+                ).fetchall(),
+            ),
+            "channels": cast(
+                List[ChannelLogDump],
+                self.execute_named(
+                    "get_channel_log_dumps",
+                    {
+                        "lower_timestamp": lower_timestamp,
+                        "upper_timestamp": upper_timestamp,
+                    },
+                ).fetchall(),
+            ),
+        }
 
 
 def __instantiate() -> None:

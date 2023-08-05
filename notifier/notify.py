@@ -1,7 +1,6 @@
 import logging
-import time
 from smtplib import SMTPAuthenticationError
-from typing import Iterable, List, Optional, Any, cast
+from typing import Iterable, List, Optional, Any, cast, Tuple
 
 from notifier.config.remote import get_global_config
 from notifier.config.user import get_user_config
@@ -12,15 +11,18 @@ from notifier.deletions import (
     rename_invalid_user_config_pages,
 )
 from notifier.digest import Digester
+from notifier.dumps import record_activation_log
 from notifier.emailer import Emailer
 from notifier.newposts import get_new_posts
 from notifier.overrides import apply_overrides
-from notifier.timing import channel_is_now, channel_will_be_next
+from notifier.timing import channel_is_now, channel_will_be_next, timestamp
 from notifier.types import (
     AuthConfig,
     CachedUserConfig,
+    ChannelLogDump,
     EmailAddresses,
     LocalConfig,
+    NewPostsInfo,
     PostInfo,
 )
 from notifier.wikiconnection import Connection, RestrictedInbox
@@ -88,6 +90,8 @@ def notify(
     getting data for new posts) and then triggers the relevant notification
     schedules.
     """
+    activation_start_timestamp = timestamp()
+
     # If there are no active channels, which shouldn't happen, there is
     # nothing to do
     if len(active_channels) == 0:
@@ -98,6 +102,7 @@ def notify(
         config, database.get_supported_wikis(), dry_run=dry_run
     )
 
+    config_start_timestamp = timestamp()
     if dry_run:
         logger.info("Dry run: skipping remote config acquisition")
     else:
@@ -108,27 +113,28 @@ def notify(
 
         # Refresh the connection to add any newly-configured wikis
         connection = Connection(config, database.get_supported_wikis())
+    config_end_timestamp = timestamp()
 
+    getpost_start_timestamp = timestamp()
     if dry_run:
         logger.info("Dry run: skipping new post acquisition")
     else:
         logger.info("Getting new posts...")
         get_new_posts(database, connection, limit_wikis)
-
-    # Record the 'current' timestamp immediately after downloading posts
-    current_timestamp = int(time.time())
-    # Get the password from keyring for login
-    wikidot_password = auth["wikidot_password"]
+    # The timestamp immediately after downloading posts will be used as the
+    # upper bound of posts to notify users about
+    getpost_end_timestamp = timestamp()
 
     if dry_run:
         logger.info("Dry run: skipping Wikidot login")
     else:
-        connection.login(config["wikidot_username"], wikidot_password)
+        connection.login(config["wikidot_username"], auth["wikidot_password"])
 
+    notify_start_timestamp = timestamp()
     logger.info("Notifying...")
     notify_active_channels(
         active_channels,
-        current_timestamp=current_timestamp,
+        current_timestamp=getpost_end_timestamp,
         config=config,
         auth=auth,
         database=database,
@@ -136,12 +142,14 @@ def notify(
         force_initial_search_timestamp=force_initial_search_timestamp,
         dry_run=dry_run,
     )
+    notify_end_timestamp = timestamp()
+
+    # Notifications have been sent, so perform time-insensitive maintenance
 
     if dry_run:
         logger.info("Dry run: skipping cleanup")
         return
 
-    # Notifications have been sent, so perform time-insensitive maintenance
     logger.info("Cleaning up...")
 
     for frequency in ["weekly", "monthly"]:
@@ -154,6 +162,24 @@ def notify(
     logger.info("Purging invalid user config pages")
     delete_prepared_invalid_user_pages(config, connection)
     rename_invalid_user_config_pages(config, connection)
+
+    activation_end_timestamp = timestamp()
+    database.store_activation_log_dump(
+        {
+            "start_timestamp": activation_start_timestamp,
+            "config_start_timestamp": config_start_timestamp,
+            "config_end_timestamp": config_end_timestamp,
+            "getpost_start_timestamp": getpost_start_timestamp,
+            "getpost_end_timestamp": getpost_end_timestamp,
+            "notify_start_timestamp": notify_start_timestamp,
+            "notify_end_timestamp": notify_end_timestamp,
+            "end_timestamp": activation_end_timestamp,
+        }
+    )
+
+    assert not dry_run
+    logger.info("Uploading log dumps...")
+    record_activation_log(config, database)
 
 
 def notify_active_channels(
@@ -173,7 +199,6 @@ def notify_active_channels(
         config["gmail_username"], auth["gmail_password"], dry_run=dry_run
     )
     for channel in active_channels:
-        # Should this be asynchronous + parallel?
         notify_channel(
             channel,
             current_timestamp=current_timestamp,
@@ -201,6 +226,7 @@ def notify_channel(
 ) -> None:
     """Compiles and sends notifications for all users in a given channel."""
     logger.info("Activating channel %s", {"channel": channel})
+    channel_start_timestamp = timestamp()
     # Get config sans subscriptions for users who would be notified
     user_configs = database.get_user_configs(channel)
     logger.debug(
@@ -225,10 +251,12 @@ def notify_channel(
     )
     # Notify each user on this frequency channel
     notified_users = 0
+    notified_posts = 0
+    notified_threads = 0
     addresses: EmailAddresses = {}
     for user in user_configs:
         try:
-            notified_users += notify_user(
+            sent, post_count, thread_count = notify_user(
                 user,
                 channel=channel,
                 current_timestamp=current_timestamp,
@@ -241,6 +269,10 @@ def notify_channel(
                 addresses=addresses,
                 dry_run=dry_run,
             )
+            if sent:
+                notified_users += 1
+                notified_posts += post_count
+                notified_threads += thread_count
         except SMTPAuthenticationError as error:
             logger.error(
                 "Failed to notify user via email %s",
@@ -264,6 +296,18 @@ def notify_channel(
                 exc_info=error,
             )
             continue
+
+    if dry_run:
+        logger.info("Dry run: not recording channel activation log")
+    else:
+        channel_log_dump: ChannelLogDump = {
+            "channel": channel,
+            "start_timestamp": channel_start_timestamp,
+            "end_timestamp": timestamp(),
+            "notified_user_count": notified_users,
+        }
+        logger.info("Recording channel activation log %s", channel_log_dump)
+        database.store_channel_log_dump(channel_log_dump)
     logger.info(
         "Finished notifying channel %s",
         {"channel": channel, "users_notified_count": notified_users},
@@ -283,10 +327,16 @@ def notify_user(
     emailer: Emailer,
     addresses: EmailAddresses,
     dry_run: bool = False,
-) -> int:
+) -> Tuple[bool, int, int]:
     """Compiles and sends a notification for a single user.
 
-    Returns a boolean indicating whether the notification was successful.
+    Returns a tuple containing the following:
+        1. a boolean indicating whether the notification was successful
+        2. the number of posts notified about
+        3. the number of threads notified about.
+    The latter values will be 0 in the case that the notification was not
+    successful, even if there were posts to notify about (e.g. if the user has
+    an invalid config).
 
     :param addresses: A dict of email addresses to use for sending emails
     to. Should be set to an empty dict initially; if this is the case, this
@@ -333,7 +383,7 @@ def notify_user(
                 "reason": "no posts",
             },
         )
-        return False
+        return False, 0, 0
 
     # Extract the 'last notification time' that will be recorded -
     # it is the timestamp of the most recent post this user is
@@ -354,7 +404,7 @@ def notify_user(
             {"for_user": user["username"]},
         )
         # Still return true to indicate that the user would have been notified
-        return True
+        return True, post_count, count_threads(posts)
 
     # Send the digests via PM to PM-subscribed users
     pm_inform_tag = "restricted-inbox"
@@ -383,7 +433,7 @@ def notify_user(
                     ),
                     " ".join([user["tags"], pm_inform_tag]),
                 )
-            return False
+            return False, 0, 0
 
     # Send the digests via email to email-subscribed users
     if user["delivery"] == "email":
@@ -423,7 +473,7 @@ def notify_user(
                     ),
                     " ".join([user["tags"], email_inform_tag]),
                 )
-            return False
+            return False, 0, 0
         if email_inform_tag in user["tags"]:
             # This user has fixed the above issue, so remove the tag
             connection.set_tags(
@@ -461,4 +511,15 @@ def notify_user(
             "",
         )
 
-    return True
+    return True, post_count, count_threads(posts)
+
+
+def count_threads(posts: NewPostsInfo) -> int:
+    """Counts the number of unique threads in a list of posts."""
+
+    def count_threads_in_posts(posts: Iterable[PostInfo]) -> int:
+        return len(set(post["thread_id"] for post in posts))
+
+    return count_threads_in_posts(
+        posts["post_replies"],
+    ) + count_threads_in_posts(posts["thread_posts"])
