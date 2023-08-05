@@ -1,0 +1,7 @@
+{
+  "private":true,
+  "scripts": {
+    "serve": "live-server"
+  },
+  "devDependencies":{"live-server":"^1.2.2"}
+}

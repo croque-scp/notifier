@@ -13,7 +13,7 @@ logger = logging.getLogger(__name__)
 
 HALF_AN_HOUR_S = 60 * 30
 ONE_DAY_S = 60 * 60 * 24
-ENTRY_RETAIN_LIMIT = ONE_DAY_S * 7 * 3
+ENTRY_RETAIN_LIMIT = ONE_DAY_S * 31 * 3
 
 
 def record_activation_log(
