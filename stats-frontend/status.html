@@ -112,11 +112,11 @@
             return durations.reduce((a, b) => (a + b)) / durations.length
           })()
           if (now - nearestHour(now) < avgRunTime)
-            return setStatus("waiting", avgRunTime)
+            return setStatus("waiting", avgRunTime - (now - nearestHour(now)))
           
           // Run might overrun - allow up to 15 mins
           if (now - nearestHour(now) < 900)
-            return setStatus("waiting", 900)
+            return setStatus("waiting", 900 - (now - nearestHour(now)))
         }
 
         // If there are less than X missed notifications, show that number and indicate failure
