@@ -9,7 +9,6 @@
     <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-luxon@^1"></script>
 
     <script>
-      // Duration graph
       addEventListener("DOMContentLoaded", async () => {
         const abortController = new AbortController()
         const abortTimer = setTimeout(() => abortController.abort(), 10000)
@@ -39,15 +38,6 @@
           )
         })
 
-        function duration(startPhase, endPhase) {
-          return activation => {
-            return {
-              x: activation["start_timestamp"] * 1000,
-              y: (activation[endPhase] - activation[startPhase] ) / 60,
-            }
-          }
-        }
-
         const palette = {
           pink: "#e7298a",
           green: "#66a61e",
@@ -58,6 +48,7 @@
           teal: "#1b9e77",
           grey: "#999999",
         }
+
         const channelPalette = {
           hourly: palette.yellow,
           "8hourly": palette.orange,
@@ -66,7 +57,18 @@
           monthly: palette.pink,
         }
 
-        const data = {
+        // Duration graph
+
+        function duration(startPhase, endPhase) {
+          return activation => {
+            return {
+              x: activation["start_timestamp"] * 1000,
+              y: (activation[endPhase] - activation[startPhase] ) / 60,
+            }
+          }
+        }
+
+        const durationData = {
           datasets: [
             {
               label: "Configuration",
@@ -109,16 +111,20 @@
           ],
         }
 
-        // Create chart
-
         new Chart(document.getElementById("graph-duration"), {
           type: "bar",
-          data,
+          data: durationData,
           options: {
             plugins: {
               title: {
                 display: true,
                 text: "Notifier run durations"
+              },
+              legend: {
+                title: {
+                  display: true,
+                  text: "Time spent per stage",
+                }
               }
             },
             responsive: true,
@@ -159,10 +165,81 @@
             }
           }
         })
+
+        // Notifications count graph
+
+        const notificationsCountData = {
+          datasets: Array.from(
+            new Set(recentNotifications.channels.map(c => c["channel"]))
+          ).map(channelName => {
+            return {
+              label: channelName,
+              data: recentNotifications.activations.filter(
+                a => a.channels.some(c => c["channel"] === channelName)
+              ).map(activation => {
+                const channel = activation.channels.find(c => c["channel"] === channelName)
+                return {
+                  x: activation["start_timestamp"] * 1000,
+                  y: channel["notified_user_count"],
+                }
+              }),
+              backgroundColor: channelPalette[channelName],
+            }
+          })
+        }
+
+        new Chart(document.getElementById("graph-notifications"), {
+          type: "bar",
+          data: notificationsCountData,
+          options: {
+            plugins: {
+              title: {
+                display: true,
+                text: "Sent notifications"
+              },
+              legend: {
+                title: {
+                  display: true,
+                  text: "Notifications sent per channel",
+                }
+              }
+            },
+            responsive: true,
+            spanGaps: 1000 * 60 * 60 * 24 * 2,
+            scales: {
+              x: {
+                stacked: true,
+                type: "time",
+                title: {
+                  display: "true",
+                  text: "Date",
+                },
+                ticks: {
+                  autoSkip: false,
+                  maxRotation: 0,
+                  major: {
+                    enabled: true,
+                  },
+                  font(context) {
+                    if (context.tick && context.tick.major) return { weight: "bold" }
+                  }
+                }
+              },
+              y: {
+                title: {
+                  display: true,
+                  text: "Notifications sent",
+                }
+              }
+            },
+            borderJoinStyle: "round",
+          }
+        })
       })
     </script>
   </head>
   <body>
     <canvas id="graph-duration"></canvas>
+    <canvas id="graph-notifications"></canvas>
   </body>
 </html>
