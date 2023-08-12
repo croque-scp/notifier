@@ -407,6 +407,8 @@ def notify_user(
         # Still return true to indicate that the user would have been notified
         return True, post_count, count_threads(posts)
 
+    error_tags = {"restricted-inbox", "not-a-back-contact"}
+
     def update_tags_for_user(
         old_tags: FrozenSet[str], new_tags: Set[str]
     ) -> None:
@@ -421,33 +423,28 @@ def notify_user(
 
     def add_error_tag_to_user(error_tag: str, waiting_count: int = 0) -> None:
         old_tags = frozenset(user["tags"].split(" "))
-        tags = set(old_tags)
+        new_tags = set(old_tags)
 
-        tags.add(error_tag)
+        new_tags.add(error_tag)
 
         # Replace any numeric tags with the new waiting count
-        tags.symmetric_difference_update(
-            tag for tag in tags if not re.match(r"^_[0-9]+$", tag)
+        new_tags.difference_update(
+            tag for tag in new_tags if re.match(r"^_[0-9]+$", tag)
         )
-        tags.add(f"_{waiting_count}")
+        new_tags.add(f"_{waiting_count}")
 
-        update_tags_for_user(old_tags, tags)
+        update_tags_for_user(old_tags, new_tags)
 
-    def remove_error_tag_from_user(error_tag: str) -> None:
+    def remove_error_tags_from_user() -> None:
         old_tags = frozenset(user["tags"].split(" "))
         new_tags = set(old_tags)
 
-        try:
-            new_tags.remove(error_tag)
-        except KeyError:
-            logger.debug(
-                "KeyError when removing tag %s",
-                {"tag": error_tag, "from_user": user["username"]},
-            )
+        # Remove all error tags
+        new_tags.difference_update(error_tags)
 
         # Remove any waiting count tags as there is no longer an error
-        new_tags.symmetric_difference_update(
-            tag for tag in new_tags if not re.match(r"^_[0-9]+$", tag)
+        new_tags.difference_update(
+            tag for tag in new_tags if re.match(r"^_[0-9]+$", tag)
         )
 
         update_tags_for_user(old_tags, new_tags)
@@ -472,8 +469,8 @@ def notify_user(
             )
             add_error_tag_to_user("restricted-inbox")
             return False, 0, 0
-        # This user has fixed the above issue, so remove the tag
-        remove_error_tag_from_user("restricted-inbox")
+        # This user has fixed the above issue, so remove error tags
+        remove_error_tags_from_user()
 
     # Send the digests via email to email-subscribed users
     if user["delivery"] == "email":
@@ -506,8 +503,8 @@ def notify_user(
             # They'll have to fix this themselves - inform them
             add_error_tag_to_user("not-a-back-contact")
             return False, 0, 0
-        # This user has fixed the above issue, so remove the tag
-        remove_error_tag_from_user("not-a-back-contact")
+        # This user has fixed the above issue, so remove error tags
+        remove_error_tags_from_user()
         logger.debug(
             "Sending notification %s",
             {"user": user["username"], "via": "email", "channel": channel},
