@@ -467,7 +467,7 @@ def notify_user(
                     "reason": "restricted Wikidot inbox",
                 },
             )
-            add_error_tag_to_user("restricted-inbox")
+            add_error_tag_to_user("restricted-inbox", post_count)
             return False, 0, 0
         # This user has fixed the above issue, so remove error tags
         remove_error_tags_from_user()
@@ -501,7 +501,7 @@ def notify_user(
                 },
             )
             # They'll have to fix this themselves - inform them
-            add_error_tag_to_user("not-a-back-contact")
+            add_error_tag_to_user("not-a-back-contact", post_count)
             return False, 0, 0
         # This user has fixed the above issue, so remove error tags
         remove_error_tags_from_user()
