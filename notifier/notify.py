@@ -1,6 +1,7 @@
 import logging
+import re
 from smtplib import SMTPAuthenticationError
-from typing import Iterable, List, Optional, Any, cast, Tuple
+from typing import FrozenSet, Iterable, List, Optional, Any, Set, cast, Tuple
 
 from notifier.config.remote import get_global_config
 from notifier.config.user import get_user_config
@@ -406,8 +407,49 @@ def notify_user(
         # Still return true to indicate that the user would have been notified
         return True, post_count, count_threads(posts)
 
+    error_tags = {"restricted-inbox", "not-a-back-contact"}
+
+    def update_tags_for_user(
+        old_tags: FrozenSet[str], new_tags: Set[str]
+    ) -> None:
+        if old_tags == new_tags:
+            return
+        new_tags_string = " ".join(map(str, new_tags))
+        connection.set_tags(
+            config["config_wiki"],
+            f"{config['user_config_category']}:{str(user['user_id'])}",
+            new_tags_string,
+        )
+
+    def add_error_tag_to_user(error_tag: str, waiting_count: int = 0) -> None:
+        old_tags = frozenset(user["tags"].split(" "))
+        new_tags = set(old_tags)
+
+        new_tags.add(error_tag)
+
+        # Replace any numeric tags with the new waiting count
+        new_tags.difference_update(
+            tag for tag in new_tags if re.match(r"^_[0-9]+$", tag)
+        )
+        new_tags.add(f"_{waiting_count}")
+
+        update_tags_for_user(old_tags, new_tags)
+
+    def remove_error_tags_from_user() -> None:
+        old_tags = frozenset(user["tags"].split(" "))
+        new_tags = set(old_tags)
+
+        # Remove all error tags
+        new_tags.difference_update(error_tags)
+
+        # Remove any waiting count tags as there is no longer an error
+        new_tags.difference_update(
+            tag for tag in new_tags if re.match(r"^_[0-9]+$", tag)
+        )
+
+        update_tags_for_user(old_tags, new_tags)
+
     # Send the digests via PM to PM-subscribed users
-    pm_inform_tag = "restricted-inbox"
     if user["delivery"] == "pm":
         logger.debug(
             "Sending notification %s",
@@ -425,15 +467,10 @@ def notify_user(
                     "reason": "restricted Wikidot inbox",
                 },
             )
-            if pm_inform_tag not in user["tags"]:
-                connection.set_tags(
-                    config["config_wiki"],
-                    ":".join(
-                        [config["user_config_category"], str(user["user_id"])]
-                    ),
-                    " ".join([user["tags"], pm_inform_tag]),
-                )
+            add_error_tag_to_user("restricted-inbox", post_count)
             return False, 0, 0
+        # This user has fixed the above issue, so remove error tags
+        remove_error_tags_from_user()
 
     # Send the digests via email to email-subscribed users
     if user["delivery"] == "email":
@@ -449,7 +486,6 @@ def notify_user(
         else:
             logger.debug("Using cached email contacts")
 
-        email_inform_tag = "not-a-back-contact"
         try:
             address = addresses[user["username"]]
         except KeyError:
@@ -465,24 +501,10 @@ def notify_user(
                 },
             )
             # They'll have to fix this themselves - inform them
-            if email_inform_tag not in user["tags"]:
-                connection.set_tags(
-                    config["config_wiki"],
-                    ":".join(
-                        [config["user_config_category"], str(user["user_id"])]
-                    ),
-                    " ".join([user["tags"], email_inform_tag]),
-                )
+            add_error_tag_to_user("not-a-back-contact", post_count)
             return False, 0, 0
-        if email_inform_tag in user["tags"]:
-            # This user has fixed the above issue, so remove the tag
-            connection.set_tags(
-                config["config_wiki"],
-                ":".join(
-                    [config["user_config_category"], str(user["user_id"])]
-                ),
-                user["tags"].replace(email_inform_tag, ""),
-            )
+        # This user has fixed the above issue, so remove error tags
+        remove_error_tags_from_user()
         logger.debug(
             "Sending notification %s",
             {"user": user["username"], "via": "email", "channel": channel},
