@@ -472,6 +472,8 @@ def notify_user(
             )
             add_error_tag_to_user("restricted-inbox")
             return False, 0, 0
+        # This user has fixed the above issue, so remove the tag
+        remove_error_tag_from_user("restricted-inbox")
 
     # Send the digests via email to email-subscribed users
     if user["delivery"] == "email":
