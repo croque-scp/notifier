@@ -117,6 +117,9 @@
           // Run might overrun - allow up to 15 mins
           if (now - nearestHour(now) < 900)
             return setStatus("waiting", 900 - (now - nearestHour(now)))
+
+          // There was legitimately a missed run
+          return setStatus("missedSeveral", 1)
         }
 
         // If there are less than X missed notifications, show that number and indicate failure
