@@ -93,7 +93,7 @@
           ...recentNotifications.activations.map(a => a["end_timestamp"])
         )
 
-        const missedActivations = (
+        let missedActivations = (
           nearestHour(now) - nearestHour(latestNotificationTimestamp)
         ) / 3600
 
@@ -124,8 +124,12 @@
 
         // If there are less than X missed notifications, show that number and indicate failure
         const missedActivationsThreshold = 24
-        if (missedActivations > 1 && missedActivations <= missedActivationsThreshold)
-          return setStatus("missedSeveral", missedActivations)
+        if (missedActivations > 1 && missedActivations <= missedActivationsThreshold) {
+          // If in first 15 mins, there could be one running right now
+          if (now - nearestHour(now) < 900)
+            return setStatus("missedSeveral", missedActivations - 1)
+          else return setStatus("missedSeveral", missedActivations)
+        }
 
         // If there are more than X missed notifications, indicate that notifier is offline
         if (missedActivations > missedActivationsThreshold) {
