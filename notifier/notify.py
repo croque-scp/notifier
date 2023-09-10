@@ -34,9 +34,9 @@ logger = logging.getLogger(__name__)
 # frequency.
 notification_channels = {
     "test": "x x x x x",  # pycron accepts this value but it never passes
-    "monthly": "0 15 1 * *",
-    "weekly": "0 14 * * 0",
-    "daily": "0 13 * * *",
+    "monthly": "0 18 1 * *",
+    "weekly": "0 16 * * 0",
+    "daily": "0 14 * * *",
     "8hourly": "0 4,12,20 * * *",
     "hourly": "0 * * * *",
 }
