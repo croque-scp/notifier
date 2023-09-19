@@ -54,10 +54,10 @@
       }
 
       function nextRunDue() {
-        const minsUntilNextRun = Math.round(
-          60 - ((Date.now() / 1000) % 3600) / 60
-        )
-        if (minsUntilNextRun > 0) return `in <b>${minsUntilNextRun}</b> m`
+        const seconds = 60 - ((Date.now() / 1000) % 3600)
+        let minutes = "< 1"
+        if (seconds > 60) minutes = Math.ceil(seconds / 60)
+        if (seconds > 10) return `in <b>${minutes}</b> m`
         return "<b>now</b>"
       }
 
