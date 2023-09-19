@@ -22,7 +22,7 @@
             setRootStatus("success")
             setStatusDetails(
               "Currently running!",
-              `Estimated <b>~${Math.round(detail / 60)}</b> m`,
+              `Estimated <b>~${Math.ceil(detail / 60)}</b> m`,
             )
           },
           missedSeveral() {
@@ -54,10 +54,10 @@
       }
 
       function nextRunDue() {
-        const minsUntilNextRun = Math.round(
-          60 - ((Date.now() / 1000) % 3600) / 60
-        )
-        if (minsUntilNextRun > 0) return `in <b>${minsUntilNextRun}</b> m`
+        const secondsRemaining = 3600 - (new Date().getTime() / 1000) % 3600
+        let minutesRemaining = "< 1"
+        if (secondsRemaining > 60) minutesRemaining = Math.ceil(secondsRemaining / 60)
+        if (secondsRemaining > 10) return `in <b>${minutesRemaining}</b> m`
         return "<b>now</b>"
       }
 
@@ -65,10 +65,9 @@
         return Math.floor(timestamp / 3600) * 3600
       }
 
-      addEventListener("DOMContentLoaded", async () => {
+      async function retrieveStats() {
         const abortController = new AbortController()
         const abortTimer = setTimeout(() => abortController.abort(), 10000)
-
         let recentNotifications
         try {
           const response = await fetch(
@@ -84,9 +83,10 @@
           setStatus("indeterminate")
           throw error
         }
+        return recentNotifications
+      }
 
-        // Evaluate retrieved notifications
-
+      function setStatusBasedOnStats(recentNotifications) {
         // Use the current timestamp to work out how many missed activations there are
         const now = Math.floor(Date.now() / 1000)
         const latestNotificationTimestamp = Math.max(
@@ -142,6 +142,29 @@
 
         // That should match all conditions, but fallback just in case
         return setStatus("indeterminate")
+      }
+
+      addEventListener("DOMContentLoaded", async () => {
+        let recentNotifications = await retrieveStats()
+        setStatusBasedOnStats(recentNotifications)
+
+        // Refresh the stats each minute
+        while (true) {
+          await new Promise(
+            resolve => setTimeout(resolve, 60000 - new Date().getTime() % 60000)
+          )
+
+          // If the most recent entry is not in the current hour, attempt to redownload it
+          const latestNotificationTimestamp = Math.max(
+            ...recentNotifications.activations.map(a => a["end_timestamp"])
+          )
+          if (new Date(latestNotificationTimestamp * 1000).getHours() !== new Date().getHours()) {
+            setRootStatus("loading")
+            recentNotifications = await retrieveStats()
+          }
+
+          setStatusBasedOnStats(recentNotifications)
+        }
       })
 
       // Temporary, for testing
