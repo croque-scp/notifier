@@ -2,8 +2,6 @@ SELECT
   user_config.user_id AS user_id
 FROM
   user_config
-  LEFT JOIN
-  user_last_notified ON user_config.user_id = user_last_notified.user_id
 WHERE
   -- Only users on the given channel
   user_config.frequency = %(frequency)s
@@ -17,7 +15,7 @@ WHERE
       post_with_context.post_user_id <> user_config.user_id
 
       -- Only posts posted since the user was last notified
-      AND post_with_context.post_posted_timestamp > user_last_notified.notified_timestamp
+      AND post_with_context.post_posted_timestamp > user_config.notified_timestamp
 
       -- Only posts matching thread or post subscription criteria
       AND (

@@ -6,7 +6,8 @@ INSERT INTO
     frequency,
     language,
     delivery,
-    tags
+    tags,
+    notified_timestamp
   )
 VALUES
   (
@@ -15,5 +16,12 @@ VALUES
     %(frequency)s,
     %(language)s,
     %(delivery)s,
-    %(tags)s
+    %(tags)s,
+    %(base_notified_timestamp_if_new_user)s
   )
+ON DUPLICATE KEY UPDATE
+  username = %(username)s,
+  frequency = %(frequency)s,
+  language = %(language)s,
+  delivery = %(delivery)s,
+  tags = %(tags)s

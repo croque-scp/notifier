@@ -438,7 +438,7 @@ def test_initial_notified_timestamp(sample_database: MySqlDriver) -> None:
             cursor.execute(
                 """
                 SELECT notified_timestamp
-                FROM user_last_notified
+                FROM user_config
                 WHERE user_id='1'
                 """
             )
@@ -450,14 +450,6 @@ def test_initial_notified_timestamp(sample_database: MySqlDriver) -> None:
             {
                 "user_id": "1",
                 "notified_timestamp": 2,
-            },
-        )
-        check_timestamp(2)
-        sample_database.execute_named(
-            "store_new_user_last_notified",
-            {
-                "user_id": "1",
-                "notified_timestamp": 3,
             },
         )
         check_timestamp(2)
