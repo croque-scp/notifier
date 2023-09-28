@@ -147,7 +147,7 @@ class MySqlDriver(BaseDatabaseDriver, BaseDatabaseWithSqlFileCache):
         self.apply_migrations()
 
     def apply_migrations(self) -> None:
-        logger.info("Applying migrations")
+        logger.info("Applying migrations...")
         try:
             current_version = int(
                 (
@@ -298,9 +298,7 @@ class MySqlDriver(BaseDatabaseDriver, BaseDatabaseWithSqlFileCache):
             ).fetchall()
         ]
         for user_config in user_configs:
-            # The last notified timestamp can be NULL (originating from the
-            # LEFT JOIN) if the user has never been notified and thus does
-            # not have an entry in the user_last_notified table
+            # The last notified timestamp can be NULL if the user has never been notified
             if user_config["last_notified_timestamp"] is None:
                 user_config["last_notified_timestamp"] = 0
             user_config["manual_subs"] = [
@@ -335,7 +333,9 @@ class MySqlDriver(BaseDatabaseDriver, BaseDatabaseWithSqlFileCache):
         )
 
     def get_notifiable_users(self, frequency: str) -> List[str]:
+        logger.debug("Caching post context...")
         self.execute_named("cache_post_context")
+        logger.debug("Retrieving notifiable users users...")
         user_ids = [
             cast(str, row["user_id"])
             for row in self.execute_named(

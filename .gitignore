@@ -7,3 +7,4 @@ lambda.zip
 config/auth.local.toml
 node_modules/
 package-lock.json
+run.log
