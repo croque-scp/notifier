@@ -229,6 +229,10 @@ def notify_channel(
     logger.info("Activating channel %s", {"channel": channel})
     channel_start_timestamp = timestamp()
     # Get config sans subscriptions for users who would be notified
+    logger.debug(
+        "Finding users for channel... %s",
+        {"channel": channel},
+    )
     user_configs = database.get_user_configs(channel)
     logger.debug(
         "Found users for channel %s",

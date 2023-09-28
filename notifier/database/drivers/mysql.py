@@ -147,7 +147,7 @@ class MySqlDriver(BaseDatabaseDriver, BaseDatabaseWithSqlFileCache):
         self.apply_migrations()
 
     def apply_migrations(self) -> None:
-        logger.info("Applying migrations")
+        logger.info("Applying migrations...")
         try:
             current_version = int(
                 (
@@ -298,9 +298,7 @@ class MySqlDriver(BaseDatabaseDriver, BaseDatabaseWithSqlFileCache):
             ).fetchall()
         ]
         for user_config in user_configs:
-            # The last notified timestamp can be NULL (originating from the
-            # LEFT JOIN) if the user has never been notified and thus does
-            # not have an entry in the user_last_notified table
+            # The last notified timestamp can be NULL if the user has never been notified
             if user_config["last_notified_timestamp"] is None:
                 user_config["last_notified_timestamp"] = 0
             user_config["manual_subs"] = [
@@ -335,7 +333,9 @@ class MySqlDriver(BaseDatabaseDriver, BaseDatabaseWithSqlFileCache):
         )
 
     def get_notifiable_users(self, frequency: str) -> List[str]:
+        logger.debug("Caching post context...")
         self.execute_named("cache_post_context")
+        logger.debug("Retrieving notifiable users users...")
         user_ids = [
             cast(str, row["user_id"])
             for row in self.execute_named(
@@ -351,10 +351,32 @@ class MySqlDriver(BaseDatabaseDriver, BaseDatabaseWithSqlFileCache):
         *,
         overwrite_existing: bool = True,
     ) -> None:
+        # Delete stored user configs not in the incoming batch
+        if overwrite_existing:
+            with self.transaction() as cursor:
+                stored_user_ids = [
+                    cast(str, row["user_id"])
+                    for row in self.execute_named(
+                        "get_user_ids", None, cursor
+                    ).fetchall()
+                ]
+                incoming_user_ids = [
+                    user_config["user_id"] for user_config in user_configs
+                ]
+                for stored_user_id in stored_user_ids:
+                    if stored_user_id not in incoming_user_ids:
+                        logger.debug(
+                            "Deleting user config not found in new data %s",
+                            {"stored_user_id": stored_user_id},
+                        )
+                        self.execute_named(
+                            "delete_user_config",
+                            {"user_id": stored_user_id},
+                            cursor,
+                        )
+
+        # Update stored user configs with new data
         with self.transaction() as cursor:
-            if overwrite_existing:
-                # Overwrite all current configs
-                self.execute_named("delete_user_configs", None, cursor)
             for user_config in user_configs:
                 self.execute_named(
                     "store_user_config",
@@ -365,9 +387,19 @@ class MySqlDriver(BaseDatabaseDriver, BaseDatabaseWithSqlFileCache):
                         "language": user_config["language"],
                         "delivery": user_config["delivery"],
                         "tags": user_config["tags"],
+                        "base_notified_timestamp_if_new_user": user_config[
+                            "user_base_notified"
+                        ],
                     },
                     cursor,
                 )
+                # Wipe all subscriptions in case any have been removed
+                self.execute_named(
+                    "delete_manual_subs_for_user",
+                    {"user_id": user_config["user_id"]},
+                    cursor,
+                )
+                # Add all new subscriptions from scratch
                 for subscription in (
                     user_config["subscriptions"]
                     + user_config["unsubscriptions"]
@@ -382,15 +414,6 @@ class MySqlDriver(BaseDatabaseDriver, BaseDatabaseWithSqlFileCache):
                         },
                         cursor,
                     )
-                self.execute_named(
-                    "store_new_user_last_notified",
-                    {
-                        "user_id": user_config["user_id"],
-                        "notified_timestamp": user_config[
-                            "user_base_notified"
-                        ],
-                    },
-                )
 
     def store_user_last_notified(
         self, user_id: str, last_notified_timestamp: int

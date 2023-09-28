@@ -95,4 +95,4 @@ def main(
             dry_run=dry_run,
         )
 
-        print("Finished")
+        logger.info("Finished")
