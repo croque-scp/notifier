@@ -50,6 +50,7 @@ def read_local_config(config_path: str) -> LocalConfig:
         assert_key(config, "wiki_config_category", str)
         assert_key(config, "overrides_url", str)
         assert_key(config, "gmail_username", str)
+        assert_key(config, "service_start_timestamp", int)
 
         # Database section
         assert_key(config, "database", dict)

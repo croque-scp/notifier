@@ -40,6 +40,7 @@ class LocalConfig(TypedDict):
     wiki_config_category: str
     overrides_url: str
     gmail_username: str
+    service_start_timestamp: int
     database: DatabaseConfig
     path: LocalConfigPaths
     log_dump_s3: LogDumpS3Config

@@ -95,7 +95,11 @@ def fetch_user_configs(
         # timestamp element, so cannot be extracted by get_text
         user_timestamp = get_timestamp(config_soup)
         try:
-            config, slug = parse_raw_user_config(raw_config, user_timestamp)
+            config, slug = parse_raw_user_config(
+                raw_config,
+                user_timestamp,
+                local_config["service_start_timestamp"],
+            )
         except (TOMLKitError, AssertionError) as error:
             # If the parse fails, the user was probably trying code
             # injection or something - discard it
@@ -113,7 +117,9 @@ def fetch_user_configs(
 
 
 def parse_raw_user_config(
-    raw_config: str, user_timestamp: Optional[int]
+    raw_config: str,
+    user_timestamp: Optional[int],
+    service_start_timestamp: int,
 ) -> Tuple[RawUserConfig, str]:
     """Parses a raw user config string to a suitable format, also returning
     the config slug."""
@@ -123,8 +129,9 @@ def parse_raw_user_config(
     assert "username" in config
     assert "user_id" in config
     # Parse page date to approximate timestamp and coerce to int
-    # TODO Move hardcoded date to config
-    config["user_base_notified"] = max(user_timestamp or 0, 1627277777)
+    config["user_base_notified"] = max(
+        user_timestamp or 0, service_start_timestamp
+    )
     assert "tags" in config
     assert isinstance(config["tags"], str)
     config["subscriptions"] = parse_subscriptions(
