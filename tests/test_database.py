@@ -456,7 +456,7 @@ def test_initial_notified_timestamp(sample_database: MySqlDriver) -> None:
 
 
 @pytest.mark.needs_database
-def test_get_notifiable_users(sample_database: BaseDatabaseDriver) -> None:
+def test_get_notifiable_users(sample_database: MySqlDriver) -> None:
     """Test that the notifiable users list returns the correct set of users.
 
     The notifiable users utility lists directly from the database the set of
@@ -627,15 +627,18 @@ def test_get_notifiable_users(sample_database: BaseDatabaseDriver) -> None:
     for post in sample_posts:
         sample_database.store_post(post)
 
-    users_expected_to_have_notifications = {
+    assert set(sample_database.get_notifiable_users("hourly", 0)) == {
         "1",  # UserR1 from base sample DB
         "51",  # T5U-!P-Sub
         "53",  # T5U-Starter
         "55",  # T5U-Poster
     }
 
-    users_with_notifications = sample_database.get_notifiable_users("hourly")
+    with sample_database.transaction() as cursor:
+        cursor.execute("DROP TABLE post_with_context")
 
-    assert (
-        set(users_with_notifications) == users_expected_to_have_notifications
-    )
+    assert set(sample_database.get_notifiable_users("hourly", 99)) == {
+        "51",  # T5U-!P-Sub
+        "53",  # T5U-Starter
+        "55",  # T5U-Poster
+    }

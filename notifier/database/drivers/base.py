@@ -93,7 +93,9 @@ class BaseDatabaseDriver(ABC):
         """Count the number of subscribed users."""
 
     @abstractmethod
-    def get_notifiable_users(self, frequency: str) -> List[str]:
+    def get_notifiable_users(
+        self, frequency: str, post_lower_timestamp_limit: int
+    ) -> List[str]:
         """Get the list of IDs for users subscribed to the given channel
         frequency who have at least one notification waiting for them.
         """

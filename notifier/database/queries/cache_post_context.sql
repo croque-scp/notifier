@@ -20,5 +20,8 @@ WITH cte AS (
   WHERE
     -- Remove deleted threads/posts
     thread.is_deleted = 0 AND post.is_deleted = 0
+
+    -- Remove posts from before the notification service started
+    AND post.posted_timestamp > %(post_lower_timestamp_limit)s
 )
 SELECT * FROM cte
