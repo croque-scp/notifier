@@ -241,7 +241,7 @@ def notify_channel(
     # Filter the users only to those with notifications waiting
     logger.debug("Filtering users without notifications waiting...")
     user_count_pre_filter = len(user_configs)
-    notifiable_user_ids = database.get_notifiable_users(channel)
+    notifiable_user_ids = database.get_notifiable_users(channel, config["service_start_timestamp"])
     user_configs = [
         user for user in user_configs if user["user_id"] in notifiable_user_ids
     ]
