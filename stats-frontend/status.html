@@ -5,17 +5,18 @@
     <title>Notifier - status indicator</title>
 
     <script>
-      function setStatus(status, detail) {
+      function setStatus(status, successRate, detail) {
         void {
           indeterminate() {
             setRootStatus("indeterminate")
-            setStatusDetails("Couldn't retrieve latest data.")
+            setStatusDetails("Failed to check status.")
           },
           success() {
             setRootStatus("success")
             setStatusDetails(
               `Last run ended <b>${Math.floor((detail % 3600) / 60)}</b> m ago`,
               `Next run due ${nextRunDue()}`,
+              `${uptime(successRate)}`,
             )
           },
           waiting() {
@@ -23,6 +24,7 @@
             setStatusDetails(
               "Currently running!",
               `Estimated <b>~${Math.ceil(detail / 60)}</b> m`,
+              `${uptime(successRate)}`,
             )
           },
           missedSeveral() {
@@ -30,6 +32,7 @@
             setStatusDetails(
               `Missed <b>${detail}</b> run${detail > 1 ? "s" : ""}.`,
               `Next run due ${nextRunDue()}`,
+              `${uptime(successRate)}`,
             )
           },
           missedLots() {
@@ -38,6 +41,7 @@
               setStatusDetails(
                 "Temporarily offline",
                 `Last run ${new Date(detail * 1000).toISOString().split("T")[0]}`,
+                `${uptime(successRate)}`,
               )
             else setStatusDetails("Offline")
           }
@@ -59,6 +63,10 @@
         if (secondsRemaining > 60) minutesRemaining = Math.ceil(secondsRemaining / 60)
         if (secondsRemaining > 10) return `in <b>${minutesRemaining}</b> m`
         return "<b>now</b>"
+      }
+
+      function uptime(rate) {
+        return `<span class="uptime">30 day uptime: <b>${(rate * 100).toFixed(1)}%</b>`
       }
 
       function nearestHour(timestamp) {
@@ -93,13 +101,21 @@
           ...recentNotifications.activations.map(a => a["end_timestamp"])
         )
 
+        let successRate30Day = (() => {
+          const timestamp30DaysAgo = Date.now() - (30 * 24 * 60 * 60 * 1000)
+          const activationIndex = recentNotifications.activations.findIndex(
+            a => a["start_timestamp"] > timestamp30DaysAgo / 1000
+          )
+          return (recentNotifications.activations.length - activationIndex) / (30 * 24)
+        })()
+
         let missedActivations = (
           nearestHour(now) - nearestHour(latestNotificationTimestamp)
         ) / 3600
 
         // If there are 0 missed notifications, success
         if (missedActivations === 0)
-          return setStatus("success", now - latestNotificationTimestamp)
+          return setStatus("success", successRate30Day, now - latestNotificationTimestamp)
 
         // If there is 1 missed notification, but is currently within the first ~quarter hour, we might just be waiting for it - show success but indicate waiting
         if (missedActivations === 1) {
@@ -112,14 +128,14 @@
             return durations.reduce((a, b) => (a + b)) / durations.length
           })()
           if (now - nearestHour(now) < avgRunTime)
-            return setStatus("waiting", avgRunTime - (now - nearestHour(now)))
+            return setStatus("waiting", successRate30Day, avgRunTime - (now - nearestHour(now)))
           
           // Run might overrun - allow up to 15 mins
           if (now - nearestHour(now) < 900)
-            return setStatus("waiting", 900 - (now - nearestHour(now)))
+            return setStatus("waiting", successRate30Day, 900 - (now - nearestHour(now)))
 
           // There was legitimately a missed run
-          return setStatus("missedSeveral", 1)
+          return setStatus("missedSeveral", successRate30Day, 1)
         }
 
         // If there are less than X missed notifications, show that number and indicate failure
@@ -128,14 +144,14 @@
           // If in first 15 mins, there could be one running right now
           if (now - nearestHour(now) < 900)
             return setStatus("missedSeveral", missedActivations - 1)
-          else return setStatus("missedSeveral", missedActivations)
+          else return setStatus("missedSeveral", successRate30Day, missedActivations)
         }
 
         // If there are more than X missed notifications, indicate that notifier is offline
         if (missedActivations > missedActivationsThreshold) {
           // Use last known notification to display date
           if (latestNotificationTimestamp)
-            return setStatus("missedLots", latestNotificationTimestamp)
+            return setStatus("missedLots", successRate30Day, latestNotificationTimestamp)
           // If no last notification present (not currently possible?) imply permanently offline
           else return setStatus("missedLots")
         }
@@ -205,7 +221,7 @@
         display: grid;
         grid-template-areas: "status header" "status footer";
         grid-template-columns: 3.25rem 10.75rem;
-        grid-template-rows: 1.5rem 2.5rem;
+        grid-template-rows: 1.5rem 3.5rem;
 
         width: 14rem;
 
@@ -271,6 +287,16 @@
         font-weight: 400;
         white-space: nowrap;
         line-height: 1.1;
+        width: 100%;
+      }
+
+      .uptime {
+        opacity: 0.6;
+        display: block;
+        font-size: 0.8125rem;
+        font-style: italic;
+        text-align: center;
+        padding-top: 0.125rem;
       }
 
       .icon-logo, .icon-status {
