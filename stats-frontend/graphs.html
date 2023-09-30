@@ -89,7 +89,11 @@
             },
             ...Array.from(
               new Set(recentNotifications.channels.map(c => c["channel"]))
-            ).map(channelName => {
+            ).sort((channel1Name, channel2Name) => {
+              // Sort channels by their execution order
+              const channelOrder = ["monthly", "weekly", "daily", "8hourly", "hourly"]
+              return channelOrder.indexOf(channel1Name) - channelOrder.indexOf(channel2Name)
+            }).map(channelName => {
               return {
                 label: `Notifying ${channelName}`,
                 data: recentNotifications.activations.filter(
