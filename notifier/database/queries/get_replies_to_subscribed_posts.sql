@@ -33,11 +33,6 @@ FROM
     AND post_sub.thread_id = thread.id
     AND post_sub.post_id = parent_post.id
   )
-  LEFT JOIN
-  post AS user_response_child_post ON (
-    user_response_child_post.parent_post_id = post.id
-    AND user_response_child_post.user_id = %(user_id)s
-  )
 WHERE
   -- Remove deleted posts
   post.is_deleted = 0
@@ -60,10 +55,8 @@ WHERE
   )
 
   -- Remove replies to posts unsubscribed from
+  -- Sub table is added to this query via left join, so the null check matches when the user has no manual subscription to or from a post
   AND (post_sub.sub <> -1 OR post_sub.sub IS NULL)
-
-  -- Remove posts the user already responded to
-  AND user_response_child_post.id IS NULL
 ORDER BY
   wiki.id,
   category.id,

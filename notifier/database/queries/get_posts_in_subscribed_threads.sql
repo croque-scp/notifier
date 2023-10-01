@@ -31,11 +31,6 @@ FROM
     AND thread_sub.thread_id = thread.id
     AND thread_sub.post_id IS NULL
   )
-  LEFT JOIN
-  post AS user_response_child_post ON (
-    user_response_child_post.parent_post_id = post.id
-    AND user_response_child_post.user_id = %(user_id)s
-  )
 WHERE
   -- Remove deleted posts
   post.is_deleted = 0
@@ -59,9 +54,6 @@ WHERE
 
   -- Remove posts in threads unsubscribed from
   AND (thread_sub.sub <> -1 OR thread_sub.sub IS NULL)
-
-  -- Remove posts the user already responded to
-  AND user_response_child_post.id IS NULL
 ORDER BY
   wiki.id,
   category.id,
