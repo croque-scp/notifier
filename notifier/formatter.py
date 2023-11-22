@@ -52,7 +52,7 @@ replacements_to_html: ReplacementList = [
     # Bullets
     (r(r"^\* (.+)$"), r"<ul><li>\1</li></ul>"),
     # Remove unnecessary breaks effected by Wikidot's lax spacing
-    ("\n", ""),
+    (r(r"\n+"), " "),
 ]
 
 replacements_to_wikitext: ReplacementList = [("<br>", "")]
