@@ -25,6 +25,6 @@ class Emailer:  # pylint: disable=too-few-public-methods
     def send(self, address: str, subject: str, body: str) -> None:
         """Send an email to an address."""
         if self.dry_run:
-            logger.warn("Dry run: email send was rejected")
+            logger.warning("Dry run: email send was rejected")
             return
         self.yag.send(address, subject, body, prettify_html=False)
