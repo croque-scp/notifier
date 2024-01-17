@@ -1,27 +1,21 @@
 CREATE TEMPORARY TABLE IF NOT EXISTS post_with_context
 WITH cte AS (
   SELECT
-    post.user_id AS post_user_id,
-    post.posted_timestamp AS post_posted_timestamp,
-    parent_post.id AS parent_post_id,
-    parent_post.user_id AS parent_post_user_id,
-    thread.id AS thread_id,
-    first_post_in_thread.user_id AS first_post_in_thread_user_id
+    notifiable_post.author_user_id AS post_user_id,
+    notifiable_post.posted_timestamp AS post_posted_timestamp,
+    context_parent_post.post_id AS parent_post_id,
+    context_parent_post.author_user_id AS parent_post_user_id,
+    context_thread.thread_id AS thread_id,
+    context_thread.first_post_author_user_id AS first_post_in_thread_user_id
   FROM
-    post
-    INNER JOIN
-    thread ON thread.id = post.thread_id
-    INNER JOIN
-    thread_first_post ON thread_first_post.thread_id = thread.id
-    INNER JOIN
-    post AS first_post_in_thread ON first_post_in_thread.id = thread_first_post.post_id
+    notifiable_post
     LEFT JOIN
-    post AS parent_post ON parent_post.id = post.parent_post_id
-  WHERE
-    -- Remove deleted threads/posts
-    thread.is_deleted = 0 AND post.is_deleted = 0
-
-    -- Remove posts from before the notification service started
-    AND post.posted_timestamp > %(post_lower_timestamp_limit)s
+    context_wiki ON context_wiki.wiki_id = notifiable_post.context_wiki_id
+    LEFT JOIN
+    context_forum_category ON context_forum_category.category_id = notifiable_post.context_forum_category_id
+    LEFT JOIN
+    context_thread ON context_thread.thread_id = notifiable_post.context_thread_id
+    LEFT JOIN
+    context_parent_post ON context_parent_post.post_id = notifiable_post.context_parent_post_id
 )
 SELECT * FROM cte
