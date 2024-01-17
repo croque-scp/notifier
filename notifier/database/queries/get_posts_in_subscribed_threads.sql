@@ -20,9 +20,9 @@ FROM
   INNER JOIN
   wiki ON wiki.id = thread.wiki_id
   INNER JOIN
-  thread_first_post ON thread_first_post.thread_id = thread.id
+  thread_first_post AS lookup_thread_first_post ON lookup_thread_first_post.thread_id = thread.id
   INNER JOIN
-  post AS first_post_in_thread ON first_post_in_thread.id = thread_first_post.post_id
+  post AS first_post_in_thread ON first_post_in_thread.id = lookup_thread_first_post.post_id
   LEFT JOIN
   category ON category.id = thread.category_id
   LEFT JOIN
