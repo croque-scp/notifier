@@ -49,9 +49,10 @@ CREATE TABLE context_thread (
 );
 
 CREATE TABLE context_wiki (
-  wiki_id         VARCHAR(20)  NOT NULL,
-  wiki_name       VARCHAR(200) NOT NULL,
-  wiki_uses_https TINYINT(1)   NOT NULL,
+  wiki_id                 VARCHAR(20)  NOT NULL,
+  wiki_name               VARCHAR(200) NOT NULL,
+  wiki_service_configured TINYINT(1)   NOT NULL,
+  wiki_uses_https         TINYINT(1)   NOT NULL,
 
   UNIQUE (wiki_id)
 );
@@ -180,6 +181,7 @@ INSERT INTO context_wiki
 SELECT
   wiki.id AS wiki_id,
   wiki.name AS wiki_name,
+  1 AS wiki_service_configured,
   wiki.secure AS wiki_uses_https
 FROM
   wiki
