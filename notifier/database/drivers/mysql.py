@@ -406,19 +406,22 @@ class MySqlDriver(BaseDatabaseDriver, BaseDatabaseWithSqlFileCache):
         )
 
     def store_supported_wikis(self, wikis: List[SupportedWikiConfig]) -> None:
-        # Destroy all existing wikis in preparation for overwrite
         with self.transaction() as cursor:
-            self.execute_named("delete_wikis", None, cursor)
+            # Soft-delete all existing wikis
+            self.execute_named("mark_context_wikis_as_not_configured", None, cursor)
+            # For each wiki, add or un-soft-delete it
             for wiki in wikis:
                 self.execute_named(
-                    "add_wiki",
+                    "add_context_wiki",
                     {
                         "wiki_id": wiki["id"],
                         "wiki_name": wiki["name"],
-                        "wiki_secure": wiki["secure"],
+                        "wiki_service_configured": 1,
+                        "wiki_uses_https": wiki["secure"],
                     },
                     cursor,
                 )
+            # Wikis that were removed from the service since the last run are still available as context
 
     def store_thread(self, thread: ThreadInfo) -> None:
         if (
