@@ -260,4 +260,11 @@ WHERE
   );
 SELECT "context_parent_post", COUNT(*) FROM context_parent_post;
 
+-- Drop old tables
+-- DROP TABLE thread_first_post;
+-- DROP TABLE thread;
+-- DROP TABLE post;
+-- DROP TABLE wiki;
+-- DROP TABLE category;
+
 COMMIT;
