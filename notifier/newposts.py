@@ -1,5 +1,6 @@
 import logging
-from typing import List, Optional, Tuple, cast
+from operator import itemgetter
+from typing import Iterator, List, Optional, TypedDict, cast
 
 import feedparser
 
@@ -174,19 +175,27 @@ def fetch_posts_with_context(
         )
 
 
-def fetch_new_posts_rss(wiki_id: str) -> List[Tuple[str, str]]:
-    """Get new posts from the wiki's RSS feed, returning only their thread
-    and post IDs."""
+RssPost = TypedDict(
+    "RssPost", {"thread_id": str, "post_id": str, "posted_timestamp": int}
+)
+
+
+def fetch_new_posts_rss(wiki_id: str) -> Iterator[RssPost]:
+    """Get basic info about new posts from the wiki's RSS feed."""
     rss_url = new_posts_rss.format(wiki_id)
     try:
         feed = feedparser.parse(rss_url)
     except Exception as error:  # pylint: disable=broad-except
-        # Will explore what errors this can throw later
         logger.error(
             "Could not parse RSS feed %s", {"wiki_id": wiki_id}, exc_info=error
         )
-    return [
-        # Assert that the post ID is present
-        cast(Tuple[str, str], parse_thread_url(entry["id"]))
-        for entry in feed["entries"]
-    ]
+
+    for entry in feed["entries"]:
+        thread_id, post_id = itemgetter("thread_id", "post_id")(
+            parse_thread_url(entry["id"])
+        )
+        yield {
+            "thread_id": thread_id,
+            "post_id": post_id,
+            "posted_timestamp": int(entry["published_parsed"]),
+        }
