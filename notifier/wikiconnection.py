@@ -303,6 +303,8 @@ class Connection:
 
         1. Meta info about the thread.
         2. List of posts in this page of the thread.
+
+        If no post with the given ID is in the thread, a null page is returned (i.e. the list of posts will be empty).
         """
         module_kwargs = {"t": thread_id.lstrip("t-")}
         if containing_post_id is not None:
