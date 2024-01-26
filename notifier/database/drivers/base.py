@@ -37,9 +37,8 @@ class BaseDatabaseDriver(ABC):
         """Initial setup for the database."""
 
     @abstractmethod
-    def find_new_posts(self, post_ids: Iterable[str]) -> List[str]:
-        """From a list of post IDs, return those that are not already
-        present in the cache."""
+    def get_latest_post_timestamp(self) -> int:
+        """Returns the timestamp of the latest stored post."""
 
     @abstractmethod
     def find_new_threads(self, thread_ids: Iterable[str]) -> List[str]:

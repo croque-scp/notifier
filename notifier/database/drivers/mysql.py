@@ -180,18 +180,14 @@ class MySqlDriver(BaseDatabaseDriver, BaseDatabaseWithSqlFileCache):
         with self.transaction() as cursor:
             self.execute_named("create_tables", None, cursor)
 
-    def find_new_posts(self, post_ids: Iterable[str]) -> List[str]:
-        return [
-            post_id
-            for post_id in post_ids
-            if (
-                row := self.execute_named(
-                    "check_post_exists", {"id": post_id}
-                ).fetchone()
-            )
-            is None
-            or not row["post_exists"]
-        ]
+    def get_latest_post_timestamp(self) -> int:
+        return cast(
+            int,
+            (
+                self.execute_named("get_latest_post_timestamp").fetchone()
+                or {"posted_timestamp": 0}
+            )["posted_timestamp"],
+        )
 
     def find_new_threads(self, thread_ids: Iterable[str]) -> List[str]:
         return [
@@ -408,7 +404,9 @@ class MySqlDriver(BaseDatabaseDriver, BaseDatabaseWithSqlFileCache):
     def store_supported_wikis(self, wikis: List[SupportedWikiConfig]) -> None:
         with self.transaction() as cursor:
             # Soft-delete all existing wikis
-            self.execute_named("mark_context_wikis_as_not_configured", None, cursor)
+            self.execute_named(
+                "mark_context_wikis_as_not_configured", None, cursor
+            )
             # For each wiki, add or un-soft-delete it
             for wiki in wikis:
                 self.execute_named(
