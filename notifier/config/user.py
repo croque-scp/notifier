@@ -1,6 +1,7 @@
 import logging
+from operator import itemgetter
 import re
-from typing import List, Optional, Tuple, Union, cast
+from typing import List, Optional, Tuple, TypedDict, Union, cast
 
 import tomlkit
 from tomlkit.exceptions import TOMLKitError
@@ -154,7 +155,9 @@ def parse_subscriptions(
             # (Empty rows are permitted so this is valid)
             continue
         try:
-            thread_id, post_id = parse_thread_url(url)
+            thread_id, post_id = itemgetter("thread_id", "post_id")(
+                parse_thread_url(url)
+            )
         except ValueError:
             # The URL parser is extremely forgiving, so this should not
             # happen; if it somehow does, discard it
@@ -165,11 +168,18 @@ def parse_subscriptions(
     return subscriptions
 
 
-def parse_thread_url(url: str) -> Tuple[str, Union[str, None]]:
+ThreadPostIds = TypedDict(
+    "ThreadPostIds", {"thread_id": str, "post_id": Union[str, None]}
+)
+
+
+def parse_thread_url(
+    url: str,
+) -> ThreadPostIds:
     """Parses a URL to a thread ID and optionally a post ID."""
     pattern = re.compile(r"(t-[0-9]+)(?:.*#(post-[0-9]+))?")
     match = pattern.search(url)
     if not match:
         raise ValueError("Thread URL does not match expected pattern")
     thread_id, post_id = match.groups()
-    return thread_id, post_id
+    return {"thread_id": thread_id, "post_id": post_id}
