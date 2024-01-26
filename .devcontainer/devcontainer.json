@@ -1,6 +1,8 @@
 {
   "name": "Python 3",
-  "build": { "dockerfile": "Dockerfile" },
+  "build": {
+    "dockerfile": "Dockerfile"
+  },
   "features": {
     "ghcr.io/devcontainers-contrib/features/poetry:2": {
       "version": "latest"
@@ -12,25 +14,31 @@
       "settings": {
         "python.defaultInterpreterPath": "./.venv/bin/python",
         "python.linting.pylintPath": "./.venv/bin/pylint",
-        "python.analysis.extraPaths": [".venv/bin"],
-        "python.linting.mypyEnabled": true,
-        "python.linting.enabled": true,
-        "python.linting.mypyArgs": ["--strict", "--show-column-numbers"],
-        "python.linting.mypyPath": "./.venv/bin/mypy",
+        "python.analysis.extraPaths": [
+          ".venv/bin"
+        ],
         "python.formatting.blackPath": "./.venv/bin/black",
         "black-formatter.path": [
           "./.venv/bin/black"
         ],
-        "editor.defaultFormatter": "ms-python.black-formatter",
-        "mypy.runUsingActiveInterpreter": true
+        "mypy.runUsingActiveInterpreter": true,
+        "[python]": {
+          "editor.defaultFormatter": "ms-python.black-formatter",
+        },
+        "python.formatting.provider": "none",
+        "editor.formatOnSave": true,
+        "mypy-type-checker.args": [
+          "--strict"
+        ],
+        "mypy-type-checker.importStrategy": "fromEnvironment"
       },
       "extensions": [
         "ms-azuretools.vscode-docker",
         "ms-python.black-formatter",
-        "matangover.mypy",
         "ms-python.vscode-pylance",
         "ms-python.python",
-        "ms-python.pylint"
+        "ms-python.pylint",
+        "ms-python.mypy-type-checker"
       ]
     }
   },

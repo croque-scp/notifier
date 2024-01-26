@@ -1,4 +1,4 @@
-FROM mcr.microsoft.com/devcontainers/python:0-3.8-bullseye
+FROM mcr.microsoft.com/devcontainers/python:0-3.8
 
 RUN apt-get install libxml2-dev libxslt-dev
 
