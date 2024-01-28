@@ -14,6 +14,7 @@ from notifier.types import (
     ActivationLogDump,
     CachedUserConfig,
     ChannelLogDump,
+    Context,
     LogDump,
     NewPostsInfo,
     PostReplyInfo,
@@ -21,7 +22,6 @@ from notifier.types import (
     RawUserConfig,
     Subscription,
     SupportedWikiConfig,
-    ThreadInfo,
     ThreadPostInfo,
 )
 
@@ -410,7 +410,7 @@ class MySqlDriver(BaseDatabaseDriver, BaseDatabaseWithSqlFileCache):
             # For each wiki, add or un-soft-delete it
             for wiki in wikis:
                 self.execute_named(
-                    "add_context_wiki",
+                    "store_context_wiki",
                     {
                         "wiki_id": wiki["id"],
                         "wiki_name": wiki["name"],
@@ -421,31 +421,56 @@ class MySqlDriver(BaseDatabaseDriver, BaseDatabaseWithSqlFileCache):
                 )
             # Wikis that were removed from the service since the last run are still available as context
 
-    def store_thread(self, thread: ThreadInfo) -> None:
-        if (
-            thread["category_id"] is not None
-            and thread["category_name"] is not None
-        ):
-            self.execute_named(
-                "store_category",
-                {"id": thread["category_id"], "name": thread["category_name"]},
-            )
+    def store_context_forum_category(
+        self, context_forum_category: Context.ForumCategory
+    ) -> None:
         self.execute_named(
-            "store_thread",
+            "store_context_forum_category",
             {
-                "id": thread["id"],
-                "title": thread["title"],
-                "wiki_id": thread["wiki_id"],
-                "category_id": thread["category_id"],
-                "creator_username": thread["creator_username"],
-                "created_timestamp": thread["created_timestamp"],
+                "category_id": context_forum_category["category_id"],
+                "category_name": context_forum_category["category_name"],
             },
         )
 
-    def store_thread_first_post(self, thread_id: str, post_id: str) -> None:
+    def store_context_thread(self, context_thread: Context.Thread) -> None:
         self.execute_named(
-            "store_thread_first_post",
-            {"thread_id": thread_id, "post_id": post_id},
+            "store_context_thread",
+            {
+                "thread_id": context_thread["thread_id"],
+                "thread_created_timestamp": context_thread[
+                    "thread_created_timestamp"
+                ],
+                "thread_title": context_thread["thread_title"],
+                "thread_snippet": context_thread["thread_snippet"],
+                "thread_creator_username": context_thread[
+                    "thread_creator_username"
+                ],
+                "first_post_id": context_thread["first_post_id"],
+                "first_post_author_user_id": context_thread[
+                    "first_post_author_user_id"
+                ],
+                "first_post_author_username": context_thread[
+                    "first_post_author_username"
+                ],
+                "first_post_created_timestamp": context_thread[
+                    "first_post_created_timestamp"
+                ],
+            },
+        )
+
+    def store_context_parent_post(
+        self, context_parent_post: Context.ParentPost
+    ) -> None:
+        self.execute_named(
+            "store_context_parent_post",
+            {
+                "post_id": context_parent_post["post_id"],
+                "posted_timestamp": context_parent_post["posted_timestamp"],
+                "post_title": context_parent_post["post_title"],
+                "post_snippet": context_parent_post["post_snippet"],
+                "author_user_id": context_parent_post["author_user_id"],
+                "author_username": context_parent_post["author_username"],
+            },
         )
 
     def store_post(self, post: RawPost) -> None:

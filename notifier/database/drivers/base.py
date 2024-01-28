@@ -10,7 +10,7 @@ from notifier.types import (
     RawPost,
     RawUserConfig,
     SupportedWikiConfig,
-    ThreadInfo,
+    Context,
 )
 
 
@@ -126,20 +126,24 @@ class BaseDatabaseDriver(ABC):
         that are already present."""
 
     @abstractmethod
-    def store_thread(self, thread: ThreadInfo) -> None:
-        """Store a thread.
-
-        Doesn't matter if the thread or category is already known or not.
-        """
-
-    @abstractmethod
-    def store_thread_first_post(self, thread_id: str, post_id: str) -> None:
-        """Store the relationship between a thread and the first post it
-        contains."""
-
-    @abstractmethod
     def store_post(self, post: RawPost) -> None:
         """Store a post."""
+
+    @abstractmethod
+    def store_context_forum_category(
+        self, context_forum_category: Context.ForumCategory
+    ) -> None:
+        """Store a forum category for context."""
+
+    @abstractmethod
+    def store_context_thread(self, context_thread: Context.Thread) -> None:
+        """Store a thread for context."""
+
+    @abstractmethod
+    def store_context_parent_post(
+        self, context_parent_post: Context.ParentPost
+    ) -> None:
+        """Store a parent post for context."""
 
     @abstractmethod
     def store_channel_log_dump(self, log: ChannelLogDump) -> None:
