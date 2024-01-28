@@ -110,24 +110,12 @@ class CachedUserConfig(TypedDict):
 class RawThreadMeta(TypedDict):
     """Information about a thread from its header."""
 
+    title: str
     category_id: Optional[str]
     category_name: Optional[str]
-    title: str
     creator_username: Optional[str]
     created_timestamp: int
     page_count: int
-
-
-class ThreadInfo(TypedDict):
-    """Information about a thread to be stored in the database."""
-
-    id: str
-    title: str
-    wiki_id: str
-    category_id: Optional[str]
-    category_name: Optional[str]
-    creator_username: Optional[str]
-    created_timestamp: int
 
 
 class RawPost(TypedDict):
@@ -141,6 +129,39 @@ class RawPost(TypedDict):
     snippet: str
     user_id: str
     username: str
+
+
+class Context:
+    """Types for different post contexts."""
+
+    class ForumCategory(TypedDict):
+        """Forum category context."""
+
+        category_id: str
+        category_name: str
+
+    class Thread(TypedDict):
+        """Thread context."""
+
+        thread_id: str
+        thread_created_timestamp: int
+        thread_title: str
+        thread_snippet: str
+        thread_creator_username: str
+        first_post_id: str
+        first_post_author_user_id: str
+        first_post_author_username: str
+        first_post_created_timestamp: int
+
+    class ParentPost(TypedDict):
+        """Parent post context."""
+
+        post_id: str
+        posted_timestamp: int
+        post_title: str
+        post_snippet: str
+        author_user_id: str
+        author_username: str
 
 
 class PostInfo(TypedDict):
