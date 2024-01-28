@@ -242,7 +242,7 @@ class Connection:
         )
         first_page = self.module(wiki, module_name, **module_kwargs)
         yield first_page
-        page_count = count_pages(first_page["body"])
+        page_count, _ = count_pages(first_page["body"])
         # Iterate through the remaining pages
         # Start from the starting index plus one, because the first page
         # was already done

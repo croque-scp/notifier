@@ -116,6 +116,7 @@ class RawThreadMeta(TypedDict):
     creator_username: Optional[str]
     created_timestamp: int
     page_count: int
+    current_page: Optional[int]
 
 
 class RawPost(TypedDict):
