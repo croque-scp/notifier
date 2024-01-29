@@ -17,6 +17,7 @@ from notifier.types import (
     Context,
     LogDump,
     NewPostsInfo,
+    NotifiablePost,
     PostReplyInfo,
     RawPost,
     RawUserConfig,
@@ -473,18 +474,20 @@ class MySqlDriver(BaseDatabaseDriver, BaseDatabaseWithSqlFileCache):
             },
         )
 
-    def store_post(self, post: RawPost) -> None:
+    def store_post(self, post: NotifiablePost) -> None:
         self.execute_named(
             "store_post",
             {
-                "id": post["id"],
-                "thread_id": post["thread_id"],
-                "parent_post_id": post["parent_post_id"],
+                "post_id": post["post_id"],
                 "posted_timestamp": post["posted_timestamp"],
-                "title": post["title"],
-                "snippet": post["snippet"],
-                "user_id": post["user_id"],
-                "username": post["username"],
+                "post_title": post["post_title"],
+                "post_snippet": post["post_snippet"],
+                "author_user_id": post["author_user_id"],
+                "author_username": post["author_username"],
+                "context_wiki_id": post["context_wiki_id"],
+                "context_forum_category_id": post["context_forum_category_id"],
+                "context_thread_id": post["context_thread_id"],
+                "context_parent_post_id": post["context_parent_post_id"],
             },
         )
 
