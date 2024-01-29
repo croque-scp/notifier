@@ -1,12 +1,13 @@
+from concurrent.futures import thread
 import logging
 from operator import itemgetter
-from typing import Iterator, List, Optional, TypedDict, cast
+from typing import Iterator, List, Optional, Set, TypedDict, cast
 
 import feedparser
 
 from notifier.config.user import parse_thread_url
 from notifier.database.drivers.base import BaseDatabaseDriver
-from notifier.types import RawPost, RawThreadMeta, ThreadInfo
+from notifier.types import RawPost, RawThreadMeta
 from notifier.wikiconnection import Connection
 
 logger = logging.getLogger(__name__)
@@ -52,125 +53,169 @@ def fetch_posts_with_context(
     the posts in the cache.
     """
     # Get the list of new posts from the forum's RSS
-    new_posts = fetch_new_posts_rss(wiki_id)
+    new_posts = list(fetch_new_posts_rss(wiki_id))
 
-    # Remove posts that are already recorded
-    new_post_ids = database.find_new_posts(
-        [new_post[1] for new_post in new_posts]
+    # Filter out posts older than this run
+    latest_post_timestamp = database.get_latest_post_timestamp()
+    new_posts = sorted(
+        [
+            post
+            for post in new_posts
+            if post["posted_timestamp"] > latest_post_timestamp
+        ],
+        key=lambda p: (p["thread_id"], p["posted_timestamp"]),
     )
+
     logger.debug(
         "Found posts in RSS %s",
         {
             "wiki_id": wiki_id,
-            "full_post_count": len(new_posts),
-            "new_post_count": len(new_post_ids),
+            "new_post_count": len(new_posts),
         },
     )
-    new_posts = [post for post in new_posts if post[1] in new_post_ids]
 
-    # Find which of these posts were made in new threads
-    new_thread_ids = database.find_new_threads(
-        [new_post[0] for new_post in new_posts]
-    )
+    # Cache the latest downloaded thread to prevent multiple identical downloads when multiple posts share a thread
+    thread_meta: RawThreadMeta = None  # type:ignore
+    thread_page_posts: List[RawPost] = []
 
-    # Make a list of thread pages to iterate over
-    # The post ID being None indicates that the full thread will be
-    # iterated; otherwise, only the page that contains the specific post
-    # will be iterated
-    threads_pages_to_get = [
-        (thread_id, None if thread_id in new_thread_ids else post_id)
-        for thread_id, post_id in new_posts
-    ]
-    # Sort the list so that full threads will be crawled first, followed by
-    # individual pages - this is to optimise deduplication
-    threads_pages_to_get.sort(key=lambda page: page[1] is not None)
+    # Track which context threads have been downloaded so that they won't be redownloaded this run
+    context_threads_this_run: Set[str] = set()
 
-    # Record posts and full threads that have already been seen to as not
-    # to duplicate any API calls
-    posts_already_seen: List[str] = []
-    full_threads_already_seen: List[str] = []
+    for new_post in new_posts:
+        thread_id = new_post["thread_id"]
+        post_id = new_post["post_id"]
 
-    # Download each of the new threads
-    logger.debug(
-        "Found new threads to download %s",
-        {"wiki_id": wiki_id, "threads_count": len(threads_pages_to_get)},
-    )
-    for thread_id, post_id in threads_pages_to_get:
-        if post_id is None and thread_id in full_threads_already_seen:
-            # If a full thread is to be crawled (post_id is None) but it
-            # has already been seen, skip it
+        # Download the thread page only if it's not already cached
+        post = next(
+            (
+                page_post
+                for page_post in thread_page_posts
+                if page_post["id"] == post_id
+            ),
+            None,
+        )
+        if post is None:
             logger.debug(
-                "Skipping download of thread %s",
-                {
-                    "wiki_id": wiki_id,
-                    "thread_id": thread_id,
-                    "reason": "thread already downloaded",
-                },
-            )
-            continue
-        if post_id is not None and post_id in posts_already_seen:
-            # If a page is to be crawled (post_id is not None) but the post
-            # has already been seen, we already have the page; skip it
-            logger.debug(
-                "Skipping download of post %s",
+                "Downloading thread page containing post %s",
                 {
                     "wiki_id": wiki_id,
                     "thread_id": thread_id,
                     "post_id": post_id,
-                    "reason": "post already seen in downloaded thread",
                 },
             )
-            continue
-        logger.debug(
-            "Downloading thread%s %s",
-            " containing post" if post_id is not None else "",
-            {"wiki_id": wiki_id, "thread_id": thread_id, "post_id": post_id},
-        )
-        for post_index, thread_or_post in enumerate(
-            connection.thread(wiki_id, thread_id, post_id)
-        ):
-            if post_index == 0:
-                # First item is the thread meta info
-                thread_meta = cast(RawThreadMeta, thread_or_post)
-                thread_info: ThreadInfo = {
-                    "id": thread_id,
-                    "title": thread_meta["title"],
-                    "wiki_id": wiki_id,
-                    "category_id": thread_meta["category_id"],
-                    "category_name": thread_meta["category_name"],
-                    "creator_username": thread_meta["creator_username"],
-                    "created_timestamp": thread_meta["created_timestamp"],
-                }
-                logger.debug("Storing metadata for thread %s", thread_info)
-                database.store_thread(thread_info)
-                continue
-            # Remaining items are posts
-            thread_post = cast(RawPost, thread_or_post)
-            logger.debug(
-                "Storing post %s",
+            thread_meta, thread_page_posts = connection.thread(
+                wiki_id, thread_id, post_id
+            )
+            post = next(
+                (
+                    page_post
+                    for page_post in thread_page_posts
+                    if page_post["id"] == post_id
+                ),
+                None,
+            )
+        if post is None:
+            logger.error(
+                "Requested post missing from downloaded thread %s",
                 {
                     "wiki_id": wiki_id,
-                    "post": thread_post,
-                    "is first post": post_id is None and post_index == 1,
+                    "thread_id": thread_id,
+                    "post_id": post_id,
                 },
             )
-            database.store_post(thread_post)
-            if post_id is None and post_index == 1:
-                database.store_thread_first_post(thread_id, thread_post["id"])
-            # Mark each post as seen
-            posts_already_seen.append(thread_post["id"])
-        if post_id is None:
-            # If the full thread was crawled, mark it as seen
-            full_threads_already_seen.append(thread_id)
-        logger.debug(
-            "Downloaded thread%s %s",
-            " containing post" if post_id is not None else "",
+            raise RuntimeError("Requested post missing from downloaded thread")
+
+        # For each kind of context, check if we already have it, and if not, fetch it
+
+        # Context: wiki
+        # The context wiki table is running double duty as the list of configured wikis, so we already have that context
+
+        # Context: category
+        if (
+            thread_meta["category_id"] is not None
+            and thread_meta["category_name"] is not None
+        ):
+            database.store_context_forum_category(
+                {
+                    "category_id": thread_meta["category_id"],
+                    "category_name": thread_meta["category_name"],
+                }
+            )
+
+        # Context: thread
+        if thread_id not in context_threads_this_run:
+            if thread_meta["current_page"] == 1:
+                thread_first_post: RawPost = thread_page_posts[0]
+                if thread_first_post["id"] == post_id:
+                    # Special case where the searched post is the first post in the thread. E.g.:
+                    #   - The user is subscribed to a thread that exists but has no posts yet
+                    #   - The user is subscribed to a thread that doesn't exist but will
+                    #   - The user is subscribed to new thread creation (a feature that doesn't exist yet but might someday)
+                    # Currently this special case is not handled - the notification will have duplicated info
+                    pass
+            else:
+                logger.debug(
+                    "Downloading first thread page %s",
+                    {"wiki_id": wiki_id, "thread_id": thread_id},
+                )
+                thread_first_post = connection.thread(wiki_id, thread_id)[1][0]
+            database.store_context_thread(
+                {
+                    "thread_id": thread_id,
+                    "thread_created_timestamp": thread_meta[
+                        "created_timestamp"
+                    ],
+                    "thread_title": thread_meta["title"],
+                    "thread_snippet": thread_first_post["snippet"],
+                    "thread_creator_username": thread_meta["creator_username"],
+                    "first_post_id": thread_first_post["id"],
+                    "first_post_author_user_id": thread_first_post["user_id"],
+                    "first_post_author_username": thread_first_post[
+                        "username"
+                    ],
+                    "first_post_created_timestamp": thread_first_post[
+                        "posted_timestamp"
+                    ],
+                }
+            )
+            context_threads_this_run.add(thread_id)
+
+        # Context: parent post
+        parent_post = next(
+            (
+                page_post
+                for page_post in thread_page_posts
+                if page_post["id"] == post["parent_post_id"]
+            ),
+            None,
+        )
+        if parent_post is not None:
+            database.store_context_parent_post(
+                {
+                    "post_id": parent_post["id"],
+                    "posted_timestamp": parent_post["posted_timestamp"],
+                    "post_title": parent_post["title"],
+                    "post_snippet": parent_post["snippet"],
+                    "author_user_id": parent_post["user_id"],
+                    "author_username": parent_post["username"],
+                }
+            )
+
+        # Context complete
+        # Now store the post itself
+        logger.debug("Storing post %s", {"wiki_id": wiki_id, "post": post})
+        database.store_post(
             {
-                "wiki_id": wiki_id,
-                "thread_id": thread_id,
-                "post_id": post_id,
-                "cumulative_post_count": len(posts_already_seen),
-                "cumulative_full_thread_count": len(full_threads_already_seen),
+                "post_id": post["id"],
+                "posted_timestamp": post["posted_timestamp"],
+                "post_title": post["title"],
+                "post_snippet": post["snippet"],
+                "author_user_id": post["user_id"],
+                "author_username": post["username"],
+                "context_wiki_id": wiki_id,
+                "context_forum_category_id": thread_meta["category_id"],
+                "context_thread_id": thread_id,
+                "context_parent_post_id": post["parent_post_id"],
             },
         )
 
