@@ -132,6 +132,21 @@ class RawPost(TypedDict):
     username: str
 
 
+class NotifiablePost(TypedDict):
+    """Info about a notifiable post to be stored in the database."""
+
+    post_id: str
+    posted_timestamp: int
+    post_title: str
+    post_snippet: str
+    author_user_id: str
+    author_username: str
+    context_wiki_id: Optional[str]
+    context_forum_category_id: Optional[str]
+    context_thread_id: Optional[str]
+    context_parent_post_id: Optional[str]
+
+
 class Context:
     """Types for different post contexts."""
 
@@ -148,7 +163,7 @@ class Context:
         thread_created_timestamp: int
         thread_title: str
         thread_snippet: str
-        thread_creator_username: str
+        thread_creator_username: Optional[str]
         first_post_id: str
         first_post_author_user_id: str
         first_post_author_username: str

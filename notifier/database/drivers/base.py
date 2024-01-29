@@ -7,7 +7,7 @@ from notifier.types import (
     ChannelLogDump,
     LogDump,
     NewPostsInfo,
-    RawPost,
+    NotifiablePost,
     RawUserConfig,
     SupportedWikiConfig,
     Context,
@@ -126,7 +126,7 @@ class BaseDatabaseDriver(ABC):
         that are already present."""
 
     @abstractmethod
-    def store_post(self, post: RawPost) -> None:
+    def store_post(self, post: NotifiablePost) -> None:
         """Store a post."""
 
     @abstractmethod
