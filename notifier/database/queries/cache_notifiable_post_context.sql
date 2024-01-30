@@ -1,3 +1,4 @@
+-- Pre-joins posts to context tables to avoid repeating that for each user queried
 CREATE TEMPORARY TABLE IF NOT EXISTS post_with_context
 WITH cte AS (
   SELECT
