@@ -32,22 +32,6 @@ CREATE TABLE notifiable_post (
   UNIQUE (post_id)
 );
 
-CREATE TABLE context_thread (
-  thread_id                VARCHAR(20)  NOT NULL,
-  thread_created_timestamp INT UNSIGNED NOT NULL,
-
-  thread_title            VARCHAR(200) NOT NULL,
-  thread_snippet          VARCHAR(200) NOT NULL,
-  thread_creator_username VARCHAR(20),
-
-  first_post_id                VARCHAR(20)  NOT NULL,
-  first_post_author_user_id    VARCHAR(20)  NOT NULL,
-  first_post_author_username   VARCHAR(20)  NOT NULL,
-  first_post_created_timestamp INT UNSIGNED NOT NULL,
-
-  UNIQUE (thread_id)
-);
-
 CREATE TABLE context_wiki (
   wiki_id                 VARCHAR(20)  NOT NULL,
   wiki_name               VARCHAR(200) NOT NULL,
@@ -62,6 +46,22 @@ CREATE TABLE context_forum_category (
   category_name VARCHAR(200) NOT NULL,
 
   UNIQUE (category_id)
+);
+
+CREATE TABLE context_thread (
+  thread_id                VARCHAR(20)  NOT NULL,
+  thread_created_timestamp INT UNSIGNED NOT NULL,
+
+  thread_title            VARCHAR(200) NOT NULL,
+  thread_snippet          VARCHAR(200) NOT NULL,
+  thread_creator_username VARCHAR(20),
+
+  first_post_id                VARCHAR(20)  NOT NULL,
+  first_post_author_user_id    VARCHAR(20)  NOT NULL,
+  first_post_author_username   VARCHAR(20)  NOT NULL,
+  first_post_created_timestamp INT UNSIGNED NOT NULL,
+
+  UNIQUE (thread_id)
 );
 
 CREATE TABLE context_parent_post (
