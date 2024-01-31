@@ -184,39 +184,32 @@ class PostInfo(TypedDict):
     """Information for a single post returned from the cache."""
 
     id: str
-    title: str
-    username: str
     posted_timestamp: int
+    title: str
     snippet: str
-    thread_id: str
-    thread_title: str
-    thread_creator: Optional[str]
-    thread_timestamp: int
-    wiki_id: str
-    wiki_name: str
-    wiki_secure: IsSecure
+    username: str
+
+    wiki_id: Optional[str]
+    wiki_name: Optional[str]
+    wiki_secure: Optional[IsSecure]
+
     category_id: Optional[str]
     category_name: Optional[str]
 
+    thread_id: Optional[str]
+    thread_timestamp: Optional[int]
+    thread_title: Optional[str]
+    thread_creator: Optional[str]
 
-class ThreadPostInfo(PostInfo):
-    """Information for a new post made to a thread from the cache."""
+    parent_post_id: Optional[str]
+    parent_posted_timestamp: Optional[int]
+    parent_title: Optional[str]
+    parent_username: Optional[str]
 
-
-class PostReplyInfo(PostInfo):
-    """Information for a new reply to a post from the cache."""
-
-    parent_post_id: str
-    parent_title: str
-    parent_username: str
-    parent_posted_timestamp: int
-
-
-class NewPostsInfo(TypedDict):
-    """All new posts returned from the cache."""
-
-    thread_posts: List[ThreadPostInfo]
-    post_replies: List[PostReplyInfo]
+    flag_user_subscribed_to_thread: bool
+    flag_user_subscribed_to_post: bool
+    flag_user_started_thread: bool
+    flag_user_posted_parent: bool
 
 
 # Email addresses keyed by Wikidot usernames.
