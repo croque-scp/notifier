@@ -38,7 +38,8 @@
         "ms-python.vscode-pylance",
         "ms-python.python",
         "ms-python.pylint",
-        "ms-python.mypy-type-checker"
+        "ms-python.mypy-type-checker",
+        "tamasfe.even-better-toml"
       ]
     }
   },
