@@ -5,7 +5,6 @@ from notifier.types import (
     ActivationLogDump,
     CachedUserConfig,
     ChannelLogDump,
-    GlobalOverridesConfig,
     LogDump,
     NewPostsInfo,
     RawPost,
@@ -36,18 +35,6 @@ class BaseDatabaseDriver(ABC):
     @abstractmethod
     def create_tables(self) -> None:
         """Initial setup for the database."""
-
-    @abstractmethod
-    def store_global_overrides(
-        self, global_overrides: GlobalOverridesConfig
-    ) -> None:
-        """Store all global overrides, overwriting any that are already
-        present."""
-
-    @abstractmethod
-    def get_global_overrides(self) -> GlobalOverridesConfig:
-        """Gets all global overrides, keyed to the ID of the wiki they are
-        set for."""
 
     @abstractmethod
     def find_new_posts(self, post_ids: Iterable[str]) -> List[str]:
