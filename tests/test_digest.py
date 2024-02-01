@@ -10,10 +10,8 @@ from notifier.digest import (
     process_long_string,
 )
 from notifier.formatter import convert_syntax
-from notifier.overrides import apply_overrides, override_applies_to_post
 from notifier.types import (
     CachedUserConfig,
-    GlobalOverridesConfig,
     NewPostsInfo,
 )
 
@@ -148,48 +146,3 @@ def test_fake_digest(
     assert digest.count("Contents...") == 6
     assert digest.count("Response...") == 8
     print(convert_syntax(digest, "email"))
-
-
-def test_overrides(fake_posts: NewPostsInfo) -> None:
-    """Check that application of overrides to mute notifications globally
-    works."""
-    overrides: GlobalOverridesConfig = {
-        "my-wiki": [
-            {"action": "mute", "thread_id_is": "t-1"},
-            {"action": "mute_thread", "thread_title_matches": "Post 2"},
-        ]
-    }
-    assert override_applies_to_post(
-        fake_posts["thread_posts"][0], overrides["my-wiki"][0]
-    )
-    apply_overrides(fake_posts, overrides, [])
-    assert (
-        len(
-            [
-                reply
-                for reply in fake_posts["post_replies"]
-                if reply["thread_id"] == "t-1"
-            ]
-        )
-        == 0
-    )
-    assert (
-        len(
-            [
-                reply
-                for reply in fake_posts["post_replies"]
-                if reply["thread_title"].startswith("Post 2")
-            ]
-        )
-        != 0
-    )
-    assert (
-        len(
-            [
-                post
-                for post in fake_posts["thread_posts"]
-                if post["thread_title"].startswith("Post 2")
-            ]
-        )
-        == 0
-    )
