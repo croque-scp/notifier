@@ -17,7 +17,7 @@ from notifier.types import CachedUserConfig, PostInfo
 @pytest.fixture(scope="module")
 def fake_user() -> CachedUserConfig:
     """Create a fake user config."""
-    return {  # TODO Subscriptions and auto subscriptions
+    return {  # TODO Subscriptions
         "user_id": "1000",
         "username": "Me",
         "frequency": "hourly",
@@ -26,7 +26,6 @@ def fake_user() -> CachedUserConfig:
         "last_notified_timestamp": 0,
         "tags": "",
         "manual_subs": [],
-        "auto_subs": [],
     }
 
 

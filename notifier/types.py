@@ -104,7 +104,6 @@ class CachedUserConfig(TypedDict):
     last_notified_timestamp: int
     tags: str
     manual_subs: List[Subscription]
-    auto_subs: List[Subscription]
 
 
 class RawThreadMeta(TypedDict):

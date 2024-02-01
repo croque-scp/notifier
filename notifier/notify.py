@@ -1,7 +1,7 @@
 import logging
 import re
 from smtplib import SMTPAuthenticationError
-from typing import FrozenSet, Iterable, List, Optional, Any, Set, cast, Tuple
+from typing import FrozenSet, Iterable, List, Optional, Set, Tuple
 
 from notifier.config.remote import get_global_config
 from notifier.config.user import get_user_config
@@ -23,7 +23,6 @@ from notifier.types import (
     ChannelLogDump,
     EmailAddresses,
     LocalConfig,
-    PostInfo,
 )
 from notifier.wikiconnection import Connection, RestrictedInbox
 
@@ -341,9 +340,8 @@ def notify_user(
     logger.debug(
         "Making digest for user %s",
         {
-            **cast(Any, user),
-            "manual_subs": len(user["manual_subs"]),
-            "auto_subs": len(user["auto_subs"]),
+            "manual_subs_count": len(user["manual_subs"]),
+            **user,
         },
     )
     # Get new posts for this user
@@ -515,7 +513,7 @@ def notify_user(
     if user["tags"] != "":
         connection.set_tags(
             config["config_wiki"],
-            ":".join([config["user_config_category"], str(user["user_id"])]),
+            ":".join([config["user_config_category"], user["user_id"]]),
             "",
         )
 
