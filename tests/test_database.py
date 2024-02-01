@@ -1,4 +1,4 @@
-from typing import List, Optional, Sequence, Set, Tuple
+from typing import List, Optional, Sequence, Set
 
 import pytest
 
@@ -9,15 +9,14 @@ from notifier.types import (
     ActivationLogDump,
     AuthConfig,
     ChannelLogDump,
+    Context,
     LocalConfig,
-    PostReplyInfo,
-    RawPost,
+    NotifiablePost,
+    PostInfo,
     RawUserConfig,
     Subscription,
     SubscriptionCardinality,
     SupportedWikiConfig,
-    ThreadInfo,
-    ThreadPostInfo,
 )
 
 
@@ -79,189 +78,208 @@ def sample_database(
     sample_wikis: List[SupportedWikiConfig] = [
         {"id": "my-wiki", "name": "My Wiki", "secure": 1}
     ]
-    sample_threads: List[ThreadInfo] = [
+    sample_threads: List[Context.Thread] = [
         {
-            "id": "t-0",
-            "title": "Null thread",
-            "wiki_id": "my-wiki",
-            "category_id": None,
-            "category_name": None,
-            "creator_username": "system",
-            "created_timestamp": 0,
-        },
-        {
-            "id": "t-1",
-            "title": "Thread 1",
-            "wiki_id": "my-wiki",
-            "category_id": None,
-            "category_name": None,
-            "creator_username": "UserR1",
-            "created_timestamp": 10,
-        },
-        {
-            "id": "t-2",
-            "title": "Thread 2",
-            "wiki_id": "my-wiki",
-            "category_id": None,
-            "category_name": None,
-            "creator_username": "UserR1",
-            "created_timestamp": 13,
-        },
-        {
-            "id": "t-3",
-            "title": "Thread 3",
-            "wiki_id": "my-wiki",
-            "category_id": None,
-            "category_name": None,
-            "creator_username": "UserD1",
-            "created_timestamp": 16,
-        },
-        {
-            "id": "t-4",
-            "title": "Thread 4",
-            "wiki_id": "my-wiki",
-            "category_id": None,
-            "category_name": None,
-            "creator_username": "UserR1",
-            "created_timestamp": 50,
-        },
-    ]
-    sample_thread_first_posts = [
-        ("t-1", "p-11"),
-        ("t-2", "p-21"),
-        ("t-3", "p-31"),
-        ("t-4", "p-41"),
-    ]
-    sample_posts: List[RawPost] = [
-        {
-            "id": "p-11",
             "thread_id": "t-1",
-            "parent_post_id": None,
+            "thread_title": "Thread 1",
+            "thread_created_timestamp": 10,
+            "thread_snippet": "",
+            "thread_creator_username": "UserR1",
+            "first_post_id": "p-11",
+            "first_post_author_user_id": "1",
+            "first_post_author_username": "UserR1",
+            "first_post_created_timestamp": 10,
+        },
+        {
+            "thread_id": "t-2",
+            "thread_title": "Thread 2",
+            "thread_created_timestamp": 13,
+            "thread_snippet": "",
+            "thread_creator_username": "UserR1",
+            "first_post_id": "p-21",
+            "first_post_author_user_id": "1",
+            "first_post_author_username": "UserR1",
+            "first_post_created_timestamp": 13,
+        },
+        {
+            "thread_id": "t-3",
+            "thread_title": "Thread 3",
+            "thread_created_timestamp": 16,
+            "thread_snippet": "",
+            "thread_creator_username": "UserD1",
+            "first_post_id": "p-31",
+            "first_post_author_user_id": "2",
+            "first_post_author_username": "UserD1",
+            "first_post_created_timestamp": 16,
+        },
+        {
+            "thread_id": "t-4",
+            "thread_title": "Thread 4",
+            "thread_created_timestamp": 50,
+            "thread_snippet": "",
+            "thread_creator_username": "UserR1",
+            "first_post_id": "p-41",
+            "first_post_author_user_id": "1",
+            "first_post_author_username": "UserR1",
+            "first_post_created_timestamp": 50,
+        },
+    ]
+    sample_posts: List[NotifiablePost] = [
+        {
+            "post_id": "p-11",
             "posted_timestamp": 10,
-            "title": "Post 11",
-            "snippet": "",
-            "user_id": "1",
-            "username": "UserR1",
+            "post_title": "Post 11",
+            "post_snippet": "",
+            "author_user_id": "1",
+            "author_username": "UserR1",
+            "context_wiki_id": "my-wiki",
+            "context_forum_category_id": None,
+            "context_thread_id": "t-1",
+            "context_parent_post_id": None,
         },
         {
-            "id": "p-111",
-            "thread_id": "t-1",
-            "parent_post_id": "p-11",
+            "post_id": "p-111",
             "posted_timestamp": 30,
-            "title": "Post 111",
-            "snippet": "",
-            "user_id": "2",
-            "username": "UserD1",
+            "post_title": "Post 111",
+            "post_snippet": "",
+            "author_user_id": "2",
+            "author_username": "UserD1",
+            "context_wiki_id": "my-wiki",
+            "context_forum_category_id": None,
+            "context_thread_id": "t-1",
+            "context_parent_post_id": "p-11",
         },
         {
-            "id": "p-12",
-            "thread_id": "t-1",
-            "parent_post_id": None,
+            "post_id": "p-12",
             "posted_timestamp": 20,
-            "title": "Post 12",
-            "snippet": "",
-            "user_id": "2",
-            "username": "UserD1",
+            "post_title": "Post 12",
+            "post_snippet": "",
+            "author_user_id": "2",
+            "author_username": "UserD1",
+            "context_wiki_id": "my-wiki",
+            "context_forum_category_id": None,
+            "context_thread_id": "t-1",
+            "context_parent_post_id": None,
         },
         {
-            "id": "p-21",
-            "thread_id": "t-2",
-            "parent_post_id": None,
+            "post_id": "p-21",
             "posted_timestamp": 13,
-            "title": "Post 21",
-            "snippet": "",
-            "user_id": "1",
-            "username": "UserR1",
+            "post_title": "Post 21",
+            "post_snippet": "",
+            "author_user_id": "1",
+            "author_username": "UserR1",
+            "context_wiki_id": "my-wiki",
+            "context_forum_category_id": None,
+            "context_thread_id": "t-2",
+            "context_parent_post_id": None,
         },
         {
-            "id": "p-211",
-            "thread_id": "t-2",
-            "parent_post_id": "p-21",
+            "post_id": "p-211",
             "posted_timestamp": 17,
-            "title": "Post 211",
-            "snippet": "",
-            "user_id": "2",
-            "username": "UserD1",
+            "post_title": "Post 211",
+            "post_snippet": "",
+            "author_user_id": "2",
+            "author_username": "UserD1",
+            "context_wiki_id": "my-wiki",
+            "context_forum_category_id": None,
+            "context_thread_id": "t-2",
+            "context_parent_post_id": "p-21",
         },
         {
-            "id": "p-212",
-            "thread_id": "t-2",
-            "parent_post_id": "p-21",
+            "post_id": "p-212",
             "posted_timestamp": 20,
-            "title": "Post 212",
-            "snippet": "",
-            "user_id": "3",
-            "username": "UserD2",
+            "post_title": "Post 212",
+            "post_snippet": "",
+            "author_user_id": "3",
+            "author_username": "UserD2",
+            "context_wiki_id": "my-wiki",
+            "context_forum_category_id": None,
+            "context_thread_id": "t-2",
+            "context_parent_post_id": "p-21",
         },
         {
-            "id": "p-2121",
-            "thread_id": "t-2",
-            "parent_post_id": "p-212",
+            "post_id": "p-2121",
             "posted_timestamp": 23,
-            "title": "Post 2121",
-            "snippet": "",
-            "user_id": "1",
-            "username": "UserR1",
+            "post_title": "Post 2121",
+            "post_snippet": "",
+            "author_user_id": "1",
+            "author_username": "UserR1",
+            "context_wiki_id": "my-wiki",
+            "context_forum_category_id": None,
+            "context_thread_id": "t-2",
+            "context_parent_post_id": "p-212",
         },
         {
-            "id": "p-31",
-            "thread_id": "t-3",
-            "parent_post_id": None,
+            "post_id": "p-31",
             "posted_timestamp": 16,
-            "title": "Post 31",
-            "snippet": "",
-            "user_id": "2",
-            "username": "UserD1",
+            "post_title": "Post 31",
+            "post_snippet": "",
+            "author_user_id": "2",
+            "author_username": "UserD1",
+            "context_wiki_id": "my-wiki",
+            "context_forum_category_id": None,
+            "context_thread_id": "t-3",
+            "context_parent_post_id": None,
         },
         {
-            "id": "p-32",
-            "thread_id": "t-3",
-            "parent_post_id": None,
+            "post_id": "p-32",
             "posted_timestamp": 21,
-            "title": "Post 32",
-            "snippet": "",
-            "user_id": "3",
-            "username": "UserD2",
+            "post_title": "Post 32",
+            "post_snippet": "",
+            "author_user_id": "3",
+            "author_username": "UserD2",
+            "context_wiki_id": "my-wiki",
+            "context_forum_category_id": None,
+            "context_thread_id": "t-3",
+            "context_parent_post_id": None,
         },
         {
-            "id": "p-321",
-            "thread_id": "t-3",
-            "parent_post_id": "p-32",
+            "post_id": "p-321",
             "posted_timestamp": 31,
-            "title": "Post 321",
-            "snippet": "",
-            "user_id": "2",
-            "username": "UserD1",
+            "post_title": "Post 321",
+            "post_snippet": "",
+            "author_user_id": "2",
+            "author_username": "UserD1",
+            "context_wiki_id": "my-wiki",
+            "context_forum_category_id": None,
+            "context_thread_id": "t-3",
+            "context_parent_post_id": "p-32",
         },
         {
-            "id": "p-41",
-            "thread_id": "t-4",
-            "parent_post_id": None,
+            "post_id": "p-41",
             "posted_timestamp": 50,
-            "title": "Post 41",
-            "snippet": "",
-            "user_id": "1",
-            "username": "UserR1",
+            "post_title": "Post 41",
+            "post_snippet": "",
+            "author_user_id": "1",
+            "author_username": "UserR1",
+            "context_wiki_id": "my-wiki",
+            "context_forum_category_id": None,
+            "context_thread_id": "t-4",
+            "context_parent_post_id": None,
         },
         {
-            "id": "p-411",
-            "thread_id": "t-4",
-            "parent_post_id": "p-41",
+            "post_id": "p-411",
             "posted_timestamp": 60,
-            "title": "Post 411",
-            "snippet": "",
-            "user_id": "3",
-            "username": "UserD2",
+            "post_title": "Post 411",
+            "post_snippet": "",
+            "author_user_id": "3",
+            "author_username": "UserD2",
+            "context_wiki_id": "my-wiki",
+            "context_forum_category_id": None,
+            "context_thread_id": "t-4",
+            "context_parent_post_id": "p-41",
         },
         {
-            "id": "p-42",
-            "thread_id": "t-4",
-            "parent_post_id": None,
+            "post_id": "p-42",
             "posted_timestamp": 65,
-            "title": "Post 42",
-            "snippet": "",
-            "user_id": "3",
-            "username": "UserD2",
+            "post_title": "Post 42",
+            "post_snippet": "",
+            "author_user_id": "3",
+            "author_username": "UserD2",
+            "context_wiki_id": "my-wiki",
+            "context_forum_category_id": None,
+            "context_thread_id": "t-4",
+            "context_parent_post_id": None,
         },
     ]
     sample_channel_log: List[ChannelLogDump] = [
@@ -291,9 +309,7 @@ def sample_database(
     db.store_user_configs(sample_user_configs)
     db.store_supported_wikis(sample_wikis)
     for thread in sample_threads:
-        db.store_thread(thread)
-    for thread_id, post_id in sample_thread_first_posts:
-        db.store_thread_first_post(thread_id, post_id)
+        db.store_context_thread(thread)
     for post in sample_posts:
         db.store_post(post)
     for channel_log in sample_channel_log:
@@ -302,7 +318,7 @@ def sample_database(
     return db
 
 
-def titles(posts: Sequence[ThreadPostInfo]) -> Set[str]:
+def titles(posts: Sequence[PostInfo]) -> Set[str]:
     """Get a set of post titles from a list of posts."""
     return set(p["title"] for p in posts)
 
@@ -310,28 +326,9 @@ def titles(posts: Sequence[ThreadPostInfo]) -> Set[str]:
 @pytest.fixture(scope="class")
 def new_posts_for_user(
     sample_database: BaseDatabaseDriver,
-) -> Tuple[List[ThreadPostInfo], List[PostReplyInfo]]:
+) -> List[PostInfo]:
     """Extract new posts for a single user from the sample database."""
-    posts = sample_database.get_new_posts_for_user("1", (0, 100))
-    thread_posts = posts["thread_posts"]
-    post_replies = posts["post_replies"]
-    return thread_posts, post_replies
-
-
-@pytest.fixture()
-def thread_posts(
-    new_posts_for_user: Tuple[List[ThreadPostInfo], List[PostReplyInfo]]
-) -> List[ThreadPostInfo]:
-    """Get only new thread posts for a user."""
-    return new_posts_for_user[0]
-
-
-@pytest.fixture()
-def post_replies(
-    new_posts_for_user: Tuple[List[ThreadPostInfo], List[PostReplyInfo]]
-) -> List[PostReplyInfo]:
-    """Get only new post replies for a user."""
-    return new_posts_for_user[1]
+    return sample_database.get_notifiable_posts_for_user("1", (0, 100))
 
 
 @pytest.mark.needs_database
@@ -342,9 +339,9 @@ def test_counting(sample_database: BaseDatabaseDriver) -> None:
 
 
 @pytest.mark.needs_database
-def test_get_replied_posts(post_replies: List[PostReplyInfo]) -> None:
+def test_get_replied_posts(new_posts_for_user: List[PostInfo]) -> None:
     """Test that the post replies are as expected."""
-    assert titles(post_replies) == {
+    assert titles(new_posts_for_user) == {
         "Post 111",
         "Post 211",
         "Post 411",
@@ -354,48 +351,48 @@ def test_get_replied_posts(post_replies: List[PostReplyInfo]) -> None:
 
 @pytest.mark.needs_database
 def test_get_post_reply_even_if_ignored_thread(
-    post_replies: List[PostReplyInfo],
+    new_posts_for_user: List[PostInfo],
 ) -> None:
     """Test that post replies are returned even if the thread is ignored."""
-    assert "Post 411" in titles(post_replies)
+    assert "Post 411" in titles(new_posts_for_user)
 
 
 @pytest.mark.needs_database
 def test_ignore_already_responded_post(
-    post_replies: List[PostReplyInfo], thread_posts: List[ThreadPostInfo]
+    new_posts_for_user: List[PostInfo],
 ) -> None:
     """Test that post replies are not returned if the user has already
     responded to them."""
-    assert "Post 212" not in titles(post_replies) | titles(thread_posts)
+    assert "Post 212" not in titles(new_posts_for_user)
 
 
 @pytest.mark.needs_database
-def test_ignore_own_post_in_thread(thread_posts: List[ThreadPostInfo]) -> None:
+def test_ignore_own_post_in_thread(new_posts_for_user: List[PostInfo]) -> None:
     """Test that the user is not notified of their own posts to a thread."""
-    assert titles(thread_posts).isdisjoint(
+    assert titles(new_posts_for_user).isdisjoint(
         {"Post 11", "Post 21", "Post 2121", "Post 41"}
     )
 
 
 @pytest.mark.needs_database
 def test_prioritise_reply_deduplication(
-    thread_posts: List[ThreadPostInfo],
+    new_posts_for_user: List[PostInfo],
 ) -> None:
     """Test that, when a post would end up in both the thread posts and
     post replies, it only ends up in the post replies."""
-    assert titles(thread_posts).isdisjoint({"Post 111", "Post 211"})
+    assert titles(new_posts_for_user).isdisjoint({"Post 111", "Post 211"})
 
 
 @pytest.mark.needs_database
-def test_get_posts_in_threads(thread_posts: List[ThreadPostInfo]) -> None:
+def test_get_posts_in_threads(new_posts_for_user: List[PostInfo]) -> None:
     """Test that thread posts are as expected."""
-    assert titles(thread_posts) == {"Post 12"}
+    assert titles(new_posts_for_user) == {"Post 12"}
 
 
 @pytest.mark.needs_database
-def test_respect_ignored_thread(thread_posts: List[ThreadPostInfo]) -> None:
+def test_respect_ignored_thread(new_posts_for_user: List[PostInfo]) -> None:
     """Test that posts in ignored threads do not appear as thread posts."""
-    assert titles(thread_posts).isdisjoint({"Post 41", "Post 42"})
+    assert titles(new_posts_for_user).isdisjoint({"Post 41", "Post 42"})
 
 
 @pytest.mark.needs_database
@@ -409,10 +406,10 @@ def test_deleted_thread(sample_database: BaseDatabaseDriver) -> None:
     """Test that marking a thread as deleted works and that it then does
     not appear in notifications."""
     sample_database.mark_thread_as_deleted("t-1")
-    posts = sample_database.get_new_posts_for_user("1", (0, 100))
-    assert "t-1" not in [reply["thread_id"] for reply in posts["post_replies"]]
-    assert "t-1" not in [post["thread_id"] for post in posts["thread_posts"]]
-    assert "p-111" not in [reply["id"] for reply in posts["post_replies"]]
+    posts = sample_database.get_notifiable_posts_for_user("1", (0, 100))
+    assert "t-1" not in [reply["thread_id"] for reply in posts]
+    assert "t-1" not in [post["thread_id"] for post in posts]
+    assert "p-111" not in [reply["id"] for reply in posts]
 
 
 @pytest.mark.needs_database
@@ -422,11 +419,11 @@ def test_deleted_post(sample_database: BaseDatabaseDriver) -> None:
     # p-21 would not appear in a notification anyway because it was made by
     # the testing user, put p-211 would, and should have been recursively
     # marked as deleted
-    posts = sample_database.get_new_posts_for_user("1", (0, 100))
-    assert "p-211" in [reply["id"] for reply in posts["post_replies"]]
+    posts = sample_database.get_notifiable_posts_for_user("1", (0, 100))
+    assert "p-211" in [reply["id"] for reply in posts]
     sample_database.mark_post_as_deleted("p-21")
-    posts = sample_database.get_new_posts_for_user("1", (0, 100))
-    assert "p-211" not in [reply["id"] for reply in posts["post_replies"]]
+    posts = sample_database.get_notifiable_posts_for_user("1", (0, 100))
+    assert "p-211" not in [reply["id"] for reply in posts]
 
 
 @pytest.mark.needs_database
@@ -484,146 +481,168 @@ def test_get_notifiable_users(sample_database: MySqlDriver) -> None:
         # Irrelevant user who is subbed elsewhere
         u(58, "T5U-Irrel", [sub("t-0")], []),
     ]
-    sample_threads: List[ThreadInfo] = [
+    sample_threads: List[Context.Thread] = [
         {
-            "id": "t-5",
-            "title": "Thread 5",
-            "wiki_id": "my-wiki",
-            "category_id": None,
-            "category_name": None,
-            "creator_username": "T5U-Starter",
-            "created_timestamp": 100,
+            "thread_id": "t-5",
+            "thread_created_timestamp": 100,
+            "thread_title": "Thread 5",
+            "thread_snippet": "",
+            "thread_creator_username": "T5U-Starter",
+            "first_post_id": "p-51",
+            "first_post_author_user_id": "53",
+            "first_post_author_username": "T5U-Starter",
+            "first_post_created_timestamp": 100,
         }
     ]
-
-    sample_posts: List[RawPost] = [
+    sample_posts: List[NotifiablePost] = [
         {
-            "id": "p-51",
-            "thread_id": "t-5",
-            "parent_post_id": None,
+            "post_id": "p-51",
             "posted_timestamp": 100,
-            "title": "Post 51",
-            "snippet": "",
-            "user_id": "53",
-            "username": "T5U-Starter",
+            "post_title": "Post 51",
+            "post_snippet": "",
+            "author_user_id": "53",
+            "author_username": "T5U-Starter",
+            "context_wiki_id": "my-wiki",
+            "context_forum_category_id": None,
+            "context_thread_id": "t-5",
+            "context_parent_post_id": None,
         },
         {
-            "id": "p-52",
-            "thread_id": "t-5",
-            "parent_post_id": None,
+            "post_id": "p-52",
             "posted_timestamp": 101,
-            "title": "Post 52",
-            "snippet": "",
-            "user_id": "55",
-            "username": "T5U-Poster",
+            "post_title": "Post 52",
+            "post_snippet": "",
+            "author_user_id": "55",
+            "author_username": "T5U-Poster",
+            "context_wiki_id": "my-wiki",
+            "context_forum_category_id": None,
+            "context_thread_id": "t-5",
+            "context_parent_post_id": None,
         },
         {
-            "id": "p-521",
-            "thread_id": "t-5",
-            "parent_post_id": "p-52",
+            "post_id": "p-521",
             "posted_timestamp": 102,
-            "title": "Post 521",
-            "snippet": "",
-            "user_id": "52",
-            "username": "T5U-Lonely",
+            "post_title": "Post 521",
+            "post_snippet": "",
+            "author_user_id": "52",
+            "author_username": "T5U-Lonely",
+            "context_wiki_id": "my-wiki",
+            "context_forum_category_id": None,
+            "context_thread_id": "t-5",
+            "context_parent_post_id": "p-52",
         },
         {
-            "id": "p-53",
-            "thread_id": "t-5",
-            "parent_post_id": None,
+            "post_id": "p-53",
             "posted_timestamp": 103,
-            "title": "Post 53",
-            "snippet": "",
-            "user_id": "54",
-            "username": "T5U-SelfRep",
+            "post_title": "Post 53",
+            "post_snippet": "",
+            "author_user_id": "54",
+            "author_username": "T5U-SelfRep",
+            "context_wiki_id": "my-wiki",
+            "context_forum_category_id": None,
+            "context_thread_id": "t-5",
+            "context_parent_post_id": None,
         },
         {
-            "id": "p-531",
-            "thread_id": "t-5",
-            "parent_post_id": "p-53",
+            "post_id": "p-531",
             "posted_timestamp": 104,
-            "title": "Post 531",
-            "snippet": "",
-            "user_id": "54",
-            "username": "T5U-SelfRep",
+            "post_title": "Post 531",
+            "post_snippet": "",
+            "author_user_id": "54",
+            "author_username": "T5U-SelfRep",
+            "context_wiki_id": "my-wiki",
+            "context_forum_category_id": None,
+            "context_thread_id": "t-5",
+            "context_parent_post_id": "p-53",
         },
         {
-            "id": "p-54",
-            "thread_id": "t-5",
-            "parent_post_id": None,
+            "post_id": "p-54",
             "posted_timestamp": 106,
-            "title": "Post 54",
-            "snippet": "",
-            "user_id": "56",
-            "username": "T5U-UnsubPost",
+            "post_title": "Post 54",
+            "post_snippet": "",
+            "author_user_id": "56",
+            "author_username": "T5U-UnsubPost",
+            "context_wiki_id": "my-wiki",
+            "context_forum_category_id": None,
+            "context_thread_id": "t-5",
+            "context_parent_post_id": None,
         },
         {
-            "id": "p-541",
-            "thread_id": "t-5",
-            "parent_post_id": "p-54",
+            "post_id": "p-541",
             "posted_timestamp": 105,
-            "title": "Post 541",
-            "snippet": "",
-            "user_id": "52",
-            "username": "T5U-Lonely",
+            "post_title": "Post 541",
+            "post_snippet": "",
+            "author_user_id": "52",
+            "author_username": "T5U-Lonely",
+            "context_wiki_id": "my-wiki",
+            "context_forum_category_id": None,
+            "context_thread_id": "t-5",
+            "context_parent_post_id": "p-54",
         },
         {
-            "id": "p-55",
-            "thread_id": "t-5",
-            "parent_post_id": None,
+            "post_id": "p-55",
             "posted_timestamp": 106,
-            "title": "Post 55",
-            "snippet": "",
-            "user_id": "50",
-            "username": "T5U-Unsub",
+            "post_title": "Post 55",
+            "post_snippet": "",
+            "author_user_id": "50",
+            "author_username": "T5U-Unsub",
+            "context_wiki_id": "my-wiki",
+            "context_forum_category_id": None,
+            "context_thread_id": "t-5",
+            "context_parent_post_id": None,
         },
         {
-            "id": "p-551",
-            "thread_id": "t-5",
-            "parent_post_id": "p-55",
+            "post_id": "p-551",
             "posted_timestamp": 107,
-            "title": "Post 551",
-            "snippet": "",
-            "user_id": "52",
-            "username": "T5U-Lonely",
+            "post_title": "Post 551",
+            "post_snippet": "",
+            "author_user_id": "52",
+            "author_username": "T5U-Lonely",
+            "context_wiki_id": "my-wiki",
+            "context_forum_category_id": None,
+            "context_thread_id": "t-5",
+            "context_parent_post_id": "p-55",
         },
         {
-            "id": "p-56",
-            "thread_id": "t-5",
-            "parent_post_id": None,
+            "post_id": "p-56",
             "posted_timestamp": 108,
-            "title": "Post 56",
-            "snippet": "",
-            "user_id": "57",
-            "username": "T5U-PrevNotif",
+            "post_title": "Post 56",
+            "post_snippet": "",
+            "author_user_id": "57",
+            "author_username": "T5U-PrevNotif",
+            "context_wiki_id": "my-wiki",
+            "context_forum_category_id": None,
+            "context_thread_id": "t-5",
+            "context_parent_post_id": None,
         },
         {
-            "id": "p-561",
-            "thread_id": "t-5",
-            "parent_post_id": "p-56",
+            "post_id": "p-561",
             "posted_timestamp": 109,
-            "title": "Post 561",
-            "snippet": "",
-            "user_id": "52",
-            "username": "T5U-Lonely",
+            "post_title": "Post 561",
+            "post_snippet": "",
+            "author_user_id": "52",
+            "author_username": "T5U-Lonely",
+            "context_wiki_id": "my-wiki",
+            "context_forum_category_id": None,
+            "context_thread_id": "t-5",
+            "context_parent_post_id": "p-56",
         },
     ]
 
     for post in sample_posts:
         if not any(
-            post["user_id"] == user["user_id"]
-            and post["username"] == user["username"]
+            post["author_user_id"] == user["user_id"]
+            and post["author_username"] == user["username"]
             for user in sample_user_configs
         ):
-            raise Exception("Bad name")
+            raise RuntimeError("Bad name")
 
     # verify=verify_post_author_id_matches_username
     sample_database.store_user_configs(
         sample_user_configs, overwrite_existing=False
     )
     for thread in sample_threads:
-        sample_database.store_thread(thread)
-    sample_database.store_thread_first_post("t-5", "p-51")
+        sample_database.store_context_thread(thread)
     for post in sample_posts:
         sample_database.store_post(post)
 

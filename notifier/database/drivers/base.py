@@ -6,8 +6,8 @@ from notifier.types import (
     CachedUserConfig,
     ChannelLogDump,
     LogDump,
-    NewPostsInfo,
     NotifiablePost,
+    PostInfo,
     RawUserConfig,
     SupportedWikiConfig,
     Context,
@@ -56,14 +56,11 @@ class BaseDatabaseDriver(ABC):
         notifications. Also mark its children as deleted, recursively."""
 
     @abstractmethod
-    def get_new_posts_for_user(
+    def get_notifiable_posts_for_user(
         self, user_id: str, timestamp_range: Tuple[int, int]
-    ) -> NewPostsInfo:
+    ) -> List[PostInfo]:
         """Get new posts for the users with the given ID made during the
-        given time range.
-
-        Returns a dict containing the thread posts and the post replies.
-        """
+        given time range."""
 
     @abstractmethod
     def get_user_configs(self, frequency: str) -> List[CachedUserConfig]:

@@ -347,7 +347,7 @@ def notify_user(
         },
     )
     # Get new posts for this user
-    posts = database.get_new_posts_for_user(
+    posts = database.get_notifiable_posts_for_user(
         user["user_id"],
         (
             (user["last_notified_timestamp"] + 1)
@@ -356,7 +356,7 @@ def notify_user(
             current_timestamp,
         ),
     )
-    post_count = len(posts["thread_posts"]) + len(posts["post_replies"])
+    post_count = len(posts)
     logger.debug(
         "Found posts for notification %s",
         {
@@ -380,12 +380,7 @@ def notify_user(
     # Extract the 'last notification time' that will be recorded -
     # it is the timestamp of the most recent post this user is
     # being notified about
-    last_notified_timestamp = max(
-        post["posted_timestamp"]
-        for post in (
-            posts["thread_posts"] + cast(List[PostInfo], posts["post_replies"])
-        )
-    )
+    last_notified_timestamp = max(post["posted_timestamp"] for post in posts)
 
     # Compile the digest
     subject, body = digester.for_user(user, posts)
