@@ -24,9 +24,9 @@ CREATE TABLE notifiable_post (
   author_user_id  VARCHAR(20) NOT NULL,
   author_username VARCHAR(20) NOT NULL,
 
-  context_wiki_id           VARCHAR(20),
+  context_wiki_id           VARCHAR(20) NOT NULL,
   context_forum_category_id VARCHAR(20),
-  context_thread_id         VARCHAR(20),
+  context_thread_id         VARCHAR(20) NOT NULL,
   context_parent_post_id    VARCHAR(20),
 
   UNIQUE (post_id)

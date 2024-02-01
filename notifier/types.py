@@ -189,17 +189,17 @@ class PostInfo(TypedDict):
     snippet: str
     username: str
 
-    wiki_id: Optional[str]
-    wiki_name: Optional[str]
-    wiki_secure: Optional[IsSecure]
+    wiki_id: str
+    wiki_name: str
+    wiki_secure: IsSecure
 
     category_id: Optional[str]
     category_name: Optional[str]
 
-    thread_id: Optional[str]
-    thread_timestamp: Optional[int]
-    thread_title: Optional[str]
-    thread_creator: Optional[str]
+    thread_id: str
+    thread_timestamp: int
+    thread_title: str
+    thread_creator: str
 
     parent_post_id: Optional[str]
     parent_posted_timestamp: Optional[int]
