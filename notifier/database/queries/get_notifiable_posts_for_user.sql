@@ -44,13 +44,13 @@ WITH post_with_flags AS (
   FROM
     notifiable_post AS post
 
-    LEFT JOIN context_wiki
+    INNER JOIN context_wiki
     ON context_wiki.wiki_id = post.context_wiki_id
 
     LEFT JOIN context_forum_category
     ON context_forum_category.category_id = post.context_forum_category_id
 
-    LEFT JOIN context_thread
+    INNER JOIN context_thread
     ON context_thread.thread_id = post.context_thread_id
 
     LEFT JOIN context_parent_post
