@@ -16,14 +16,11 @@ from notifier.types import (
     ChannelLogDump,
     Context,
     LogDump,
-    NewPostsInfo,
     NotifiablePost,
-    PostReplyInfo,
-    RawPost,
+    PostInfo,
     RawUserConfig,
     Subscription,
     SupportedWikiConfig,
-    ThreadPostInfo,
 )
 
 logger = logging.getLogger(__name__)
@@ -214,39 +211,23 @@ class MySqlDriver(BaseDatabaseDriver, BaseDatabaseWithSqlFileCache):
         ).fetchall():
             self.mark_post_as_deleted(child["id"])
 
-    def get_new_posts_for_user(
+    def get_notifiable_posts_for_user(
         self, user_id: str, timestamp_range: Tuple[int, int]
-    ) -> NewPostsInfo:
+    ) -> List[PostInfo]:
         lower_timestamp, upper_timestamp = timestamp_range
-        criterion = {
-            "user_id": user_id,
-            "upper_timestamp": upper_timestamp,
-            "lower_timestamp": lower_timestamp,
-        }
-        thread_posts = cast(
-            List[ThreadPostInfo],
+        return cast(
+            List[PostInfo],
             list(
                 self.execute_named(
-                    "get_posts_in_subscribed_threads", criterion
+                    "get_notifiable_posts_for_user",
+                    {
+                        "user_id": user_id,
+                        "upper_timestamp": upper_timestamp,
+                        "lower_timestamp": lower_timestamp,
+                    },
                 ).fetchall()
             ),
         )
-        post_replies = cast(
-            List[PostReplyInfo],
-            list(
-                self.execute_named(
-                    "get_replies_to_subscribed_posts", criterion
-                ).fetchall()
-            ),
-        )
-        # Remove duplicate posts - keep the ones that are post replies
-        post_replies_ids = [post["id"] for post in post_replies]
-        thread_posts = [
-            thread_post
-            for thread_post in thread_posts
-            if thread_post["id"] not in post_replies_ids
-        ]
-        return {"thread_posts": thread_posts, "post_replies": post_replies}
 
     def get_user_configs(self, frequency: str) -> List[CachedUserConfig]:
         user_configs = [

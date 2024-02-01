@@ -1,4 +1,5 @@
 from pathlib import Path
+from typing import List
 
 import pytest
 
@@ -10,10 +11,7 @@ from notifier.digest import (
     process_long_string,
 )
 from notifier.formatter import convert_syntax
-from notifier.types import (
-    CachedUserConfig,
-    NewPostsInfo,
-)
+from notifier.types import CachedUserConfig, PostInfo
 
 
 @pytest.fixture(scope="module")
@@ -33,25 +31,25 @@ def fake_user() -> CachedUserConfig:
 
 
 @pytest.fixture(scope="module")
-def fake_posts(fake_user: CachedUserConfig) -> NewPostsInfo:
+def fake_posts(fake_user: CachedUserConfig) -> List[PostInfo]:
     """Create a set of posts as would be returned from the cache."""
     return {
         "thread_posts": [
             {
                 "id": f"post-{post_index}",
-                "title": f"Post {post_index}",
-                "username": "AnotherUser",
                 "posted_timestamp": post_timestamp,
+                "title": f"Post {post_index}",
                 "snippet": "Contents...",
-                "thread_id": f"t-{thread_index}",
-                "thread_title": f"Post {thread_index}",
-                "thread_creator": "AnotherUser",
-                "thread_timestamp": thread_index * 10,
+                "username": "AnotherUser",
                 "wiki_id": "my-wiki",
                 "wiki_name": "My Wiki",
                 "wiki_secure": 1,
                 "category_id": None,
                 "category_name": None,
+                "thread_id": f"t-{thread_index}",
+                "thread_timestamp": thread_index * 10,
+                "thread_title": f"Post {thread_index}",
+                "thread_creator": "AnotherUser",
             }
             for thread_index in range(1, 2 + 1)
             for post_index in range(1, 3 + 1)
@@ -127,7 +125,7 @@ def test_pluralise() -> None:
 
 
 def test_fake_digest(
-    fake_user: CachedUserConfig, fake_posts: NewPostsInfo
+    fake_user: CachedUserConfig, fake_posts: List[PostInfo]
 ) -> None:
     """Construct a digest from fake data and compare it to the expected
     output."""

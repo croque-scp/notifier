@@ -79,16 +79,12 @@ def find_posts_to_check(
     users = database.get_user_configs(frequency)
     posts_to_check: Set[StrictPostId] = set()
     for user in users:
-        posts = database.get_new_posts_for_user(
+        posts = database.get_notifiable_posts_for_user(
             user["user_id"], (user["last_notified_timestamp"] + 1, now)
         )
-        for post in posts["thread_posts"]:
+        for post in posts:
             posts_to_check.add(
                 (post["wiki_id"], post["thread_id"], post["id"])
-            )
-        for reply in posts["post_replies"]:
-            posts_to_check.add(
-                (reply["wiki_id"], reply["thread_id"], reply["id"])
             )
     return posts_to_check
 
