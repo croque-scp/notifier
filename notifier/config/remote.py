@@ -9,11 +9,7 @@ from tomlkit.exceptions import TOMLKitError
 
 from notifier.database.drivers.base import BaseDatabaseDriver
 from notifier.database.utils import try_cache
-from notifier.types import (
-    GlobalOverridesConfig,
-    LocalConfig,
-    SupportedWikiConfig,
-)
+from notifier.types import LocalConfig, SupportedWikiConfig
 from notifier.wikiconnection import Connection
 
 logger = logging.getLogger(__name__)
@@ -31,41 +27,12 @@ def get_global_config(
     database: BaseDatabaseDriver,
     connection: Connection,
 ) -> None:
-    """Retrieve remote global config for overrides and wikis."""
-    try_cache(
-        get=lambda: fetch_global_overrides(local_config),
-        store=database.store_global_overrides,
-        do_not_store={},
-    )
+    """Retrieve remote global config for wikis."""
     try_cache(
         get=lambda: fetch_supported_wikis(local_config, connection),
         store=database.store_supported_wikis,
         do_not_store=[],
     )
-
-
-def fetch_global_overrides(local_config: LocalConfig) -> GlobalOverridesConfig:
-    """Get the list of global override actions from the configuration
-    wiki."""
-    raw_config = requests.get(local_config["overrides_url"]).text
-    config = {}
-    try:
-        config = parse_raw_overrides_config(raw_config)
-    except (TOMLKitError, AssertionError) as error:
-        logger.error("Couldn't parse global overrides config", exc_info=error)
-    return config
-
-
-def parse_raw_overrides_config(raw_config: str) -> GlobalOverridesConfig:
-    """Parses a raw overrides config to lists of override objects sorted by
-    the wiki ID they correspond to."""
-    config = tomlkit.parse(raw_config)
-    assert isinstance(config, dict)
-    for overrides in config.values():
-        assert isinstance(overrides, list)
-        for override in overrides:
-            assert "action" in override
-    return config
 
 
 def fetch_supported_wikis(

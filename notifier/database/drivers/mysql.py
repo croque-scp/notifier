@@ -1,4 +1,3 @@
-import json
 import logging
 from contextlib import contextmanager
 from itertools import chain
@@ -15,7 +14,6 @@ from notifier.types import (
     ActivationLogDump,
     CachedUserConfig,
     ChannelLogDump,
-    GlobalOverridesConfig,
     LogDump,
     NewPostsInfo,
     PostReplyInfo,
@@ -181,43 +179,6 @@ class MySqlDriver(BaseDatabaseDriver, BaseDatabaseWithSqlFileCache):
     def create_tables(self) -> None:
         with self.transaction() as cursor:
             self.execute_named("create_tables", None, cursor)
-
-    def get_global_overrides(self) -> GlobalOverridesConfig:
-        rows = self.execute_named("get_global_overrides").fetchall()
-        overrides = {
-            row["wiki_id"]: json.loads(row["override_settings_json"])
-            for row in rows
-        }
-        return overrides
-
-    def store_global_overrides(
-        self, global_overrides: GlobalOverridesConfig
-    ) -> None:
-        # Overwrite all current overrides
-        with self.transaction() as cursor:
-            self.execute_named("delete_overrides", None, cursor)
-            for wiki_id, overrides in global_overrides.items():
-                overrides_json = json.dumps(overrides)
-                # DB limits this field to 2000 characters
-                if len(overrides_json) > 1500:
-                    logger.warning(
-                        "Override string length near limit %s",
-                        {"wiki_id": wiki_id, "length": len(overrides_json)},
-                    )
-                if len(overrides_json) > 2000:
-                    logger.warning(
-                        "Override string length above limit %s",
-                        {"wiki_id": wiki_id, "length": len(overrides_json)},
-                    )
-                    continue
-                self.execute_named(
-                    "store_global_override",
-                    {
-                        "wiki_id": wiki_id,
-                        "override_settings_json": json.dumps(overrides),
-                    },
-                    cursor,
-                )
 
     def find_new_posts(self, post_ids: Iterable[str]) -> List[str]:
         return [

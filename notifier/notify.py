@@ -15,7 +15,6 @@ from notifier.digest import Digester
 from notifier.dumps import record_activation_log
 from notifier.emailer import Emailer
 from notifier.newposts import get_new_posts
-from notifier.overrides import apply_overrides
 from notifier.timing import channel_is_now, channel_will_be_next, timestamp
 from notifier.types import (
     AuthConfig,
@@ -64,9 +63,7 @@ def pick_channels_to_notify(
             {"count": len(channels), "channels": channels},
         )
     else:
-        channels = [
-            c for c in force_channels if c in notification_channels.keys()
-        ]
+        channels = [c for c in force_channels if c in notification_channels]
         logger.info(
             "Activating channels chosen manually %s",
             {"count": len(channels), "channels": channels},
@@ -241,7 +238,9 @@ def notify_channel(
     # Filter the users only to those with notifications waiting
     logger.debug("Filtering users without notifications waiting...")
     user_count_pre_filter = len(user_configs)
-    notifiable_user_ids = database.get_notifiable_users(channel, config["service_start_timestamp"])
+    notifiable_user_ids = database.get_notifiable_users(
+        channel, config["service_start_timestamp"]
+    )
     user_configs = [
         user for user in user_configs if user["user_id"] in notifiable_user_ids
     ]
@@ -365,9 +364,6 @@ def notify_user(
             else force_initial_search_timestamp,
             current_timestamp,
         ),
-    )
-    apply_overrides(
-        posts, database.get_global_overrides(), user["manual_subs"]
     )
     post_count = len(posts["thread_posts"]) + len(posts["post_replies"])
     logger.debug(
