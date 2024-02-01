@@ -80,28 +80,15 @@ frequency_weekly = "weekly"
 frequency_monthly = "monthly"
 subject = "[Forum Notifications] {post_count} new plural({post_count}|post|posts)"
 intro = """|
-Hello! This is your {frequency} notification digest from {link_site}, notifying
-you of new posts to threads that you're subscribed to.
+Hello! This is your {frequency} notification digest from {link_site}, notifying you of new posts to threads that you're subscribed to.
 
-Not including any subscriptions that have been removed as a result of your
-manual unsubscriptions, this service is keeping track of {sub_count}
-plural({sub_count}|subscription|subscriptions) for you:
+Not including any subscriptions that have been removed as a result of your manual unsubscriptions, this service is keeping track of {sub_count} plural({sub_count}|subscription|subscriptions) for you:
 
-* {manual_sub_count} manual
-plural({manual_sub_count}|subscription|subscriptions), as defined in
-[{link_your_config} your user configuration].
+* {manual_sub_count} manual plural({manual_sub_count}|subscription|subscriptions), as defined in [{link_your_config} your user configuration].
 
-* {auto_thread_sub_count} automatic thread
-plural({auto_thread_sub_count}|subscription|subscriptions) and
-{auto_post_sub_count} automatic post
-plural({auto_post_sub_count}|subscription|subscriptions). The service is
-[{link_info_learning} still learning] about your automatic subscriptions, so
-expect this number to increase over time. [{link_info_automatic} Learn what
-constitutes an automatic subscription.]
+* {auto_thread_sub_count} automatic thread plural({auto_thread_sub_count}|subscription|subscriptions) and {auto_post_sub_count} automatic post plural({auto_post_sub_count}|subscription|subscriptions). The service is [{link_info_learning} still learning] about your automatic subscriptions, so expect this number to increase over time. [{link_info_automatic} Learn what constitutes an automatic subscription.]
 
-This account ([[*user Notifier]]) is automated -- any response to this
-message will be ignored. If there are any problems, contact me ([[*user
-Croquembouche]]) directly.
+This account ([[*user Notifier]]) is automated -- any response to this message will be ignored. If there are any problems, contact me ([[*user Croquembouche]]) directly.
 
 -----
 
@@ -112,8 +99,7 @@ Croquembouche]]) directly.
 unsub_footer = "Unsubscribe from these notifications: {link_unsubscribe}"
 main_summary = "You have {summary} from {wiki_count} plural({wiki_count}|wiki|wikis)"
 summary = """|
-{notification_count} plural({notification_count}|notification|notifications)
-in {thread_count} plural({thread_count}|thread|threads)
+{notification_count} plural({notification_count}|notification|notifications) in {thread_count} plural({thread_count}|thread|threads)
 """
 unknown_category_name = "Other"
 thread_opener = "Thread:"
@@ -128,25 +114,15 @@ frequency_weekly = "hàng tuần"
 frequency_monthly = "hàng tháng"
 subject = "[Thông Báo Diễn Đàn] {post_count} post mới"
 intro = """|
-Xin chào! Đây là hệ thống thông báo {frequency} của bạn từ {link_site}, hiển thị
-thông báo về các bài post mới được đăng vào trang thread mà bạn đăng kí
-theo dõi.
+Xin chào! Đây là hệ thống thông báo {frequency} của bạn từ {link_site}, hiển thị thông báo về các bài post mới được đăng vào trang thread mà bạn đăng kí theo dõi.
 
-Trừ đi các phần mà bạn đã hủy đăng kí thông qua chỉnh sửa đăng kí thủ công,
-dịch vụ này hiện đang theo dõi {sub_count} đăng kí cho bạn, bao gồm:
+Trừ đi các phần mà bạn đã hủy đăng kí thông qua chỉnh sửa đăng kí thủ công, dịch vụ này hiện đang theo dõi {sub_count} đăng kí cho bạn, bao gồm:
 
-* {manual_sub_count} mẫu đăng kí thủ công, theo như cài đặt tại
-[{link_your_config} bản điều chỉnh người dùng của bạn].
+* {manual_sub_count} mẫu đăng kí thủ công, theo như cài đặt tại [{link_your_config} bản điều chỉnh người dùng của bạn].
 
-* {auto_thread_sub_count} thread được đăng kí tự động và
-{auto_post_sub_count} post đăng kí tự động. Dịch vụ hiện vẫn
-[{link_info_learning} đang học hỏi] về các bản đăng kí tự động của bạn, vì
-thế con số này có thể tăng thêm theo thời gian. [{link_info_automatic} Tìm hiểu
-về những yếu tố cấu thành bản đăng kí tự động.]
+* {auto_thread_sub_count} thread được đăng kí tự động và {auto_post_sub_count} post đăng kí tự động. Dịch vụ hiện vẫn [{link_info_learning} đang học hỏi] về các bản đăng kí tự động của bạn, vì thế con số này có thể tăng thêm theo thời gian. [{link_info_automatic} Tìm hiểu về những yếu tố cấu thành bản đăng kí tự động.]
 
-Tài khoản ([[*user Notifier]]) này được chạy tự động -- bất kể tin nhắn
-gửi đến tài khoản đều bị bỏ qua. Nếu có khúc mắc, vui lòng liên hệ ([[*user
-Croquembouche]]) trực tiếp.
+Tài khoản ([[*user Notifier]]) này được chạy tự động -- bất kể tin nhắn gửi đến tài khoản đều bị bỏ qua. Nếu có khúc mắc, vui lòng liên hệ ([[*user Croquembouche]]) trực tiếp.
 
 -----
 
@@ -198,8 +174,7 @@ Croquembouche]] (en anglais).
 unsub_footer = "Se désinscrire de ces notifications : {link_unsubscribe}"
 main_summary = "Vous avez {summary} de {wiki_count} plural({wiki_count}|wiki|wikis)"
 summary = """|
-{notification_count} plural({notification_count}|notification|notifications)
-sur {thread_count} plural({thread_count}|fil|fils)
+{notification_count} plural({notification_count}|notification|notifications) sur {thread_count} plural({thread_count}|fil|fils)
 """
 unknown_category_name = "Autres"
 thread_opener = "Fil :"
@@ -214,25 +189,13 @@ frequency_weekly = "semanal"
 frequency_monthly = "mensual"
 subject = "[Notificaciones del Foro] {post_count} plural({post_count}|nuevo mensaje|nuevos mensajes)"
 intro = """|
-¡Hola! Este es el resumen {frequency} de notificaciones de {link_site}, avisándote
-de las nuevas respuestas a hilos a los que estás suscrito.
-No incluye ninguna suscripción que haya sido removida como resultado de tus
-desuscripciones manuales, este servicio mantiene seguimiento de {sub_count}
-plural({sub_count}|suscripción|suscripciones) para ti:
+¡Hola! Este es el resumen {frequency} de notificaciones de {link_site}, avisándote de las nuevas respuestas a hilos a los que estás suscrito. No incluye ninguna suscripción que haya sido removida como resultado de tus desuscripciones manuales, este servicio mantiene seguimiento de {sub_count} plural({sub_count}|suscripción|suscripciones) para ti:
 
-* {manual_sub_count}
-plural({manual_sub_count}|suscripción|suscripciones) manuales, como se define en
-[{link_your_config} tu configuración de usuario].
+* {manual_sub_count} plural({manual_sub_count}|suscripción|suscripciones) manuales, como se define en [{link_your_config} tu configuración de usuario].
 
-* {auto_thread_sub_count} hilos automáticos
-plural({auto_thread_sub_count}|suscrito|suscritos) y
-{auto_post_sub_count} publicaciones automáticas
-plural({auto_post_sub_count}|suscritas|suscritas). El servicio aún
-[{link_info_learning} está aprendiendo] sobre tus suscripciones automáticas, así que espera que este número crezca con el tiempo. [{link_info_automatic} Aprende qué constituye una suscripción automática.]
+* {auto_thread_sub_count} hilos automáticos plural({auto_thread_sub_count}|suscrito|suscritos) y {auto_post_sub_count} publicaciones automáticas plural({auto_post_sub_count}|suscritas|suscritas). El servicio aún [{link_info_learning} está aprendiendo] sobre tus suscripciones automáticas, así que espera que este número crezca con el tiempo. [{link_info_automatic} Aprende qué constituye una suscripción automática.]
 
-La cuenta ([[*user Notifier]]) está automatizada -- cualquier respuesta a este
-mensaje será ignorada. Si hay cualquier problema, contacta directamente conmigo, ([[*user
-Croquembouche]]).
+La cuenta ([[*user Notifier]]) está automatizada -- cualquier respuesta a este mensaje será ignorada. Si hay cualquier problema, contacta directamente conmigo, ([[*user Croquembouche]]).
 
 -----
 
@@ -243,8 +206,7 @@ Croquembouche]]).
 unsub_footer = "Desuscribirse de estas notificaciones: {link_unsubscribe}"
 main_summary = "Tienes {summary} de {wiki_count} plural({wiki_count}|wiki|wikis)"
 summary = """|
-{notification_count} plural({notification_count}|notificación|notificaciones)
-en {thread_count} plural({thread_count}|hilo|hilos)
+{notification_count} plural({notification_count}|notificación|notificaciones) en {thread_count} plural({thread_count}|hilo|hilos)
 """
 unknown_category_name = "Otros"
 thread_opener = "Hilo:"
@@ -327,23 +289,14 @@ frequency_weekly = "settimanale"
 frequency_monthly = "mensile"
 subject = "[Notifiche dal Forum] {post_count} plural({post_count}|nuovo|nuovi) post"
 intro = """|
-Ehilà! Ecco a te il tuo riassunto {frequency} delle notifiche da {link_site}, che ti 
-avvisa dei nuovi post pubblicati nei thread ai quali hai effettuato un'iscrizione.
-Eccezion fatta per tutti i thread l'iscrizione ai quali hai annullato
-manualmente, questo servizio tiene d'occhio {sub_count}
-plural({sub_count}|la tua iscrizione|le tue iscrizioni) al posto tuo:
-* {manual_sub_count} 
-plural({manual_sub_count}|l'iscrizione manuale|le iscrizioni manuali), come descritte
-[{link_your_config} nelle tue configurazioni utente].
-* {auto_thread_sub_count}
-plural({auto_thread_sub_count}|l'iscrizione automatica|le iscrizioni automatiche) ai thread e
-{auto_post_sub_count} 
-plural({auto_post_sub_count}|l'iscrizione automatica|le iscrizioni automatiche)ai post. Il servizio sta ancora
-[{link_info_learning} imparando man mano] il funzionamento delle iscrizioni automatiche, perciò
-aspettati che il numero qui sopra cresca con il tempo. [{link_info_automatic} Informati su cosa sia un'iscrizione automatica.]
-Il presente account ([[*user Notifier]]) è automatizzato -- qualsiasi risposta a questo
-messaggio sarà ignorata. Nel caso ci siano problemi, contatta me ([[*user
-Croquembouche]]) direttamente, in lingua Inglese.
+Ehilà! Ecco a te il tuo riassunto {frequency} delle notifiche da {link_site}, che ti avvisa dei nuovi post pubblicati nei thread ai quali hai effettuato un'iscrizione. Eccezion fatta per tutti i thread l'iscrizione ai quali hai annullato manualmente, questo servizio tiene d'occhio {sub_count} plural({sub_count}|la tua iscrizione|le tue iscrizioni) al posto tuo:
+
+* {manual_sub_count} plural({manual_sub_count}|l'iscrizione manuale|le iscrizioni manuali), come descritte [{link_your_config} nelle tue configurazioni utente].
+
+* {auto_thread_sub_count} plural({auto_thread_sub_count}|l'iscrizione automatica|le iscrizioni automatiche) ai thread e {auto_post_sub_count} plural({auto_post_sub_count}|l'iscrizione automatica|le iscrizioni automatiche)ai post. Il servizio sta ancora [{link_info_learning} imparando man mano] il funzionamento delle iscrizioni automatiche, perciò aspettati che il numero qui sopra cresca con il tempo. [{link_info_automatic} Informati su cosa sia un'iscrizione automatica.]
+
+Il presente account ([[*user Notifier]]) è automatizzato -- qualsiasi risposta a questo messaggio sarà ignorata. Nel caso ci siano problemi, contatta me ([[*user Croquembouche]]) direttamente, in lingua Inglese.
+
 -----
 [[=]]<>+ :closed_mailbox_with_raised_flag:<>[[/=]]
 -----
@@ -351,8 +304,7 @@ Croquembouche]]) direttamente, in lingua Inglese.
 unsub_footer = "Disiscriviti da queste notifiche: {link_unsubscribe}"
 main_summary = "Hai {summary} da {wiki_count} plural({wiki_count}|wiki|wiki)"
 summary = """|
-{notification_count} plural({notification_count}|notifica|notifiche)
-in {thread_count} plural({thread_count}|thread|thread)
+{notification_count} plural({notification_count}|notifica|notifiche) in {thread_count} plural({thread_count}|thread|thread)
 """
 unknown_category_name = "Altro"
 thread_opener = "Thread:"
@@ -367,28 +319,15 @@ frequency_weekly = "ukentlige "
 frequency_monthly = "månedlige "
 subject = "[Forum-varsler] {post_count} plural({post_count}|nytt|nye) innlegg"
 intro = """|
-Hei! Dette er ditt {frequency}varslingssammendrag fra {link_site}, med
-varsler om nye innlegg i diskusjoner du har abonnert på.
+Hei! Dette er ditt {frequency}varslingssammendrag fra {link_site}, med varsler om nye innlegg i diskusjoner du har abonnert på.
 
-Utenom abonnementer som har blitt fjernet som et resultat av dine manuelle
-abonnementer, holder denne tjenesten rede på {sub_count}
-plural({sub_count}|abonnement|abonnementer) for deg:
+Utenom abonnementer som har blitt fjernet som et resultat av dine manuelle abonnementer, holder denne tjenesten rede på {sub_count} plural({sub_count}|abonnement|abonnementer) for deg:
 
-* {manual_sub_count}
-plural({manual_sub_count}|manuelt abonnement|manuelle abonnementer), som definert i
-[{link_your_config} dine bruker-instillinger].
+* {manual_sub_count} plural({manual_sub_count}|manuelt abonnement|manuelle abonnementer), som definert i [{link_your_config} dine bruker-instillinger].
 
-* {auto_thread_sub_count}
-plural({auto_thread_sub_count}|automatisk diskusjons-abonnement|automatiske diskusjons-abonnementer) og
-{auto_post_sub_count}
-plural({auto_post_sub_count}|automatisk innlegg-abonnement|automatiske innlegg-abonnementer). Tjenesten er
-[{link_info_learning} fremdeles under opplæring] om dine automatiske abonnementer, så
-du kan forvente dette tallet til å stige over tid. [{link_info_automatic} Finn ut hva
-som utgjør et automatisk abonnement.]
+* {auto_thread_sub_count} plural({auto_thread_sub_count}|automatisk diskusjons-abonnement|automatiske diskusjons-abonnementer) og {auto_post_sub_count} plural({auto_post_sub_count}|automatisk innlegg-abonnement|automatiske innlegg-abonnementer). Tjenesten er [{link_info_learning} fremdeles under opplæring] om dine automatiske abonnementer, så du kan forvente dette tallet til å stige over tid. [{link_info_automatic} Finn ut hva som utgjør et automatisk abonnement.]
 
-Denne kontoen ([[*user Notifier]]) er automatisert -- alle svar til denne
-meldingen vil bli ignorert. Hvis du har problemer, kontakt meg ([[*user
-Croquembouche]]) direkte.
+Denne kontoen ([[*user Notifier]]) er automatisert -- alle svar til denne meldingen vil bli ignorert. Hvis du har problemer, kontakt meg ([[*user Croquembouche]]) direkte.
 
 -----
 
@@ -399,8 +338,7 @@ Croquembouche]]) direkte.
 unsub_footer = "Avslutt abonnement på disse varslene: {link_unsubscribe}"
 main_summary = "Du har {summary} fra {wiki_count} plural({wiki_count}|wiki|wikier)"
 summary = """|
-{notification_count} plural({notification_count}|varsel|varsler)
-i {thread_count} plural({thread_count}|diskusjon|diskusjoner)
+{notification_count} plural({notification_count}|varsel|varsler) i {thread_count} plural({thread_count}|diskusjon|diskusjoner)
 """
 unknown_category_name = "Annet"
 thread_opener = "Diskusjon:"
