@@ -23,7 +23,6 @@ from notifier.types import (
     ChannelLogDump,
     EmailAddresses,
     LocalConfig,
-    NewPostsInfo,
     PostInfo,
 )
 from notifier.wikiconnection import Connection, RestrictedInbox
@@ -261,11 +260,10 @@ def notify_channel(
     # Notify each user on this frequency channel
     notified_users = 0
     notified_posts = 0
-    notified_threads = 0
     addresses: EmailAddresses = {}
     for user in user_configs:
         try:
-            sent, post_count, thread_count = notify_user(
+            sent, post_count = notify_user(
                 user,
                 channel=channel,
                 current_timestamp=current_timestamp,
@@ -281,7 +279,6 @@ def notify_channel(
             if sent:
                 notified_users += 1
                 notified_posts += post_count
-                notified_threads += thread_count
         except SMTPAuthenticationError as error:
             logger.error(
                 "Failed to notify user via email %s",
@@ -329,16 +326,12 @@ def notify_user(
     emailer: Emailer,
     addresses: EmailAddresses,
     dry_run: bool = False,
-) -> Tuple[bool, int, int]:
+) -> Tuple[bool, int]:
     """Compiles and sends a notification for a single user.
 
     Returns a tuple containing the following:
         1. a boolean indicating whether the notification was successful
         2. the number of posts notified about
-        3. the number of threads notified about.
-    The latter values will be 0 in the case that the notification was not
-    successful, even if there were posts to notify about (e.g. if the user has
-    an invalid config).
 
     :param addresses: A dict of email addresses to use for sending emails
     to. Should be set to an empty dict initially; if this is the case, this
@@ -382,7 +375,7 @@ def notify_user(
                 "reason": "no posts",
             },
         )
-        return False, 0, 0
+        return False, 0
 
     # Extract the 'last notification time' that will be recorded -
     # it is the timestamp of the most recent post this user is
@@ -403,7 +396,7 @@ def notify_user(
             {"for_user": user["username"]},
         )
         # Still return true to indicate that the user would have been notified
-        return True, post_count, count_threads(posts)
+        return True, post_count
 
     error_tags = {"restricted-inbox", "not-a-back-contact"}
 
@@ -466,7 +459,7 @@ def notify_user(
                 },
             )
             add_error_tag_to_user("restricted-inbox", post_count)
-            return False, 0, 0
+            return False, 0
         # This user has fixed the above issue, so remove error tags
         remove_error_tags_from_user()
 
@@ -500,7 +493,7 @@ def notify_user(
             )
             # They'll have to fix this themselves - inform them
             add_error_tag_to_user("not-a-back-contact", post_count)
-            return False, 0, 0
+            return False, 0
         # This user has fixed the above issue, so remove error tags
         remove_error_tags_from_user()
         logger.debug(
@@ -531,15 +524,4 @@ def notify_user(
             "",
         )
 
-    return True, post_count, count_threads(posts)
-
-
-def count_threads(posts: NewPostsInfo) -> int:
-    """Counts the number of unique threads in a list of posts."""
-
-    def count_threads_in_posts(posts: Iterable[PostInfo]) -> int:
-        return len(set(post["thread_id"] for post in posts))
-
-    return count_threads_in_posts(
-        posts["post_replies"],
-    ) + count_threads_in_posts(posts["thread_posts"])
+    return True, post_count
