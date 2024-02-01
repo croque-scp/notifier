@@ -78,7 +78,7 @@ frequency_8hourly = "every-8-hours"
 frequency_daily = "daily"
 frequency_weekly = "weekly"
 frequency_monthly = "monthly"
-subject = "[Forum Notifications] {post_count} new posts"
+subject = "[Forum Notifications] {post_count} new plural({post_count}|post|posts)"
 intro = """|
 Hello! This is your {frequency} notification digest from {link_site}, notifying
 you of new posts to threads that you're subscribed to.
@@ -176,7 +176,7 @@ frequency_8hourly = "dans les 8 dernières heures"
 frequency_daily = "journalier"
 frequency_weekly = "hebdomadaire"
 frequency_monthly = "mensuel"
-subject = "[Notifications Forum] {post_count} nouveaux messages"
+subject = "[Notifications Forum] {post_count} plural({post_count}|nouveau message|nouveaux messages)"
 intro = """|
 Bonjour ! Voici votre récapitulatif de [{link_site} notifications] {frequency}, vous informant de tous les nouveaux messages sur les fils auxquels vous vous êtes abonné·e.
 
@@ -212,7 +212,7 @@ frequency_8hourly = "de cada 8 horas"
 frequency_daily = "diario"
 frequency_weekly = "semanal"
 frequency_monthly = "mensual"
-subject = "[Notificaciones del Foro] {post_count} nuevos mensajes"
+subject = "[Notificaciones del Foro] {post_count} plural({post_count}|nuevo mensaje|nuevos mensajes)"
 intro = """|
 ¡Hola! Este es el resumen {frequency} de notificaciones de {link_site}, avisándote
 de las nuevas respuestas a hilos a los que estás suscrito.
@@ -325,7 +325,7 @@ frequency_8hourly = "ottaorario"
 frequency_daily = "giornaliero"
 frequency_weekly = "settimanale"
 frequency_monthly = "mensile"
-subject = "[Notifiche dal Forum] {post_count} nuovi post"
+subject = "[Notifiche dal Forum] {post_count} plural({post_count}|nuovo|nuovi) post"
 intro = """|
 Ehilà! Ecco a te il tuo riassunto {frequency} delle notifiche da {link_site}, che ti 
 avvisa dei nuovi post pubblicati nei thread ai quali hai effettuato un'iscrizione.
@@ -365,7 +365,7 @@ frequency_8hourly = "8-timers-"
 frequency_daily = "daglige "
 frequency_weekly = "ukentlige "
 frequency_monthly = "månedlige "
-subject = "[Forum-varsler] {post_count} nye innlegg"
+subject = "[Forum-varsler] {post_count} plural({post_count}|nytt|nye) innlegg"
 intro = """|
 Hei! Dette er ditt {frequency}varslingssammendrag fra {link_site}, med
 varsler om nye innlegg i diskusjoner du har abonnert på.
