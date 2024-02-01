@@ -38,7 +38,6 @@ class LocalConfig(TypedDict):
     config_wiki: str
     user_config_category: str
     wiki_config_category: str
-    overrides_url: str
     gmail_username: str
     service_start_timestamp: int
     database: DatabaseConfig
