@@ -63,21 +63,6 @@ class AuthConfig(TypedDict):
     mysql_password: str
 
 
-GlobalOverrideAction = Union[Literal["mute"], Literal["mute_thread"]]
-
-
-class GlobalOverrideConfig(TypedDict, total=False):
-    """A single remote override config."""
-
-    action: GlobalOverrideAction
-    category_id_is: Optional[str]
-    thread_id_is: Optional[str]
-    thread_title_matches: Optional[str]
-
-
-# A collection of remote override configs, keyed by wiki.
-GlobalOverridesConfig = Dict[str, List[GlobalOverrideConfig]]
-
 # Direction of a subscription (-1 indicates an unsubscription).
 SubscriptionCardinality = Union[Literal[-1], Literal[1]]
 
