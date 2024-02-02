@@ -133,13 +133,33 @@ def test_fake_digest(
     digest = "\n".join(make_wikis_digest(fake_posts, lexicon))
     print(digest)
     print(digest[:25].replace("\n", "\\n"))
-    # Would be prohibitively difficult to test an exact match for the
-    # digest - manual inspection should be sufficient. But I can check that
-    # it does produce something and that it has the expected number of
-    # notifications:
+
+    # Would be prohibitively difficult to test an exact match for the digest - manual inspection should be sufficient. But I can check that it does produce something and that it has the expected number of notifications:
     assert digest.startswith("++ My Wiki\n\n+++ Other\n\n14")
     assert digest.count(lexicon["thread_opener"]) == 2
     assert digest.count(lexicon["post_replies_opener"]) == 4
     assert digest.count("Contents...") == 6
     assert digest.count("Response...") == 8
+
+    # Print an email output for review
     print(convert_syntax(digest, "email"))
+
+
+def test_full_interpolation_all_languages(
+    fake_user: CachedUserConfig, fake_posts: List[PostInfo]
+) -> None:
+    """Verify that there's no leftover interpolation in any language's digest."""
+
+    digester = Digester(str(Path.cwd() / "config" / "lang.toml"))
+    languages = set(digester.lexicons.keys())
+    languages.remove("base")
+
+    for language in languages:
+        digest = digester.for_user(
+            {
+                **fake_user,  # type:ignore[misc]
+                "language": language,
+            },
+            fake_posts,
+        )
+        assert "{" not in digest
