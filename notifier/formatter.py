@@ -28,6 +28,8 @@ replacements_to_html: ReplacementList = [
         r(r"\[\[date ([0-9]+) format=\"([^|]*).*?\"\]\]"),
         lambda match: time.strftime(match[2], time.gmtime(int(match[1]))),
     ),
+    # Links
+    (r(r"\[(\S+) (.+?)\]"), r"""<a href="\1">\2</a>"""),
     # Inline formatting
     (r(r"//(.+?)//"), r"<i>\1</i>"),
     (r(r"\*\*(.+?)\*\*"), r"<b>\1</b>"),
@@ -38,8 +40,6 @@ replacements_to_html: ReplacementList = [
     # Remaining misc elements like ul/li
     ("[[", "<"),
     ("]]", ">"),
-    # Links
-    (r(r"\[(\S+) (.+?)\]"), r"""<a href="\1">\2</a>"""),
     # Headings
     (
         r(r"^(\++) (.+)$"),
