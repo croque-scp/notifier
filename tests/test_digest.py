@@ -155,11 +155,13 @@ def test_full_interpolation_all_languages(
     languages.remove("base")
 
     for language in languages:
-        digest = digester.for_user(
-            {
-                **fake_user,  # type:ignore[misc]
-                "language": language,
-            },
-            fake_posts,
-        )
-        assert "{" not in digest
+        for delivery in ["email", "pm"]:
+            digest = digester.for_user(
+                {
+                    **fake_user,  # type:ignore[misc]
+                    "language": language,
+                    "delivery": delivery,
+                },
+                fake_posts,
+            )
+            assert "{" not in digest
