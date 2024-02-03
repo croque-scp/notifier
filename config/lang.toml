@@ -82,13 +82,13 @@ subject = "[Forum Notifications] {post_count} new plural({post_count}|post|posts
 intro = """|
 Hello! This is your {frequency} notification digest from {link_site}, notifying you of new posts to threads that you're subscribed to.
 
-Not including any subscriptions that have been removed as a result of your manual unsubscriptions, this service is keeping track of {sub_count} plural({sub_count}|subscription|subscriptions) for you:
+This service is keeping track of:
 
 * {manual_sub_count} manual plural({manual_sub_count}|subscription|subscriptions), as defined in [{link_your_config} your user configuration].
 
-* {auto_thread_sub_count} automatic thread plural({auto_thread_sub_count}|subscription|subscriptions) and {auto_post_sub_count} automatic post plural({auto_post_sub_count}|subscription|subscriptions). The service is [{link_info_learning} still learning] about your automatic subscriptions, so expect this number to increase over time. [{link_info_automatic} Learn what constitutes an automatic subscription.]
+* Automatic thread and post subscriptions. [{link_info_automatic} Learn what constitutes an automatic subscription.]
 
-This account ([[*user Notifier]]) is automated -- any response to this message will be ignored. If there are any problems, contact me ([[*user Croquembouche]]) directly.
+This account ([[*user Notifier]]) is automated -- any response to this message will not be seen. If there are any problems, contact [[*user Croquembouche]] directly.
 
 -----
 
