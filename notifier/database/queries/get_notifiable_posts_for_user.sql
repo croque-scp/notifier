@@ -25,21 +25,21 @@ WITH post_with_flags AS (
 
     -- Flags indicating the reasons that a post emits a notification
 
-    (CASE WHEN
+    CASE WHEN (
       thread_sub.sub = 1
-    THEN 1 ELSE 0 END) AS flag_user_subscribed_to_thread
+    ) THEN 1 ELSE 0 END AS flag_user_subscribed_to_thread,
 
-    (CASE WHEN
+    CASE WHEN (
       post_sub.sub = 1
-    THEN 1 ELSE 0 END) AS flag_user_subscribed_to_post
+    ) THEN 1 ELSE 0 END AS flag_user_subscribed_to_post,
 
-    (CASE WHEN
+    CASE WHEN (
       context_thread.first_post_author_user_id = %(user_id)s
-    THEN 1 ELSE 0 END) AS flag_user_started_thread
+    ) THEN 1 ELSE 0 END AS flag_user_started_thread,
 
-    (CASE WHEN
+    CASE WHEN (
       context_parent_post.author_user_id = %(user_id)s
-    THEN 1 ELSE 0 END) AS flag_user_posted_parent
+    ) THEN 1 ELSE 0 END AS flag_user_posted_parent
 
   FROM
     notifiable_post AS post
@@ -85,13 +85,10 @@ SELECT * FROM post_with_flags
 
 -- From the CTE select only posts with at least one flag active
 WHERE
-  flag_subscribed_to_thread
-  OR flag_subscribed_to_post
+  flag_user_subscribed_to_thread
+  OR flag_user_subscribed_to_post
   OR flag_user_started_thread
   OR flag_user_posted_parent
 
 ORDER BY
-  context_wiki.wiki_id,
-  context_forum_category.category_id,
-  context_thread.thread_created_timestamp,
-  post.posted_timestamp
+  wiki_id, category_id, thread_id, parent_post_id, posted_timestamp
