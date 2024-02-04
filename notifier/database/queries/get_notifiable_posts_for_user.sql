@@ -77,7 +77,12 @@ WITH post_with_flags AS (
     AND post.posted_timestamp <= %(upper_timestamp)s
 
     -- Remove posts unsubscribed from
-    AND (thread_sub.sub IS NULL OR thread_sub.sub = 1)
+    AND (
+      thread_sub.sub IS NULL OR thread_sub.sub = 1
+      -- Post reply overrides thread unsubscription
+      OR post_sub.sub = 1
+      OR context_parent_post.author_user_id = %(user_id)s
+    )
     AND (post_sub.sub IS NULL OR post_sub.sub = 1)
 )
 
