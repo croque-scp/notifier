@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import Any, Iterable, List, Tuple
+from typing import Any, List, Tuple
 
 from notifier.types import (
     ActivationLogDump,
@@ -39,21 +39,6 @@ class BaseDatabaseDriver(ABC):
     @abstractmethod
     def get_latest_post_timestamp(self) -> int:
         """Returns the timestamp of the latest stored post."""
-
-    @abstractmethod
-    def find_new_threads(self, thread_ids: Iterable[str]) -> List[str]:
-        """From a list of thread IDs, return those that are not already
-        present in the cache."""
-
-    @abstractmethod
-    def mark_thread_as_deleted(self, thread_id: str) -> None:
-        """Marks a thread as deleted, preventing its posts from appearing
-        in notifications."""
-
-    @abstractmethod
-    def mark_post_as_deleted(self, post_id: str) -> None:
-        """Marks a post as deleted, preventing it from appearing in
-        notifications. Also mark its children as deleted, recursively."""
 
     @abstractmethod
     def get_notifiable_posts_for_user(
@@ -112,10 +97,6 @@ class BaseDatabaseDriver(ABC):
     @abstractmethod
     def get_supported_wikis(self) -> List[SupportedWikiConfig]:
         """Get a list of supported wikis."""
-
-    @abstractmethod
-    def count_supported_wikis(self) -> int:
-        """Count the number of supported wikis."""
 
     @abstractmethod
     def store_supported_wikis(self, wikis: List[SupportedWikiConfig]) -> None:

@@ -1,6 +1,6 @@
 import logging
 from contextlib import contextmanager
-from typing import Any, Dict, Iterable, Iterator, List, Optional, Tuple, cast
+from typing import Any, Dict, Iterator, List, Optional, Tuple, cast
 
 import pymysql
 from pymysql import Connection
@@ -186,30 +186,6 @@ class MySqlDriver(BaseDatabaseDriver, BaseDatabaseWithSqlFileCache):
             )["posted_timestamp"],
         )
 
-    def find_new_threads(self, thread_ids: Iterable[str]) -> List[str]:
-        return [
-            thread_id
-            for thread_id in thread_ids
-            if (
-                row := self.execute_named(
-                    "check_thread_exists", {"id": thread_id}
-                ).fetchone()
-            )
-            is None
-            or not row["thread_exists"]
-        ]
-
-    def mark_thread_as_deleted(self, thread_id: str) -> None:
-        self.execute_named("mark_thread_as_deleted", {"id": thread_id})
-
-    def mark_post_as_deleted(self, post_id: str) -> None:
-        self.execute_named("mark_post_as_deleted", {"id": post_id})
-        # Find any children of this post and delete them, too
-        for child in self.execute_named(
-            "get_post_children", {"id": post_id}
-        ).fetchall():
-            self.mark_post_as_deleted(child["id"])
-
     def get_notifiable_posts_for_user(
         self, user_id: str, timestamp_range: Tuple[int, int]
     ) -> List[PostInfo]:
@@ -359,15 +335,6 @@ class MySqlDriver(BaseDatabaseDriver, BaseDatabaseWithSqlFileCache):
     def get_supported_wikis(self) -> List[SupportedWikiConfig]:
         wikis = self.execute_named("get_supported_wikis").fetchall()
         return cast(List[SupportedWikiConfig], list(wikis))
-
-    def count_supported_wikis(self) -> int:
-        return cast(
-            int,
-            (
-                self.execute_named("count_supported_wikis").fetchone()
-                or {"count": 0}
-            )["count"],
-        )
 
     def store_supported_wikis(self, wikis: List[SupportedWikiConfig]) -> None:
         with self.transaction() as cursor:
