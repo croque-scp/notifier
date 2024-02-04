@@ -383,14 +383,6 @@ def test_counting(sample_database: BaseDatabaseDriver) -> None:
 
 
 @pytest.mark.needs_database
-def test_get_post_reply_even_if_ignored_thread(
-    new_posts_for_user: List[PostInfo],
-) -> None:
-    """Test that post replies are returned even if the thread is ignored."""
-    assert "Post 411" in titles(new_posts_for_user)
-
-
-@pytest.mark.needs_database
 def test_ignore_own_post_in_thread(new_posts_for_user: List[PostInfo]) -> None:
     """Test that the user is not notified of their own posts to a thread."""
     assert titles(new_posts_for_user).isdisjoint(
@@ -401,38 +393,36 @@ def test_ignore_own_post_in_thread(new_posts_for_user: List[PostInfo]) -> None:
 @pytest.mark.needs_database
 def test_get_replied_posts(new_posts_for_user: List[PostInfo]) -> None:
     """Test that the post replies are as expected."""
-    assert titles(
-        [
-            p
-            for p in new_posts_for_user
-            if p["flag_user_started_thread"]
-            or p["flag_user_subscribed_to_thread"]
-        ]
-    ) == {
+
+    def post_is_reply(p: PostInfo) -> bool:
+        return (
+            p["flag_user_posted_parent"] or p["flag_user_subscribed_to_post"]
+        )
+
+    assert titles([p for p in new_posts_for_user if post_is_reply(p)]) == {
         "Post 111",
         "Post 211",
+        "Post 212",
         "Post 411",
         "Post 321",
     }
-
-
-@pytest.mark.needs_database
-def test_get_posts_in_threads(new_posts_for_user: List[PostInfo]) -> None:
-    """Test that thread posts are as expected."""
-    assert titles(
-        [
-            p
-            for p in new_posts_for_user
-            if p["flag_user_posted_parent"]
-            or p["flag_user_subscribed_to_post"]
-        ]
-    ) == {"Post 12"}
+    assert titles([p for p in new_posts_for_user if not post_is_reply(p)]) == {
+        "Post 12"
+    }
 
 
 @pytest.mark.needs_database
 def test_respect_ignored_thread(new_posts_for_user: List[PostInfo]) -> None:
     """Test that posts in ignored threads do not appear as thread posts."""
     assert titles(new_posts_for_user).isdisjoint({"Post 41", "Post 42"})
+
+
+@pytest.mark.needs_database
+def test_get_post_reply_even_if_ignored_thread(
+    new_posts_for_user: List[PostInfo],
+) -> None:
+    """Test that post replies are returned even if the thread is ignored."""
+    assert "Post 411" in titles(new_posts_for_user)
 
 
 @pytest.mark.needs_database
