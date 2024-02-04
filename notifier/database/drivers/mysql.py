@@ -235,10 +235,7 @@ class MySqlDriver(BaseDatabaseDriver, BaseDatabaseWithSqlFileCache):
 
     def get_notifiable_users(self, frequency: str) -> List[str]:
         logger.debug("Caching post context...")
-        self.execute_named(
-            "cache_notifiable_post_context",
-            {"post_lower_timestamp_limit": post_lower_timestamp_limit},
-        )
+        self.execute_named("cache_notifiable_post_context")
         logger.debug("Retrieving notifiable users users...")
         user_ids = [
             cast(str, row["user_id"])

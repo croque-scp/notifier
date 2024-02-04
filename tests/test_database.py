@@ -493,6 +493,48 @@ def test_get_notifiable_users(sample_database: MySqlDriver) -> None:
             "first_post_created_timestamp": 100,
         }
     ]
+    sample_parent_posts: List[Context.ParentPost] = [
+        {
+            "post_id": "p-52",
+            "posted_timestamp": 101,
+            "post_title": "Post 52",
+            "post_snippet": "",
+            "author_user_id": "55",
+            "author_username": "T5U-Poster",
+        },
+        {
+            "post_id": "p-53",
+            "posted_timestamp": 103,
+            "post_title": "Post 53",
+            "post_snippet": "",
+            "author_user_id": "54",
+            "author_username": "T5U-SelfRep",
+        },
+        {
+            "post_id": "p-54",
+            "posted_timestamp": 106,
+            "post_title": "Post 54",
+            "post_snippet": "",
+            "author_user_id": "56",
+            "author_username": "T5U-UnsubPost",
+        },
+        {
+            "post_id": "p-55",
+            "posted_timestamp": 106,
+            "post_title": "Post 55",
+            "post_snippet": "",
+            "author_user_id": "50",
+            "author_username": "T5U-Unsub",
+        },
+        {
+            "post_id": "p-56",
+            "posted_timestamp": 108,
+            "post_title": "Post 56",
+            "post_snippet": "",
+            "author_user_id": "57",
+            "author_username": "T5U-PrevNotif",
+        },
+    ]
     sample_posts: List[NotifiablePost] = [
         {
             "post_id": "p-51",
