@@ -63,8 +63,8 @@ WITH post_with_flags AS (
 
     LEFT JOIN manual_sub AS post_sub
     ON post_sub.user_id = %(user_id)s
-    AND post_sub.post_id = post.post_id
     AND post_sub.thread_id = context_thread.thread_id
+    AND post_sub.post_id = context_parent_post.post_id
 
   WHERE
     -- Remove posts made by the user
