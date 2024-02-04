@@ -642,20 +642,13 @@ def test_get_notifiable_users(sample_database: MySqlDriver) -> None:
     )
     for thread in sample_threads:
         sample_database.store_context_thread(thread)
+    for parent_post in sample_parent_posts:
+        sample_database.store_context_parent_post(parent_post)
     for post in sample_posts:
         sample_database.store_post(post)
 
-    assert set(sample_database.get_notifiable_users("hourly", 0)) == {
+    assert set(sample_database.get_notifiable_users("hourly")) == {
         "1",  # UserR1 from base sample DB
-        "51",  # T5U-!P-Sub
-        "53",  # T5U-Starter
-        "55",  # T5U-Poster
-    }
-
-    with sample_database.transaction() as cursor:
-        cursor.execute("DROP TABLE post_with_context")
-
-    assert set(sample_database.get_notifiable_users("hourly", 99)) == {
         "51",  # T5U-!P-Sub
         "53",  # T5U-Starter
         "55",  # T5U-Poster
