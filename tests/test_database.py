@@ -334,7 +334,7 @@ def new_posts_for_user(
 @pytest.mark.needs_database
 def test_counting(sample_database: BaseDatabaseDriver) -> None:
     """Test that the driver can count."""
-    assert sample_database.count_supported_wikis() == 1
+    assert len(sample_database.get_supported_wikis()) == 1
     assert sample_database.count_user_configs() == 1
 
 
@@ -393,37 +393,6 @@ def test_get_posts_in_threads(new_posts_for_user: List[PostInfo]) -> None:
 def test_respect_ignored_thread(new_posts_for_user: List[PostInfo]) -> None:
     """Test that posts in ignored threads do not appear as thread posts."""
     assert titles(new_posts_for_user).isdisjoint({"Post 41", "Post 42"})
-
-
-@pytest.mark.needs_database
-def test_new_threads(sample_database: BaseDatabaseDriver) -> None:
-    """Test that the utility for checking if threads exists works."""
-    assert sample_database.find_new_threads(["t-1", "t-2", "t-99"]) == ["t-99"]
-
-
-@pytest.mark.needs_database
-def test_deleted_thread(sample_database: BaseDatabaseDriver) -> None:
-    """Test that marking a thread as deleted works and that it then does
-    not appear in notifications."""
-    sample_database.mark_thread_as_deleted("t-1")
-    posts = sample_database.get_notifiable_posts_for_user("1", (0, 100))
-    assert "t-1" not in [reply["thread_id"] for reply in posts]
-    assert "t-1" not in [post["thread_id"] for post in posts]
-    assert "p-111" not in [reply["id"] for reply in posts]
-
-
-@pytest.mark.needs_database
-def test_deleted_post(sample_database: BaseDatabaseDriver) -> None:
-    """Test that marking a post as deleted works and that it then does
-    not appear in notifications."""
-    # p-21 would not appear in a notification anyway because it was made by
-    # the testing user, put p-211 would, and should have been recursively
-    # marked as deleted
-    posts = sample_database.get_notifiable_posts_for_user("1", (0, 100))
-    assert "p-211" in [reply["id"] for reply in posts]
-    sample_database.mark_post_as_deleted("p-21")
-    posts = sample_database.get_notifiable_posts_for_user("1", (0, 100))
-    assert "p-211" not in [reply["id"] for reply in posts]
 
 
 @pytest.mark.needs_database

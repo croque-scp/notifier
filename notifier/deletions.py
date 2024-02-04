@@ -107,15 +107,11 @@ def delete_posts(
         try:
             _, thread_posts = connection.thread(wiki_id, thread_id, post_id)
         except ThreadNotExists:
-            database.mark_thread_as_deleted(thread_id)
-            deleted_threads.add((wiki_id, thread_id))
-            continue
+            raise NotImplementedError  # TODO Reimplement deletion
 
         # If there are no posts it means the targeted page doesn't exist and therefore neither does the targeted post
         if len(thread_posts) == 0:
-            database.mark_post_as_deleted(post_id)
-            deleted_posts.add((wiki_id, thread_id, post_id))
-            continue
+            raise NotImplementedError  # TODO Reimplement deletion
 
         # If the post does exist, record all post IDs seen in that page, which are known to exist so don't need to be checked later
         existing_posts.update(post["id"] for post in thread_posts)

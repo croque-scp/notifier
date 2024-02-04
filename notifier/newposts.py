@@ -1,7 +1,6 @@
-from concurrent.futures import thread
 import logging
 from operator import itemgetter
-from typing import Iterator, List, Optional, Set, TypedDict, cast
+from typing import Iterator, List, Optional, Set, TypedDict
 
 import feedparser
 
