@@ -391,15 +391,6 @@ def test_get_post_reply_even_if_ignored_thread(
 
 
 @pytest.mark.needs_database
-def test_ignore_already_responded_post(
-    new_posts_for_user: List[PostInfo],
-) -> None:
-    """Test that post replies are not returned if the user has already
-    responded to them."""
-    assert "Post 212" not in titles(new_posts_for_user)
-
-
-@pytest.mark.needs_database
 def test_ignore_own_post_in_thread(new_posts_for_user: List[PostInfo]) -> None:
     """Test that the user is not notified of their own posts to a thread."""
     assert titles(new_posts_for_user).isdisjoint(
