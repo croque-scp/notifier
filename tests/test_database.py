@@ -124,6 +124,48 @@ def sample_database(
             "first_post_created_timestamp": 50,
         },
     ]
+    sample_parent_posts: List[Context.ParentPost] = [
+        {
+            "post_id": "p-11",
+            "posted_timestamp": 10,
+            "post_title": "Post 11",
+            "post_snippet": "",
+            "author_user_id": "1",
+            "author_username": "UserR1",
+        },
+        {
+            "post_id": "p-21",
+            "posted_timestamp": 13,
+            "post_title": "Post 21",
+            "post_snippet": "",
+            "author_user_id": "1",
+            "author_username": "UserR1",
+        },
+        {
+            "post_id": "p-212",
+            "posted_timestamp": 20,
+            "post_title": "Post 212",
+            "post_snippet": "",
+            "author_user_id": "3",
+            "author_username": "UserD2",
+        },
+        {
+            "post_id": "p-32",
+            "posted_timestamp": 21,
+            "post_title": "Post 32",
+            "post_snippet": "",
+            "author_user_id": "3",
+            "author_username": "UserD2",
+        },
+        {
+            "post_id": "p-41",
+            "posted_timestamp": 50,
+            "post_title": "Post 41",
+            "post_snippet": "",
+            "author_user_id": "1",
+            "author_username": "UserR1",
+        },
+    ]
     sample_posts: List[NotifiablePost] = [
         {
             "post_id": "p-11",
@@ -310,6 +352,8 @@ def sample_database(
     db.store_supported_wikis(sample_wikis)
     for thread in sample_threads:
         db.store_context_thread(thread)
+    for parent_post in sample_parent_posts:
+        db.store_context_parent_post(parent_post)
     for post in sample_posts:
         db.store_post(post)
     for channel_log in sample_channel_log:
