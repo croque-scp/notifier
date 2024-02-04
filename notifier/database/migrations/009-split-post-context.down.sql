@@ -61,7 +61,7 @@ FROM
   INNER JOIN
   notifiable_post ON notifiable_post.post_id = (
     SELECT post_id FROM notifiable_post
-    WHERE notifiable_post.context_parent_post_id = context_thread.first_post_id
+    WHERE notifiable_post.context_thread_id = context_thread.thread_id
     LIMIT 1
   );
 
@@ -127,7 +127,8 @@ SELECT
   notifiable_post.author_user_id AS user_id,
   notifiable_post.author_username AS username,
   0 AS is_deleted
-FROM notifiable_post;
+FROM notifiable_post
+ON DUPLICATE KEY UPDATE id=id;
 
 INSERT INTO post
 SELECT
@@ -140,7 +141,8 @@ SELECT
   context_thread.first_post_author_user_id AS user_id,
   context_thread.first_post_author_username AS username,
   0 AS is_deleted
-FROM context_thread;
+FROM context_thread
+ON DUPLICATE KEY UPDATE id=id;
 
 DROP TABLE context_thread;
 DROP TABLE notifiable_post;
