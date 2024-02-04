@@ -383,17 +383,6 @@ def test_counting(sample_database: BaseDatabaseDriver) -> None:
 
 
 @pytest.mark.needs_database
-def test_get_replied_posts(new_posts_for_user: List[PostInfo]) -> None:
-    """Test that the post replies are as expected."""
-    assert titles(new_posts_for_user) == {
-        "Post 111",
-        "Post 211",
-        "Post 411",
-        "Post 321",
-    }
-
-
-@pytest.mark.needs_database
 def test_get_post_reply_even_if_ignored_thread(
     new_posts_for_user: List[PostInfo],
 ) -> None:
@@ -419,18 +408,34 @@ def test_ignore_own_post_in_thread(new_posts_for_user: List[PostInfo]) -> None:
 
 
 @pytest.mark.needs_database
-def test_prioritise_reply_deduplication(
-    new_posts_for_user: List[PostInfo],
-) -> None:
-    """Test that, when a post would end up in both the thread posts and
-    post replies, it only ends up in the post replies."""
-    assert titles(new_posts_for_user).isdisjoint({"Post 111", "Post 211"})
+def test_get_replied_posts(new_posts_for_user: List[PostInfo]) -> None:
+    """Test that the post replies are as expected."""
+    assert titles(
+        [
+            p
+            for p in new_posts_for_user
+            if p["flag_user_started_thread"]
+            or p["flag_user_subscribed_to_thread"]
+        ]
+    ) == {
+        "Post 111",
+        "Post 211",
+        "Post 411",
+        "Post 321",
+    }
 
 
 @pytest.mark.needs_database
 def test_get_posts_in_threads(new_posts_for_user: List[PostInfo]) -> None:
     """Test that thread posts are as expected."""
-    assert titles(new_posts_for_user) == {"Post 12"}
+    assert titles(
+        [
+            p
+            for p in new_posts_for_user
+            if p["flag_user_posted_parent"]
+            or p["flag_user_subscribed_to_post"]
+        ]
+    ) == {"Post 12"}
 
 
 @pytest.mark.needs_database
