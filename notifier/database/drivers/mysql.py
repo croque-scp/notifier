@@ -238,7 +238,7 @@ class MySqlDriver(BaseDatabaseDriver, BaseDatabaseWithSqlFileCache):
     ) -> List[str]:
         logger.debug("Caching post context...")
         self.execute_named(
-            "cache_post_context",
+            "cache_notifiable_post_context",
             {"post_lower_timestamp_limit": post_lower_timestamp_limit},
         )
         logger.debug("Retrieving notifiable users users...")
