@@ -1,10 +1,13 @@
 from notifier.formatter import convert_syntax
 
 
-def test_italic_links() -> None:
-    """Test that italic syntax doesn't disrupt links."""
+def test_that_formatting_does_what_i_expect() -> None:
+    """Test various formatter quirks."""
     for pair in [
         ("//italic//", "<i>italic</i>"),
+        ("[[ul]]text[[/ul]]", "<ul>text</ul>"),
+        ("[[ul]][[li]]text[[/li]][[/ul]]", "<ul><li>text</li></ul>"),
+        # Italic syntax shouldn't disrupt links
         (
             "[[user Username]]",
             """<a href="https://www.wikidot.com/user:info/Username">Username</a>""",
@@ -19,6 +22,16 @@ def test_italic_links() -> None:
         (
             "[https://url text] [https://url text]",
             """<a href="https://url">text</a> <a href="https://url">text</a>""",
+        ),
+        # Links shouldn't break syntax that also uses square brackets
+        ("[[li]][url text][[/li]]", """<li><a href="url">text</a></li>"""),
+        (
+            """[[ul style="list-style-type: ':open_mailbox_with_raised_flag: '"]]text[[/ul]]""",
+            """<ul style="list-style-type: ':open_mailbox_with_raised_flag: '">text</ul>""",
+        ),
+        (
+            """[[ul style="list-style-type: ':open_mailbox_with_raised_flag: '"]][https://www.example.com/path text][[/ul]]""",
+            """<ul style="list-style-type: ':open_mailbox_with_raised_flag: '"><a href="https://www.example.com/path">text</a></ul>""",
         ),
     ]:
         assert convert_syntax(pair[0], "email") == pair[1]
