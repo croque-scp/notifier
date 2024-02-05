@@ -185,7 +185,6 @@ def make_threads_digest(
         (thread_posts, post_replies)[
             post["parent_post_id"] is not None
         ].append(post)
-        # XXX TODO This check isn't correct - it just determines if the post has a parent or not. If the user is subscribed to the thread they don't give a shit if it's a post or a reply. It'll appear as 'Replies to your post:' when this check is actually 'Replies to A post:' which is useless
     # I want to group the posts in both lists by thread ID and then
     # iterate over them both, but can only guarantee that at least one list
     # contains any given thread ID.

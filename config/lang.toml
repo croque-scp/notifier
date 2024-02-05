@@ -103,7 +103,7 @@ summary = """|
 """
 unknown_category_name = "Other"
 thread_opener = "Thread:"
-post_replies_opener = "Replies to your post:"
+post_replies_opener = "Replies to post:"
 untitled_post_title = "(untitled post)"
 
 [vi]
