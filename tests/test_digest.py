@@ -5,6 +5,7 @@ import pytest
 
 from notifier.digest import (
     Digester,
+    finalise_digest,
     make_wikis_digest,
     pluralise,
     process_long_lexicon_strings,
@@ -150,7 +151,7 @@ def test_fake_digest(
     assert digest.count("Response...") == 8
 
     # Print an email output for review
-    print(convert_syntax(digest, "email"))
+    print(convert_syntax(finalise_digest(digest), "email"))
 
 
 def test_full_interpolation_all_languages(

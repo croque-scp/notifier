@@ -21,14 +21,7 @@ import tomlkit
 from emoji import emojize
 
 from notifier.formatter import convert_syntax
-from notifier.types import (
-    CachedUserConfig,
-    IsSecure,
-    NewPostsInfo,
-    PostInfo,
-    PostReplyInfo,
-    ThreadPostInfo,
-)
+from notifier.types import CachedUserConfig, IsSecure, PostInfo
 
 Lexicon = Dict[str, str]
 Lexicons = Dict[str, Lexicon]
@@ -60,13 +53,9 @@ class Digester:
                 Lexicons, dict(tomlkit.parse(lang_file.read()))
             )
 
-    @lru_cache(maxsize=None)
+    @lru_cache(maxsize=1)
     def make_lexicon(self, lang: str) -> Lexicon:
-        """Constructs a subset of the full lexicon for a given language.
-
-        These lexicons are cached per language, which will be necessarily
-        cleared on construction of a new Digester.
-        """
+        """Constructs a subset of the full lexicon for a given language."""
         # Later keys in the lexicon will override previous ones - e.g. for
         # a non-en language, its keys should override all of en's, but in
         # case they don't, en's are used as a fallback.
@@ -80,7 +69,7 @@ class Digester:
         return lexicon
 
     def for_user(
-        self, user: CachedUserConfig, posts: NewPostsInfo
+        self, user: CachedUserConfig, posts: Sequence[PostInfo]
     ) -> Tuple[str, str]:
         """Compile a notification digest for a user.
 
@@ -93,26 +82,7 @@ class Digester:
         manual_sub_count = len(
             [sub for sub in user["manual_subs"] if sub["sub"] == 1]
         )
-        auto_thread_sub_count = len(
-            [
-                sub
-                for sub in user["auto_subs"]
-                if sub["sub"] == 1 and sub["post_id"] is None
-            ]
-        )
-        auto_post_sub_count = len(
-            [
-                sub
-                for sub in user["auto_subs"]
-                if sub["sub"] == 1 and sub["post_id"] is not None
-            ]
-        )
-        sub_count = (
-            manual_sub_count + auto_thread_sub_count + auto_post_sub_count
-        )
-        total_notification_count = len(posts["thread_posts"]) + len(
-            posts["post_replies"]
-        )
+        total_notification_count = len(posts)
         # Construct the message
         subject = lexicon["subject"].format(
             post_count=total_notification_count
@@ -128,7 +98,6 @@ class Digester:
         intro = lexicon["intro"].format(
             frequency=frequency,
             link_site=lexicon["link_site"],
-            sub_count=sub_count,
             manual_sub_count=manual_sub_count,
             link_your_config=lexicon["link_your_config"].format(
                 link_site=lexicon["link_site"]
@@ -139,8 +108,6 @@ class Digester:
             link_info_automatic=lexicon["link_info_automatic"].format(
                 link_site=lexicon["link_site"]
             ),
-            auto_thread_sub_count=auto_thread_sub_count,
-            auto_post_sub_count=auto_post_sub_count,
         )
         outro = lexicon["outro"].format(
             unsub_footer=lexicon["unsub_footer"].format(
@@ -159,24 +126,21 @@ class Digester:
         return subject, body
 
 
-def make_wikis_digest(new_posts: NewPostsInfo, lexicon: Lexicon) -> List[str]:
-    """Makes the notification list."""
-    thread_posts = new_posts["thread_posts"]
-    post_replies = new_posts["post_replies"]
+def make_wikis_digest(
+    posts: Sequence[PostInfo], lexicon: Lexicon
+) -> List[str]:
+    """Makes the notification list for wikis."""
     digests: List[str] = []
     # Group posts by their wiki ID
-    grouped_posts = group_posts(thread_posts, "wiki_id")
-    grouped_replies = group_posts(post_replies, "wiki_id")
+    grouped_posts = group_posts(posts, "wki_id")
     # Iterate wikis by notification count
-    for wiki_id in frequent_ids(grouped_posts, grouped_replies):
-        posts = grouped_posts[wiki_id]
-        replies = cast(List[PostReplyInfo], grouped_replies[wiki_id])
-        first_post = (posts + cast(List[PostInfo], replies))[0]
+    for wiki_id in frequent_ids(grouped_posts):
+        wiki_posts = grouped_posts[wiki_id]
         digests.append(
             lexicon["wiki"].format(
-                wiki_name=first_post["wiki_name"],
+                wiki_name=wiki_posts[0]["wiki_name"],
                 categories="\n".join(
-                    make_categories_digest(posts, replies, lexicon)
+                    make_categories_digest(wiki_posts, lexicon)
                 ),
             )
         )
@@ -184,26 +148,21 @@ def make_wikis_digest(new_posts: NewPostsInfo, lexicon: Lexicon) -> List[str]:
 
 
 def make_categories_digest(
-    thread_posts: Sequence[ThreadPostInfo],
-    post_replies: Sequence[PostReplyInfo],
-    lexicon: Lexicon,
+    posts: Sequence[PostInfo], lexicon: Lexicon
 ) -> List[str]:
     """Makes the notification list for categories in a given wiki."""
     digests: List[str] = []
-    grouped_posts = group_posts(thread_posts, "category_id")
-    grouped_replies = group_posts(post_replies, "category_id")
+    grouped_posts = group_posts(posts, "category_id")
     # Sort categories by notification count
-    for category_id in frequent_ids(grouped_posts, grouped_replies):
-        posts = grouped_posts[category_id]
-        replies = cast(List[PostReplyInfo], grouped_replies[category_id])
-        first_post = (posts + cast(List[PostInfo], replies))[0]
-        threads = make_threads_digest(posts, replies, lexicon)
+    for category_id in frequent_ids(grouped_posts):
+        category_posts = grouped_posts[category_id]
+        threads = make_threads_digest(posts, lexicon)
         digests.append(
             lexicon["category"].format(
-                category_name=first_post.get("category_name")
+                category_name=category_posts[0].get("category_name")
                 or lexicon["unknown_category_name"],
                 summary=lexicon["summary"].format(
-                    notification_count=len(posts) + len(replies),
+                    notification_count=len(category_posts),
                     thread_count=len(threads),
                 ),
                 threads="\n".join(threads),
@@ -213,23 +172,29 @@ def make_categories_digest(
 
 
 def make_threads_digest(
-    thread_posts: Sequence[ThreadPostInfo],
-    post_replies: Sequence[PostReplyInfo],
+    posts: Sequence[PostInfo],
     lexicon: Lexicon,
 ) -> List[str]:
     """Makes the notification list for threads in a given category."""
     digests: List[str] = []
+    # Split posts in the thread by whether it's a thread reply or a post reply
+    # Either list (but not both) could be empty
+    thread_posts: List[PostInfo] = []
+    post_replies: List[PostInfo] = []
+    for post in posts:
+        (thread_posts, post_replies)[
+            post["parent_post_id"] is not None
+        ].append(post)
+        # XXX TODO This check isn't correct - it just determines if the post has a parent or not. If the user is subscribed to the thread they don't give a shit if it's a post or a reply. It'll appear as 'Replies to your post:' when this check is actually 'Replies to A post:' which is useless
     # I want to group the posts in both lists by thread ID and then
     # iterate over them both, but can only guarantee that at least one list
     # contains any given thread ID.
-    # Create a defaultdict keyed by thread ID with an empty iterable
-    # default value for both lists
     grouped_posts = group_posts(thread_posts, "thread_id")
     grouped_replies = group_posts(post_replies, "thread_id")
     # Iterate over the thread IDs sorted by notification count
     for thread_id in frequent_ids(grouped_posts, grouped_replies):
         posts = grouped_posts[thread_id]
-        replies = cast(List[PostReplyInfo], grouped_replies[thread_id])
+        replies = grouped_replies[thread_id]
         # For each thread, there is necessarily at least one post in either
         # the thread posts or the post replies
         posts_section = ""
@@ -244,7 +209,7 @@ def make_threads_digest(
                     make_post_replies_digest(replies, lexicon)
                 )
             )
-        first_post = (posts + cast(List[PostInfo], replies))[0]
+        first_post = (posts + replies)[0]
         digests.append(
             lexicon["thread"].format(
                 thread_opener=lexicon["thread_opener"],
@@ -272,7 +237,7 @@ def make_threads_digest(
 
 
 def make_post_replies_digest(
-    post_replies: Iterable[PostReplyInfo], lexicon: Lexicon
+    post_replies: Sequence[PostInfo], lexicon: Lexicon
 ) -> List[str]:
     """Makes the notification list for replies in a given thread."""
     digests: List[str] = []
