@@ -107,7 +107,7 @@ FROM
   LEFT JOIN
   category ON category.id = thread.category_id
   LEFT JOIN
-  post AS parent_post ON parent_post.id = post.parent_post_id
+  post AS parent_post ON parent_post.id = post.parent_post_id;
 SELECT "notifiable_post", COUNT(*) FROM notifiable_post;
 
 -- 2. Context tables

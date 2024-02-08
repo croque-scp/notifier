@@ -1,5 +1,7 @@
 -- Pre-joins posts to context tables to avoid repeating that for each user queried
-CREATE TEMPORARY TABLE IF NOT EXISTS post_with_context
+CREATE TEMPORARY TABLE IF NOT EXISTS post_with_context (
+  INDEX pwc_timestamp (post_posted_timestamp)
+)
 WITH cte AS (
   SELECT
     notifiable_post.author_user_id AS post_user_id,
