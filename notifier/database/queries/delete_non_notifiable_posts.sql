@@ -39,10 +39,10 @@ WHERE
       )
 
       -- Users are not notified about their own posts
-      AND post.author_user_id <> user_config.user_id
+      AND user_config.user_id <> post.author_user_id
 
-      -- Only users last notified before this post was posted
-      AND post.posted_timestamp > user_config.notified_timestamp
+      -- Users whose last notified post was earlier than this one
+      AND user_config.notified_timestamp <= post.posted_timestamp
 
       -- Filter out users unsubscribed to this post
       AND (
