@@ -1,17 +1,3 @@
--- DELETE FROM thread WHERE is_deleted = 1;
--- DELETE FROM post WHERE is_deleted = 1;
-
-START TRANSACTION;
-
--- Temporary for testing
-
-DROP TABLE IF EXISTS notifiable_post;
-DROP TABLE IF EXISTS context_wiki;
-DROP TABLE IF EXISTS context_forum_category;
-DROP TABLE IF EXISTS context_thread;
-DROP TABLE IF EXISTS context_parent_post;
-SELECT "post", COUNT(*) FROM post;
-
 -- Set up new tables for split post data structure
 
 CREATE TABLE notifiable_post (
@@ -81,6 +67,8 @@ CREATE TABLE context_parent_post (
 
 -- Move existing posts into new tables
 
+START TRANSACTION;
+
 -- 1. Notifiable posts
 -- Insert posts into this table if a user is going to be notified about them
 
@@ -110,7 +98,6 @@ FROM
   category ON category.id = thread.category_id
   LEFT JOIN
   post AS parent_post ON parent_post.id = post.parent_post_id;
-SELECT "notifiable_post", COUNT(*) FROM notifiable_post;
 
 -- 2. Context tables
 
@@ -131,7 +118,6 @@ WHERE
     WHERE
       notifiable_post.context_wiki_id = wiki.id
   );
-SELECT "context_wiki", COUNT(*) FROM context_wiki;
 
 -- 2.2. Categories
 
@@ -148,7 +134,6 @@ WHERE
     WHERE
       notifiable_post.context_forum_category_id = category.id
   );
-SELECT "context_forum_category", COUNT(*) FROM context_forum_category;
 
 -- 2.3. Threads
 
@@ -176,7 +161,6 @@ WHERE
     WHERE
       notifiable_post.context_thread_id = thread.id
   );
-SELECT "context_thread", COUNT(*) FROM context_thread;
 
 -- 2.4. Parent posts
 
@@ -197,7 +181,8 @@ WHERE
     WHERE
       notifiable_post.context_parent_post_id = post.id
   );
-SELECT "context_parent_post", COUNT(*) FROM context_parent_post;
+
+COMMIT;
 
 -- Drop old tables
 DROP TABLE post;
@@ -205,5 +190,3 @@ DROP TABLE thread_first_post;
 DROP TABLE thread;
 DROP TABLE category;
 DROP TABLE wiki;
-
-COMMIT;
