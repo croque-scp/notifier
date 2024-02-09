@@ -29,7 +29,8 @@ CREATE TABLE notifiable_post (
   context_thread_id         VARCHAR(20) NOT NULL,
   context_parent_post_id    VARCHAR(20),
 
-  UNIQUE (post_id)
+  UNIQUE (post_id),
+  INDEX post_thread_id (context_thread_id)
 );
 
 CREATE TABLE context_wiki (
@@ -61,7 +62,8 @@ CREATE TABLE context_thread (
   first_post_author_username   VARCHAR(20)  NOT NULL,
   first_post_created_timestamp INT UNSIGNED NOT NULL,
 
-  UNIQUE (thread_id)
+  UNIQUE (thread_id),
+  INDEX thread_author_id (first_post_author_user_id)
 );
 
 CREATE TABLE context_parent_post (
