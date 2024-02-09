@@ -3,17 +3,21 @@
 DELETE
   notifiable_post
 FROM
-  notifiable_post AS post
+  notifiable_post
 
   INNER JOIN context_thread
-  ON context_thread.thread_id = post.context_thread_id
+  ON context_thread.thread_id = notifiable_post.context_thread_id
 
   LEFT JOIN context_parent_post
-  ON context_parent_post.post_id = post.context_parent_post_id
+  ON context_parent_post.post_id = notifiable_post.context_parent_post_id
 WHERE
   -- Remove posts older than 1 year, no matter what
-  post.posted_timestamp < ((
-    SELECT MAX(posted_timestamp) FROM post
+  notifiable_post.posted_timestamp < ((
+    SELECT latest_timestamp FROM (
+      SELECT
+        MAX(posted_timestamp) AS latest_timestamp
+      FROM notifiable_post
+    ) AS t
   ) - (60 * 60 * 24 * 365))
 
   -- Remove posts for which there exist 0 users who will be notified about it
@@ -30,29 +34,28 @@ WHERE
       LEFT JOIN manual_sub AS post_sub
       ON post_sub.user_id = user_config.user_id
       AND post_sub.thread_id = notifiable_post.context_thread_id
-      AND post_sub.post_id = notifiable_post.parent_post_id
+      AND post_sub.post_id = notifiable_post.context_parent_post_id
 
-    WHERE (
+    WHERE
       -- Include only users with chosen frequency in a defined list - other users e.g. those on the 'never' frequency are effectively unsubscribed
       user_config.frequency IN (
         "hourly", "8hourly", "daily", "weekly", "monthly"
       )
 
       -- Users are not notified about their own posts
-      AND user_config.user_id <> post.author_user_id
+      AND user_config.user_id <> notifiable_post.author_user_id
 
       -- Users whose last notified post was earlier than this one
-      AND user_config.notified_timestamp <= post.posted_timestamp
+      AND user_config.notified_timestamp <= notifiable_post.posted_timestamp
 
       -- Filter out users unsubscribed to this post
       AND (
         thread_sub.sub IS NULL OR thread_sub.sub = 1
         -- Post reply overrides thread unsubscription
         OR post_sub.sub = 1
-        OR post_with_context.parent_post_user_id = user_config.user_id
+        OR context_parent_post.author_user_id = user_config.user_id
       )
       AND (post_sub.sub IS NULL OR post_sub.sub = 1)
-    )
 
       -- Only users subscribed to this post
       AND (
