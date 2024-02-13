@@ -116,11 +116,11 @@ subject = "[Thông Báo Diễn Đàn] {post_count} post mới"
 intro = """|
 Xin chào! Đây là hệ thống thông báo {frequency} của bạn từ {link_site}, hiển thị thông báo về các bài post mới được đăng vào trang thread mà bạn đăng kí theo dõi.
 
-Trừ đi các phần mà bạn đã hủy đăng kí thông qua chỉnh sửa đăng kí thủ công, dịch vụ này hiện đang theo dõi {sub_count} đăng kí cho bạn, bao gồm:
+Dịch vụ này hiện đang theo dõi:
 
 * {manual_sub_count} mẫu đăng kí thủ công, theo như cài đặt tại [{link_your_config} bản điều chỉnh người dùng của bạn].
 
-* {auto_thread_sub_count} thread được đăng kí tự động và {auto_post_sub_count} post đăng kí tự động. Dịch vụ hiện vẫn [{link_info_learning} đang học hỏi] về các bản đăng kí tự động của bạn, vì thế con số này có thể tăng thêm theo thời gian. [{link_info_automatic} Tìm hiểu về những yếu tố cấu thành bản đăng kí tự động.]
+* Đăng kí tự động của bạn. [{link_info_automatic} Tìm hiểu về những yếu tố cấu thành bản đăng kí tự động.]
 
 Tài khoản ([[*user Notifier]]) này được chạy tự động -- bất kể tin nhắn gửi đến tài khoản đều bị bỏ qua. Nếu có khúc mắc, vui lòng liên hệ ([[*user Croquembouche]]) trực tiếp.
 
