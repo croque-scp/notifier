@@ -24,6 +24,7 @@ def main(
     limit_wikis: Optional[List[str]] = None,
     force_initial_search_timestamp: Optional[int] = None,
     force_current_time: Optional[str] = None,
+    proxy: Optional[str] = None,
     dry_run: bool = False,
 ) -> None:
     """Main notifier application entrypoint."""
@@ -69,6 +70,7 @@ def main(
                 database=database,
                 limit_wikis=limit_wikis,
                 force_initial_search_timestamp=force_initial_search_timestamp,
+                proxy=proxy,
                 dry_run=dry_run,
             ),
             CronTrigger.from_crontab(notification_channels["hourly"]),
@@ -92,6 +94,7 @@ def main(
             database=database,
             limit_wikis=limit_wikis,
             force_initial_search_timestamp=force_initial_search_timestamp,
+            proxy=proxy,
             dry_run=dry_run,
         )
 

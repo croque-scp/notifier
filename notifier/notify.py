@@ -79,6 +79,7 @@ def notify(
     database: BaseDatabaseDriver,
     limit_wikis: Optional[List[str]] = None,
     force_initial_search_timestamp: Optional[int] = None,
+    proxy: Optional[str] = None,
     dry_run: bool = False,
 ) -> None:
     """Main task executor. Should be called as often as the most frequent
@@ -97,7 +98,7 @@ def notify(
         return
 
     connection = Connection(
-        config, database.get_supported_wikis(), dry_run=dry_run
+        config, database.get_supported_wikis(), dry_run=dry_run, proxy=proxy
     )
 
     config_start_timestamp = timestamp()
@@ -110,7 +111,9 @@ def notify(
         get_user_config(config, database, connection)
 
         # Refresh the connection to add any newly-configured wikis
-        connection = Connection(config, database.get_supported_wikis())
+        connection = Connection(
+            config, database.get_supported_wikis(), proxy=proxy
+        )
     config_end_timestamp = timestamp()
 
     getpost_start_timestamp = timestamp()

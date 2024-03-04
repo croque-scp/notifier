@@ -60,9 +60,11 @@ class Connection:
         config: LocalConfig,
         supported_wikis: List[SupportedWikiConfig],
         *,
+        proxy: Optional[str],
         dry_run: bool = False,
     ):
         """Connect to Wikidot."""
+        self.proxy = proxy or ""
         self.dry_run = dry_run
         if self.dry_run:
             # Theoretically the session will never be used in a dry run
@@ -101,7 +103,9 @@ class Connection:
                 "Dry run: Wikidot request was not sent %s", {"to": url}
             )
             return None
-        return self._session.request("POST", url, **request_kwargs)
+        return self._session.request(
+            "POST", self.proxy + url, **request_kwargs
+        )
 
     def module(
         self, wiki_id: str, module_name: str, **module_kwargs: Any
@@ -433,7 +437,7 @@ class Connection:
         page_url = "http{}://{}.wikidot.com/{}".format(
             "s" if wiki["secure"] else "", wiki_id, slug
         )
-        page = self._session.get(page_url).text
+        page = self._session.get(self.proxy + page_url).text
         return int(
             cast(Match[str], re.search(r"pageId = ([0-9]+);", page)).group(1)
         )
