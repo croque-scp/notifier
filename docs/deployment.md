@@ -413,9 +413,10 @@ Create the trigger, then find it in the EventBridge console, and edit it:
 
 ```json
 {
-  "db_instance_id": "i-01708f003d7c13d71",
+  "db_instance_id": "i-<id>",
   "config_path": "config/config.toml",
-  "auth_path": "config/auth.lambda.toml"
+  "auth_path": "config/auth.lambda.toml",
+  "proxy": "https://<id>.execute-api.<region>.amazonaws.com/dev/proxy?target_url="
 }
 ```
 

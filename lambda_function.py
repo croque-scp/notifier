@@ -41,16 +41,26 @@ def lambda_handler(event: Dict[str, str], context: Any) -> int:
         raise ValueError("Missing key auth_path in event")
     local_auth_path = event["auth_path"]
 
+    proxy = event.get("proxy", "")
+
     force_current_time = None
     if "force_current_time" in event:
         force_current_time = event["force_current_time"]
 
-    logger.debug("Lambda: starting main procedure")
+    logger.debug(
+        "Lambda: starting main procedure %s",
+        {
+            "local_config_path": local_config_path,
+            "local_auth_path": local_auth_path,
+            "proxy": proxy,
+        },
+    )
     main(
         config=read_local_config(local_config_path),
         auth=read_local_auth(local_auth_path),
         execute_now=[],
         force_current_time=force_current_time,
+        proxy=proxy,
     )
     logger.info("Lambda finished")
     return 0
