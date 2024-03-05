@@ -74,7 +74,7 @@ def read_local_config(config_path: str) -> LocalConfig:
     raise RuntimeError
 
 
-def read_local_auth(auth_path: str) -> AuthConfig:
+def read_local_auth(auth_path: str, *, proxy: str = "") -> AuthConfig:
     """Reads the local auth file from the specified path."""
     logger.debug("Reading local auth config %s", {"path": auth_path})
     with open(auth_path, "r", encoding="utf-8") as auth_file:
@@ -97,6 +97,7 @@ def read_local_auth(auth_path: str) -> AuthConfig:
                 external_source["region_name"],
                 external_source["secret_name"],
                 external_source["use_keys"],
+                proxy=proxy,
             )
         )
         logger.debug("Supplemented secret %s", {"index": index})

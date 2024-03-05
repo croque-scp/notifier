@@ -1,6 +1,6 @@
 import json
 import logging
-from typing import Any, Dict, List, Tuple, cast
+from typing import Any, Dict, List, Optional, Tuple, cast
 
 import boto3
 import requests
@@ -78,22 +78,28 @@ class AWS:
     client = None
 
     @staticmethod
-    def _get_client(region_name: str) -> Any:
+    def _get_client(region_name: str, proxy: str) -> Any:
         """Makes or retrieves a connection client."""
         if AWS.client is None:
             AWS.session = boto3.session.Session()
             AWS.client = AWS.session.client(
-                service_name="secretsmanager", region_name=region_name
+                service_name="secretsmanager",
+                region_name=region_name,
+                endpoint_url=f"{proxy}https://secretsmanager.{region_name}.amazonaws.com",
             )
         return AWS.client
 
     @staticmethod
     def get_secrets(
-        region_name: str, secret_name: str, mapping: List[Tuple[str, str]]
+        region_name: str,
+        secret_name: str,
+        mapping: List[Tuple[str, str]],
+        *,
+        proxy: str = "",
     ) -> Dict[str, str]:
         """Retrieves secrets from Secrets Manager."""
         secrets = json.loads(
-            AWS._get_client(region_name).get_secret_value(
+            AWS._get_client(region_name, proxy).get_secret_value(
                 SecretId=secret_name
             )["SecretString"]
         )

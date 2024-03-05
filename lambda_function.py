@@ -57,7 +57,7 @@ def lambda_handler(event: Dict[str, str], context: Any) -> int:
     )
     main(
         config=read_local_config(local_config_path),
-        auth=read_local_auth(local_auth_path),
+        auth=read_local_auth(local_auth_path, proxy=proxy),
         execute_now=[],
         force_current_time=force_current_time,
         proxy=proxy,
