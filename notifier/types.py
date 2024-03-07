@@ -191,21 +191,21 @@ class ChannelLogDump(TypedDict):
 
     channel: str
     start_timestamp: int
-    end_timestamp: int
-    notified_user_count: int
+    end_timestamp: Optional[int]
+    notified_user_count: Optional[int]
 
 
 class ActivationLogDump(TypedDict):
     """Structure of public stats per activation."""
 
     start_timestamp: int
-    config_start_timestamp: int
-    config_end_timestamp: int
-    getpost_start_timestamp: int
-    getpost_end_timestamp: int
-    notify_start_timestamp: int
-    notify_end_timestamp: int
-    end_timestamp: int
+    config_start_timestamp: Optional[int]
+    config_end_timestamp: Optional[int]
+    getpost_start_timestamp: Optional[int]
+    getpost_end_timestamp: Optional[int]
+    notify_start_timestamp: Optional[int]
+    notify_end_timestamp: Optional[int]
+    end_timestamp: Optional[int]
 
 
 class LogDump(TypedDict):
