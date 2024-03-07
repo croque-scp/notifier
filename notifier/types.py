@@ -186,26 +186,26 @@ class NewPostsInfo(TypedDict):
 EmailAddresses = Dict[str, str]
 
 
-class ChannelLogDump(TypedDict):
+class ChannelLogDump(TypedDict, total=False):
     """Structure of public stats per channel."""
 
     channel: str
     start_timestamp: int
-    end_timestamp: Optional[int]
-    notified_user_count: Optional[int]
+    end_timestamp: int
+    notified_user_count: int
 
 
-class ActivationLogDump(TypedDict):
+class ActivationLogDump(TypedDict, total=False):
     """Structure of public stats per activation."""
 
     start_timestamp: int
-    config_start_timestamp: Optional[int]
-    config_end_timestamp: Optional[int]
-    getpost_start_timestamp: Optional[int]
-    getpost_end_timestamp: Optional[int]
-    notify_start_timestamp: Optional[int]
-    notify_end_timestamp: Optional[int]
-    end_timestamp: Optional[int]
+    config_start_timestamp: int
+    config_end_timestamp: int
+    getpost_start_timestamp: int
+    getpost_end_timestamp: int
+    notify_start_timestamp: int
+    notify_end_timestamp: int
+    end_timestamp: int
 
 
 class LogDump(TypedDict):
