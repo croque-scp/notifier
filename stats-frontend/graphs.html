@@ -49,7 +49,16 @@
           throw error
         }
 
+        console.log(recentNotifications)
+
         const allChannels = new Set(recentNotifications.channels.map(c => c["channel"]))
+
+        // Add default end timestamp to activations that didn't finish
+        recentNotifications.activations.forEach(activation => {
+          if (activation["end_timestamp"] == null) {
+            activation["end_timestamp"] = activation["start_timestamp"] + (15 * 60)
+          }
+        })
 
         // Bind channels data to activations data
 
@@ -62,9 +71,6 @@
             activationIndex++
           ) {
             const activation = recentNotifications.activations[activationIndex]
-            if (activation["end_timestamp"] == null) {
-              activation["end_timestamp"] = activation["start_timestamp"] + (15 * 60)
-            }
 
             // If channel started after activation, move onto next activation
             if (channel["start_timestamp"] > activation["end_timestamp"]) {
@@ -89,11 +95,12 @@
 
         function duration(startPhase, endPhase) {
           return activation => {
-            if (activation[startPhase] == null) startPhase = "end_timestamp"
-            if (activation[endPhase] == null) endPhase = "end_timestamp"
+            let [start, end] = [startPhase, endPhase]
+            if (activation[start] == null) start = "end_timestamp"
+            if (activation[end] == null) end = "end_timestamp"
             return {
               x: activation["start_timestamp"] * 1000,
-              y: (activation[endPhase] - activation[startPhase] ) / 60,
+              y: (activation[end] - activation[start] ) / 60,
             }
           }
         }
@@ -230,7 +237,7 @@
               plugins: {
                 title: {
                   display: true,
-                  text: "Sent notifications"
+                  text: "Delivered notifications"
                 },
                 legend: {
                   title: {
