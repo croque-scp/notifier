@@ -7,6 +7,7 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js@^4"></script>
     <script src="https://cdn.jsdelivr.net/npm/luxon@^3"></script>
     <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-luxon@^1"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@^3"></script>
     <script src="assets/createResizeIframe.js"></script>
 
     <script>
@@ -165,6 +166,27 @@
                   title: {
                     display: true,
                     text: "Time spent per stage",
+                  }
+                },
+                annotation: {
+                  annotations: {
+                    lambdaTimeout: {
+                      type: "line",
+                      yMin: 15,
+                      yMax: 15,
+                      borderDash: [5],
+                      borderWidth: 1,
+                      borderColor: "red",
+                      label: {
+                        color: "red",
+                        backgroundColor: "transparent",
+                        content: "Timeout limit (15min)",
+                        display: true,
+                        position: "start",
+                        font: { weight: 400, size: 10 },
+                        yAdjust: -12,
+                      }
+                    }
                   }
                 }
               },
