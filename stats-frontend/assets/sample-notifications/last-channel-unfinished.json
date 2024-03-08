@@ -1,0 +1,28 @@
+{
+  "activations": [
+    {
+      "start_timestamp": 1691179249,
+      "config_start_timestamp": 1691179249,
+      "config_end_timestamp": 1691179281,
+      "getpost_start_timestamp": 1691179281,
+      "getpost_end_timestamp": 1691179324,
+      "notify_start_timestamp": 1691179324,
+      "notify_end_timestamp": null,
+      "end_timestamp": null
+    }
+  ],
+  "channels": [
+    {
+      "channel": "8hourly",
+      "start_timestamp": 1691179326,
+      "end_timestamp": 1691179431,
+      "notified_user_count": 1
+    },
+    {
+      "channel": "hourly",
+      "start_timestamp": 1691179431,
+      "end_timestamp": null,
+      "notified_user_count": null
+    }
+  ]
+}
