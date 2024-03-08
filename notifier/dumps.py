@@ -34,9 +34,16 @@ class LogDumpCacher(Generic[AnyLogDump]):
     cache_func: Callable[[AnyLogDump], None]
     dry_run: bool
 
+    def __post_init__(self):
+        self.cache()
+
     def update(self, data: AnyLogDump) -> None:
-        """Adds the given key to the log dump and caches it if not a dry run."""
+        """Adds the given key."""
         self.data.update(data)
+        self.cache()
+
+    def cache(self) -> None:
+        """Caches data if not dry run."""
         if not self.dry_run:
             self.cache_func(self.data)
 
