@@ -8,8 +8,17 @@ from mypy_boto3_s3 import S3ServiceResource
 from mypy_boto3_s3.service_resource import Object
 
 from notifier.database.drivers.base import BaseDatabaseDriver
-from notifier.dumps import record_activation_log, upload_log_dump_to_s3
-from notifier.types import LocalConfig, LogDump
+from notifier.dumps import (
+    LogDumpCacher,
+    record_activation_log,
+    upload_log_dump_to_s3,
+)
+from notifier.types import (
+    ActivationLogDump,
+    ChannelLogDump,
+    LocalConfig,
+    LogDump,
+)
 
 
 def construct_fake_s3_resource(
@@ -18,8 +27,12 @@ def construct_fake_s3_resource(
     """Construct fake S3 object for monkeypatching."""
 
     def fake_s3_resource(_resource: str) -> S3ServiceResource:
-        s3 = lambda: None
-        bucket = lambda: None
+        def s3() -> None:
+            return None
+
+        def bucket() -> None:
+            return None
+
         dump_object = cast(Object, lambda: None)
         setattr(s3, "Bucket", lambda _name: bucket)
         setattr(bucket, "Object", lambda _path: dump_object)
@@ -84,3 +97,37 @@ def test_upload_dry_run_with_sample_data(
     record_activation_log(notifier_config, sample_database, inf)
 
     assert test_func_was_called
+
+
+def test_cache_partial_log_dump() -> None:
+    """Test that the partial log dump utility works as expected."""
+
+    cache_func_called = False
+
+    def mock_cache_func(*_: Any) -> None:
+        nonlocal cache_func_called
+        cache_func_called = True
+
+    assert cache_func_called is False
+
+    activation_log_dump = LogDumpCacher[ActivationLogDump](
+        {"start_timestamp": 1}, mock_cache_func, False
+    )
+    assert activation_log_dump.data == {"start_timestamp": 1}
+    assert cache_func_called is True
+    cache_func_called = False
+
+    activation_log_dump.update({"config_start_timestamp": 2})
+    assert activation_log_dump.data == {
+        "start_timestamp": 1,
+        "config_start_timestamp": 2,
+    }
+    assert cache_func_called is True
+    cache_func_called = False
+
+    channel_log_dump = LogDumpCacher[ChannelLogDump](
+        {"start_timestamp": 3}, mock_cache_func, True
+    )
+    assert cache_func_called is False
+    channel_log_dump.update({"config_start_timestamp": 2})
+    assert cache_func_called is False
