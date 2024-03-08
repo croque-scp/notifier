@@ -6,10 +6,13 @@ INSERT INTO
     end_timestamp,
     notified_user_count
   )
-  VALUES
+VALUES
   (
     %(channel)s,
     %(start_timestamp)s,
     %(end_timestamp)s,
     %(notified_user_count)s
   )
+ON DUPLICATE KEY UPDATE
+  end_timestamp = %(end_timestamp)s,
+  notified_user_count = %(notified_user_count)s

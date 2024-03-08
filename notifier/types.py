@@ -186,7 +186,7 @@ class NewPostsInfo(TypedDict):
 EmailAddresses = Dict[str, str]
 
 
-class ChannelLogDump(TypedDict):
+class ChannelLogDump(TypedDict, total=False):
     """Structure of public stats per channel."""
 
     channel: str
@@ -195,7 +195,7 @@ class ChannelLogDump(TypedDict):
     notified_user_count: int
 
 
-class ActivationLogDump(TypedDict):
+class ActivationLogDump(TypedDict, total=False):
     """Structure of public stats per activation."""
 
     start_timestamp: int

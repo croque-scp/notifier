@@ -1,0 +1,60 @@
+{
+  "activations": [
+    {
+      "start_timestamp": 1709902864,
+      "config_start_timestamp": 1709902864,
+      "config_end_timestamp": 1709902906,
+      "getpost_start_timestamp": 1709902906,
+      "getpost_end_timestamp": 1709902961,
+      "notify_start_timestamp": 1709902962,
+      "notify_end_timestamp": 1709903519,
+      "end_timestamp": 1709903558
+    },
+    {
+      "start_timestamp": 1709906464,
+      "config_start_timestamp": 1709906464,
+      "config_end_timestamp": 1709906506,
+      "getpost_start_timestamp": 1709906506,
+      "getpost_end_timestamp": 1709906586,
+      "notify_start_timestamp": 1709906587,
+      "notify_end_timestamp": null,
+      "end_timestamp": null
+    },
+    {
+      "start_timestamp": 1709910124,
+      "config_start_timestamp": 1709910125,
+      "config_end_timestamp": 1709910164,
+      "getpost_start_timestamp": 1709910164,
+      "getpost_end_timestamp": 1709910232,
+      "notify_start_timestamp": 1709910232,
+      "notify_end_timestamp": 1709910798,
+      "end_timestamp": 1709910835
+    }
+  ],
+  "channels": [
+    {
+      "channel": "hourly",
+      "start_timestamp": 1709902963,
+      "end_timestamp": 1709903519,
+      "notified_user_count": 1
+    },
+    {
+      "channel": "daily",
+      "start_timestamp": 1709906588,
+      "end_timestamp": 1709907053,
+      "notified_user_count": 11
+    },
+    {
+      "channel": "hourly",
+      "start_timestamp": 1709907053,
+      "end_timestamp": null,
+      "notified_user_count": null
+    },
+    {
+      "channel": "hourly",
+      "start_timestamp": 1709910233,
+      "end_timestamp": 1709910798,
+      "notified_user_count": 4
+    }
+  ]
+}

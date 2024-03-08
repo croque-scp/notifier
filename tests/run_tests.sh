@@ -1,6 +1,6 @@
 #!/usr/bin/env sh
 
-service=notifier
+service="notifier --attach database"
 if [ "$1" = "--no-db" ]; then
   service=notifier_without_db
 fi
@@ -10,4 +10,4 @@ cleanup() {
 }
 trap cleanup EXIT
 
-docker compose -f docker-compose.test.yml up --build $service --attach $service --attach database --exit-code-from $service
+docker compose -f docker-compose.test.yml up --build $service --attach $service --exit-code-from $service

@@ -12,11 +12,12 @@ from notifier.deletions import (
     rename_invalid_user_config_pages,
 )
 from notifier.digest import Digester
-from notifier.dumps import record_activation_log
+from notifier.dumps import LogDumpCacher, record_activation_log
 from notifier.emailer import Emailer
 from notifier.newposts import get_new_posts
 from notifier.timing import channel_is_now, channel_will_be_next, timestamp
 from notifier.types import (
+    ActivationLogDump,
     AuthConfig,
     CachedUserConfig,
     ChannelLogDump,
@@ -88,7 +89,11 @@ def notify(
     getting data for new posts) and then triggers the relevant notification
     schedules.
     """
-    activation_start_timestamp = timestamp()
+    activation_log_dump = LogDumpCacher[ActivationLogDump](
+        {"start_timestamp": timestamp()},
+        database.store_activation_log_dump,
+        dry_run,
+    )
 
     # If there are no active channels, which shouldn't happen, there is
     # nothing to do
@@ -100,7 +105,7 @@ def notify(
         config, database.get_supported_wikis(), dry_run=dry_run
     )
 
-    config_start_timestamp = timestamp()
+    activation_log_dump.update({"config_start_timestamp": timestamp()})
     if dry_run:
         logger.info("Dry run: skipping remote config acquisition")
     else:
@@ -111,9 +116,9 @@ def notify(
 
         # Refresh the connection to add any newly-configured wikis
         connection = Connection(config, database.get_supported_wikis())
-    config_end_timestamp = timestamp()
+    activation_log_dump.update({"config_end_timestamp": timestamp()})
 
-    getpost_start_timestamp = timestamp()
+    activation_log_dump.update({"getpost_start_timestamp": timestamp()})
     if dry_run:
         logger.info("Dry run: skipping new post acquisition")
     else:
@@ -121,18 +126,20 @@ def notify(
         get_new_posts(database, connection, limit_wikis)
     # The timestamp immediately after downloading posts will be used as the
     # upper bound of posts to notify users about
-    getpost_end_timestamp = timestamp()
+    activation_log_dump.update({"getpost_end_timestamp": timestamp()})
 
     if dry_run:
         logger.info("Dry run: skipping Wikidot login")
     else:
         connection.login(config["wikidot_username"], auth["wikidot_password"])
 
-    notify_start_timestamp = timestamp()
+    activation_log_dump.update({"notify_start_timestamp": timestamp()})
     logger.info("Notifying...")
     notify_active_channels(
         active_channels,
-        current_timestamp=getpost_end_timestamp,
+        current_timestamp=activation_log_dump.data.get(
+            "getpost_end_timestamp", timestamp()
+        ),
         config=config,
         auth=auth,
         database=database,
@@ -140,7 +147,7 @@ def notify(
         force_initial_search_timestamp=force_initial_search_timestamp,
         dry_run=dry_run,
     )
-    notify_end_timestamp = timestamp()
+    activation_log_dump.update({"notify_end_timestamp": timestamp()})
 
     # Notifications have been sent, so perform time-insensitive maintenance
 
@@ -161,19 +168,7 @@ def notify(
     delete_prepared_invalid_user_pages(config, connection)
     rename_invalid_user_config_pages(config, connection)
 
-    activation_end_timestamp = timestamp()
-    database.store_activation_log_dump(
-        {
-            "start_timestamp": activation_start_timestamp,
-            "config_start_timestamp": config_start_timestamp,
-            "config_end_timestamp": config_end_timestamp,
-            "getpost_start_timestamp": getpost_start_timestamp,
-            "getpost_end_timestamp": getpost_end_timestamp,
-            "notify_start_timestamp": notify_start_timestamp,
-            "notify_end_timestamp": notify_end_timestamp,
-            "end_timestamp": activation_end_timestamp,
-        }
-    )
+    activation_log_dump.update({"end_timestamp": timestamp()})
 
     assert not dry_run
     logger.info("Uploading log dumps...")
@@ -225,6 +220,16 @@ def notify_channel(
     """Compiles and sends notifications for all users in a given channel."""
     logger.info("Activating channel %s", {"channel": channel})
     channel_start_timestamp = timestamp()
+
+    channel_log_dump = LogDumpCacher[ChannelLogDump](
+        {
+            "channel": channel,
+            "start_timestamp": channel_start_timestamp,
+        },
+        database.store_channel_log_dump,
+        dry_run,
+    )
+
     # Get config sans subscriptions for users who would be notified
     logger.debug(
         "Finding users for channel... %s",
@@ -301,17 +306,10 @@ def notify_channel(
             )
             continue
 
-    if dry_run:
-        logger.info("Dry run: not recording channel activation log")
-    else:
-        channel_log_dump: ChannelLogDump = {
-            "channel": channel,
-            "start_timestamp": channel_start_timestamp,
-            "end_timestamp": timestamp(),
-            "notified_user_count": notified_users,
-        }
-        logger.info("Recording channel activation log %s", channel_log_dump)
-        database.store_channel_log_dump(channel_log_dump)
+    channel_log_dump.update(
+        {"end_timestamp": timestamp(), "notified_user_count": notified_users}
+    )
+
     logger.info(
         "Finished notifying channel %s",
         {"channel": channel, "users_notified_count": notified_users},

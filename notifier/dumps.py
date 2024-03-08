@@ -1,19 +1,51 @@
+from dataclasses import dataclass
 import json
 import logging
 import time
 from datetime import datetime
+from typing import Callable, Generic, TypeVar
 
 import boto3
 from dateutil import tz
 
 from notifier.database.drivers.base import BaseDatabaseDriver
-from notifier.types import LocalConfig, LogDump
+from notifier.types import (
+    ActivationLogDump,
+    ChannelLogDump,
+    LocalConfig,
+    LogDump,
+)
 
 logger = logging.getLogger(__name__)
 
 HALF_AN_HOUR_S = 60 * 30
 ONE_DAY_S = 60 * 60 * 24
 ENTRY_RETAIN_LIMIT = ONE_DAY_S * 31 * 3
+
+
+AnyLogDump = TypeVar("AnyLogDump", ChannelLogDump, ActivationLogDump)
+
+
+@dataclass
+class LogDumpCacher(Generic[AnyLogDump]):
+    """Wrapper for caching a log dump only when not doing a dry run."""
+
+    data: AnyLogDump
+    cache_func: Callable[[AnyLogDump], None]
+    dry_run: bool
+
+    def __post_init__(self):
+        self.cache()
+
+    def update(self, data: AnyLogDump) -> None:
+        """Adds the given key."""
+        self.data.update(data)
+        self.cache()
+
+    def cache(self) -> None:
+        """Caches data if not dry run."""
+        if not self.dry_run:
+            self.cache_func(self.data)
 
 
 def record_activation_log(

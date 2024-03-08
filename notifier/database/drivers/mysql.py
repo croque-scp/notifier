@@ -467,10 +467,10 @@ class MySqlDriver(BaseDatabaseDriver, BaseDatabaseWithSqlFileCache):
         self.execute_named(
             "store_channel_log_dump",
             {
-                "channel": log["channel"],
-                "start_timestamp": log["start_timestamp"],
-                "end_timestamp": log["end_timestamp"],
-                "notified_user_count": log["notified_user_count"],
+                "channel": log.get("channel", None),
+                "start_timestamp": log.get("start_timestamp", None),
+                "end_timestamp": log.get("end_timestamp", None),
+                "notified_user_count": log.get("notified_user_count", None),
             },
         )
 
@@ -479,14 +479,22 @@ class MySqlDriver(BaseDatabaseDriver, BaseDatabaseWithSqlFileCache):
         self.execute_named(
             "store_activation_log_dump",
             {
-                "start_timestamp": log["start_timestamp"],
-                "config_start_timestamp": log["config_start_timestamp"],
-                "config_end_timestamp": log["config_end_timestamp"],
-                "getpost_start_timestamp": log["getpost_start_timestamp"],
-                "getpost_end_timestamp": log["getpost_end_timestamp"],
-                "notify_start_timestamp": log["notify_start_timestamp"],
-                "notify_end_timestamp": log["notify_end_timestamp"],
-                "end_timestamp": log["end_timestamp"],
+                "start_timestamp": log.get("start_timestamp", None),
+                "config_start_timestamp": log.get(
+                    "config_start_timestamp", None
+                ),
+                "config_end_timestamp": log.get("config_end_timestamp", None),
+                "getpost_start_timestamp": log.get(
+                    "getpost_start_timestamp", None
+                ),
+                "getpost_end_timestamp": log.get(
+                    "getpost_end_timestamp", None
+                ),
+                "notify_start_timestamp": log.get(
+                    "notify_start_timestamp", None
+                ),
+                "notify_end_timestamp": log.get("notify_end_timestamp", None),
+                "end_timestamp": log.get("end_timestamp", None),
             },
         )
 
