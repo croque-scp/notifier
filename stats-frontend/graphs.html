@@ -10,6 +10,25 @@
     <script src="assets/createResizeIframe.js"></script>
 
     <script>
+      const palette = {
+        pink: "#e7298a",
+        green: "#66a61e",
+        yellow: "#e6ab02",
+        purple: "#7570b3",
+        brown: "#a6761d",
+        orange: "#d95f02",
+        teal: "#1b9e77",
+        grey: "#999999",
+      }
+
+      const channelPalette = {
+        hourly: palette.yellow,
+        "8hourly": palette.orange,
+        daily: palette.green,
+        weekly: palette.brown,
+        monthly: palette.pink,
+      }
+
       addEventListener("DOMContentLoaded", async () => {
         autoResizeIframe("http://notifications.wikidot.com")
 
@@ -30,40 +49,48 @@
           throw error
         }
 
-        // Process activations into chartable data
+        const allChannels = new Set(recentNotifications.channels.map(c => c["channel"]))
 
-        recentNotifications.activations.forEach(activation => {
-          activation.channels = recentNotifications.channels.filter(
-            channel => (
-              channel["start_timestamp"] > activation["start_timestamp"]
-              && channel["end_timestamp"] < activation["end_timestamp"]
-            )
-          )
-        })
+        // Bind channels data to activations data
 
-        const palette = {
-          pink: "#e7298a",
-          green: "#66a61e",
-          yellow: "#e6ab02",
-          purple: "#7570b3",
-          brown: "#a6761d",
-          orange: "#d95f02",
-          teal: "#1b9e77",
-          grey: "#999999",
-        }
+        let lastActivationIndex = 0
+        while (recentNotifications.channels.length) {
+          const channel = recentNotifications.channels.shift()
+          for (
+            let activationIndex = lastActivationIndex;
+            activationIndex < recentNotifications.activations.length;
+            activationIndex++
+          ) {
+            const activation = recentNotifications.activations[activationIndex]
+            if (activation["end_timestamp"] == null) {
+              activation["end_timestamp"] = activation["start_timestamp"] + (15 * 60)
+            }
 
-        const channelPalette = {
-          hourly: palette.yellow,
-          "8hourly": palette.orange,
-          daily: palette.green,
-          weekly: palette.brown,
-          monthly: palette.pink,
+            // If channel started after activation, move onto next activation
+            if (channel["start_timestamp"] > activation["end_timestamp"]) {
+              continue
+            }
+
+            // If channel started before activation, it should have been bound already
+            if (channel["start_timestamp"] < activation["start_timestamp"]) {
+              console.error("Channels not properly bound to activations")
+              // Just discard it, I guess
+              break
+            }
+
+            if (!("channels" in activation)) activation.channels = []
+            activation.channels.push(channel)
+            lastActivationIndex = activationIndex
+            break
+          }
         }
 
         // Duration graph
 
         function duration(startPhase, endPhase) {
           return activation => {
+            if (activation[startPhase] == null) startPhase = "end_timestamp"
+            if (activation[endPhase] == null) endPhase = "end_timestamp"
             return {
               x: activation["start_timestamp"] * 1000,
               y: (activation[endPhase] - activation[startPhase] ) / 60,
@@ -87,9 +114,7 @@
               ),
               backgroundColor: palette.teal,
             },
-            ...Array.from(
-              new Set(recentNotifications.channels.map(c => c["channel"]))
-            ).sort((channel1Name, channel2Name) => {
+            ...Array.from(allChannels).sort((channel1Name, channel2Name) => {
               // Sort channels by their execution order
               const channelOrder = ["monthly", "weekly", "daily", "8hourly", "hourly"]
               return channelOrder.indexOf(channel1Name) - channelOrder.indexOf(channel2Name)
@@ -102,7 +127,7 @@
                   const channel = activation.channels.find(c => c["channel"] === channelName)
                   return {
                     x: activation["start_timestamp"] * 1000,
-                    y: (channel["end_timestamp"] - channel["start_timestamp"] ) / 60,
+                    y: ((channel["end_timestamp"] || activation["end_timestamp"]) - channel["start_timestamp"] ) / 60,
                   }
                 }),
                 backgroundColor: channelPalette[channelName],
@@ -179,9 +204,7 @@
         // Notifications count graph
 
         const notificationsCountData = {
-          datasets: Array.from(
-            new Set(recentNotifications.channels.map(c => c["channel"]))
-          ).map(channelName => {
+          datasets: Array.from(allChannels).map(channelName => {
             return {
               label: channelName,
               data: recentNotifications.activations.filter(
@@ -190,7 +213,7 @@
                 const channel = activation.channels.find(c => c["channel"] === channelName)
                 return {
                   x: activation["start_timestamp"] * 1000,
-                  y: channel["notified_user_count"],
+                  y: channel["notified_user_count"] || 0,
                 }
               }),
               backgroundColor: channelPalette[channelName],
