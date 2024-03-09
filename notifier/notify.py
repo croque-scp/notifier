@@ -297,7 +297,7 @@ def notify_channel(
             logger.error(
                 "Failed to notify user %s",
                 {
-                    "reason": "unknown",
+                    "reason": repr(error),
                     "for user": user["username"],
                     "in channel": channel,
                     "user_config": user,
