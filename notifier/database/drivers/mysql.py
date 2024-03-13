@@ -351,6 +351,23 @@ class MySqlDriver(BaseDatabaseDriver, BaseDatabaseWithSqlFileCache):
                 )
             # Wikis that were removed from the service since the last run are still available as context
 
+    def store_post(self, post: NotifiablePost) -> None:
+        self.execute_named(
+            "store_post",
+            {
+                "post_id": post["post_id"],
+                "posted_timestamp": post["posted_timestamp"],
+                "post_title": post["post_title"],
+                "post_snippet": post["post_snippet"],
+                "author_user_id": post["author_user_id"],
+                "author_username": post["author_username"],
+                "context_wiki_id": post["context_wiki_id"],
+                "context_forum_category_id": post["context_forum_category_id"],
+                "context_thread_id": post["context_thread_id"],
+                "context_parent_post_id": post["context_parent_post_id"],
+            },
+        )
+
     def store_context_forum_category(
         self, context_forum_category: Context.ForumCategory
     ) -> None:
@@ -403,22 +420,9 @@ class MySqlDriver(BaseDatabaseDriver, BaseDatabaseWithSqlFileCache):
             },
         )
 
-    def store_post(self, post: NotifiablePost) -> None:
-        self.execute_named(
-            "store_post",
-            {
-                "post_id": post["post_id"],
-                "posted_timestamp": post["posted_timestamp"],
-                "post_title": post["post_title"],
-                "post_snippet": post["post_snippet"],
-                "author_user_id": post["author_user_id"],
-                "author_username": post["author_username"],
-                "context_wiki_id": post["context_wiki_id"],
-                "context_forum_category_id": post["context_forum_category_id"],
-                "context_thread_id": post["context_thread_id"],
-                "context_parent_post_id": post["context_parent_post_id"],
-            },
-        )
+    def delete_non_notifiable_posts(self) -> None:
+        self.execute_named("delete_non_notifiable_posts")
+        self.execute_named("delete_unused_post_context")
 
     def store_channel_log_dump(self, log: ChannelLogDump) -> None:
         """Store a channel log dump."""

@@ -155,14 +155,19 @@ def notify(
 
     logger.info("Cleaning up...")
 
-    for frequency in ["weekly", "monthly"]:
-        if channel_will_be_next(notification_channels[frequency]):
-            logger.info(
-                "Checking for deleted posts %s", {"for channel": frequency}
-            )
-            clear_deleted_posts(frequency, database, connection)
+    logger.info("Removing non-notifiable posts...")
+    database.delete_non_notifiable_posts()
 
-    logger.info("Purging invalid user config pages")
+    if any(
+        [
+            channel_will_be_next(notification_channels["weekly"]),
+            channel_will_be_next(notification_channels["monthly"]),
+        ]
+    ):
+        logger.info("Checking for deleted posts")
+        clear_deleted_posts(database, connection)
+
+    logger.info("Purging invalid user config pages...")
     delete_prepared_invalid_user_pages(config, connection)
     rename_invalid_user_config_pages(config, connection)
 

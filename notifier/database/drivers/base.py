@@ -122,6 +122,14 @@ class BaseDatabaseDriver(ABC):
         """Store a parent post for context."""
 
     @abstractmethod
+    def delete_post(self, post_id: str) -> None:
+        """Delete a post."""
+
+    @abstractmethod
+    def delete_non_notifiable_posts(self) -> None:
+        """Delete posts that will not emit notifications."""
+
+    @abstractmethod
     def store_channel_log_dump(self, log: ChannelLogDump) -> None:
         """Store a channel log dump."""
 
