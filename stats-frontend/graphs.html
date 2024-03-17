@@ -62,34 +62,18 @@
         })
 
         // Bind channels data to activations data
+        for (
+          let activationIndex = 0;
+          activationIndex < recentNotifications.activations.length;
+          activationIndex++
+        ) {
+          const activation = recentNotifications.activations[activationIndex]
 
-        let lastActivationIndex = 0
-        while (recentNotifications.channels.length) {
-          const channel = recentNotifications.channels.shift()
-          for (
-            let activationIndex = lastActivationIndex;
-            activationIndex < recentNotifications.activations.length;
-            activationIndex++
-          ) {
-            const activation = recentNotifications.activations[activationIndex]
-
-            // If channel started after activation, move onto next activation
-            if (channel["start_timestamp"] > activation["end_timestamp"]) {
-              continue
-            }
-
-            // If channel started before activation, it should have been bound already
-            if (channel["start_timestamp"] < activation["start_timestamp"]) {
-              console.error("Channels not properly bound to activations")
-              // Just discard it, I guess
-              break
-            }
-
-            if (!("channels" in activation)) activation.channels = []
-            activation.channels.push(channel)
-            lastActivationIndex = activationIndex
-            break
-          }
+          // Grab all channels that started during this activation
+          activation.channels = recentNotifications.channels.filter(channel =>
+            channel["start_timestamp"] > activation["start_timestamp"]
+            && channel["start_timestamp"] < activation["end_timestamp"]
+          )
         }
 
         // Duration graph
