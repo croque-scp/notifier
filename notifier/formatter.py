@@ -21,21 +21,23 @@ replacements_to_html: ReplacementList = [
     # Alignment
     ("[[=]]", """<div style="text-align: center">"""),
     ("[[/=]]", "</div>"),
-    # Wikidot user elements
-    (r(r"\[\[\*?user (.*?)\]\]"), r"\1"),
     # Wikidot date elements
     (
         r(r"\[\[date ([0-9]+) format=\"([^|]*).*?\"\]\]"),
         lambda match: time.strftime(match[2], time.gmtime(int(match[1]))),
     ),
     # Inline formatting
-    (r(r"//(.+?)//"), r"<i>\1</i>"),
+    (r(r"(?<!:)//(.+?)(?<!:)//"), r"<i>\1</i>"),
     (r(r"\*\*(.+?)\*\*"), r"<b>\1</b>"),
     (
         r(r"##(\S+)\|(.+?)##"),
         r"""<span style="color: \1">\2</span>""",
     ),
     # Remaining misc elements like ul/li
+    (
+        r(r"\[\[\*?user (.*?)\]\]"),
+        r"""<a href="https://www.wikidot.com/user:info/\1">\1</a>""",
+    ),
     ("[[", "<"),
     ("]]", ">"),
     # Links

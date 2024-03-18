@@ -79,16 +79,12 @@ def find_posts_to_check(
     users = database.get_user_configs(frequency)
     posts_to_check: Set[StrictPostId] = set()
     for user in users:
-        posts = database.get_new_posts_for_user(
+        posts = database.get_notifiable_posts_for_user(
             user["user_id"], (user["last_notified_timestamp"] + 1, now)
         )
-        for post in posts["thread_posts"]:
+        for post in posts:
             posts_to_check.add(
                 (post["wiki_id"], post["thread_id"], post["id"])
-            )
-        for reply in posts["post_replies"]:
-            posts_to_check.add(
-                (reply["wiki_id"], reply["thread_id"], reply["id"])
             )
     return posts_to_check
 
@@ -108,27 +104,16 @@ def delete_posts(
         if post_id in existing_posts:
             continue
 
-        thread_info = connection.thread(wiki_id, thread_id, post_id)
-        # The first iteration is a special case and returns information
-        # about the thread; it will always succeed if the thread exists
         try:
-            next(thread_info)
+            _, thread_posts = connection.thread(wiki_id, thread_id, post_id)
         except ThreadNotExists:
-            database.mark_thread_as_deleted(thread_id)
-            deleted_threads.add((wiki_id, thread_id))
-            continue
+            raise NotImplementedError  # TODO Reimplement deletion
 
-        # Subsequent iterations return posts from the targeted page; if
-        # there are no posts it means the targeted page doesn't exist and
-        # therefore neither does the targeted post
-        thread_posts = cast(List[RawPost], list(thread_info))
+        # If there are no posts it means the targeted page doesn't exist and therefore neither does the targeted post
         if len(thread_posts) == 0:
-            database.mark_post_as_deleted(post_id)
-            deleted_posts.add((wiki_id, thread_id, post_id))
-            continue
+            raise NotImplementedError  # TODO Reimplement deletion
 
-        # If the post does exist, record all post IDs seen in that page,
-        # which are known to exist so don't need to be checked later
+        # If the post does exist, record all post IDs seen in that page, which are known to exist so don't need to be checked later
         existing_posts.update(post["id"] for post in thread_posts)
 
     return deleted_threads, deleted_posts
