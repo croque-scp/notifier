@@ -207,7 +207,7 @@ def get_timestamp(element: Tag) -> Optional[int]:
 def count_pages(module_result: Union[str, Tag]) -> Tuple[int, Optional[int]]:
     """Counts the pages in a Wikidot module and gets the current page.
 
-    Takes the HTML (as text or soup) of the output of any module that can return with a pager, and reads the text of the last page button to get the page number.
+    Takes the HTML (as text or soup) of the output of any module that can return with a pager, and reads the text of the last page button to get the page number. The current page is 1-indexed.
 
     If a pager is not present, the page count is assumed to be 1.
     It's possible that no page is marked as the current one (no idea what causes this, but I've seen it happen).

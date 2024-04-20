@@ -8,6 +8,7 @@ from notifier.types import (
     LogDump,
     NotifiablePost,
     PostInfo,
+    PostMeta,
     RawUserConfig,
     SupportedWikiConfig,
     Context,
@@ -64,6 +65,15 @@ class BaseDatabaseDriver(ABC):
     def get_notifiable_users(self, frequency: str) -> List[str]:
         """Get the list of IDs for users subscribed to the given channel
         frequency who have at least one notification waiting for them.
+        """
+
+    @abstractmethod
+    def get_posts_to_check_for_deletion(
+        self, timestamp: int
+    ) -> List[PostMeta]:
+        """Get a list of posts to check for having potentially been deleted.
+
+        Timestamp is assumed to be time to check relative to.
         """
 
     @abstractmethod
@@ -128,6 +138,10 @@ class BaseDatabaseDriver(ABC):
     @abstractmethod
     def delete_non_notifiable_posts(self) -> None:
         """Delete posts that will not emit notifications."""
+
+    @abstractmethod
+    def delete_context_thread(self, thread_id: str) -> None:
+        """Delete posts with the given thread context."""
 
     @abstractmethod
     def store_channel_log_dump(self, log: ChannelLogDump) -> None:

@@ -12,13 +12,15 @@ In lieu of manual moderation these pages should be cleared.
 """
 
 import logging
-import time
-from typing import List, Set, Tuple, cast
+from datetime import datetime
+from typing import List, Set, Tuple
+
 from uuid import uuid4
 
 from notifier.config.user import fetch_user_configs, user_config_is_valid
 from notifier.database.drivers.base import BaseDatabaseDriver
-from notifier.types import LocalConfig, RawPost
+from notifier import timing
+from notifier.types import LocalConfig, PostMeta
 from notifier.wikiconnection import Connection, ThreadNotExists
 
 logger = logging.getLogger(__name__)
@@ -30,93 +32,114 @@ StrictPostId = Tuple[str, str, str]
 
 
 def clear_deleted_posts(
-    frequency: str, database: BaseDatabaseDriver, connection: Connection
+    database: BaseDatabaseDriver, connection: Connection
 ) -> None:
-    """Remove deleted posts from the database.
+    """Check for posts that have been deleted on the remote and delete them here too.
 
-    For each thread that a user on the given channel would soon be
-    notified about, check that it still exists. If it does not, flag it as
-    deleted in the cache, preventing it from emitting any notifications.
+    It'd be inefficient to check every post for deletion all the time, but also it's important to make sure that all posts are checked frequently because they could be deleted at any point.
 
-    If no users were about to be notified about a thread, there is no point
-    bothering to look up whether it still exists or not.
+    Deletion checking works by dragging several consistently-spaced hour-long 'rakes' across the timeline, checking all selected posts for deletion. The rakes become more spread apart the further back in time they are, so posts are checked gradually less and less frequently. At a certain point checking for deletion no longer matters because the post will be cleared from the database anyway.
     """
-    logger.info(
-        "Checking for deleted posts to clear %s", {"channel": frequency}
-    )
-    posts = find_posts_to_check(frequency, database)
-    logger.info(
-        "Found posts to check %s",
-        {
-            "post_count": len(posts),
-            "thread_count": len(set(post[1] for post in posts)),
-        },
-    )
-    deleted_threads, deleted_posts = delete_posts(posts, database, connection)
-    logger.info(
-        "Deleted threads %s",
-        {
-            "thread_count": len(deleted_threads),
-            "wiki_count": len(set(d[0] for d in deleted_threads)),
-        },
-    )
-    logger.info(
-        "Deleted posts %s",
-        {
-            "post_count": len(deleted_posts),
-            "thread_count": len(set(d[1] for d in deleted_posts)),
-            "wiki_count": len(set(d[0] for d in deleted_posts)),
-        },
-    )
 
+    logger.info("Checking for deleted posts to clear")
 
-def find_posts_to_check(
-    frequency: str, database: BaseDatabaseDriver
-) -> Set[StrictPostId]:
-    """For users on the given channel, find which threads and posts should
-    be checked for deletion."""
-    now = int(time.time())
-    users = database.get_user_configs(frequency)
-    posts_to_check: Set[StrictPostId] = set()
-    for user in users:
-        posts = database.get_notifiable_posts_for_user(
-            user["user_id"], (user["last_notified_timestamp"] + 1, now)
-        )
-        for post in posts:
-            posts_to_check.add(
-                (post["wiki_id"], post["thread_id"], post["id"])
-            )
-    return posts_to_check
+    now_hour = timing.now.replace(minute=0, second=0, microsecond=0)
+    now_hour_ts = int(datetime.timestamp(now_hour))
+
+    posts = database.get_posts_to_check_for_deletion(now_hour_ts)
+    delete_posts(posts, database, connection)
 
 
 def delete_posts(
-    posts: Set[StrictPostId],
+    posts: List[PostMeta],
     database: BaseDatabaseDriver,
     connection: Connection,
-) -> Tuple[Set[StrictThreadId], Set[StrictPostId]]:
-    """For each post, check if it exists. If it doesn't (or if the thread
-    doesn't), mark it as deleted in the database."""
-    deleted_threads: Set[StrictThreadId] = set()
-    deleted_posts: Set[StrictPostId] = set()
-    existing_posts: Set[str] = set()
+) -> None:
+    """Sync post deletion states.
 
-    for wiki_id, thread_id, post_id in posts:
-        if post_id in existing_posts:
+    For each post, check if it exists on the remote. If it doesn't (or if the thread doesn't), mark it as deleted in the database.
+    """
+    logger.debug("Checking posts for deletion %s", {"post_count": len(posts)})
+    posts_ids = {p["post_id"] for p in posts}
+
+    deleted_threads_ids: Set[str] = set()
+    existing_posts_ids: Set[str] = set()
+    deleted_posts_count = 0
+
+    for post in posts:
+        # A post that was already encountered is known to exist
+        if post["post_id"] in existing_posts_ids:
+            continue
+
+        # A post in a thread that was already deleted is known not to exist and will already be deleted from the database
+        if post["thread_id"] in deleted_threads_ids:
             continue
 
         try:
-            _, thread_posts = connection.thread(wiki_id, thread_id, post_id)
+            # Throws ThreadNotExists if the thread doesn't exist
+            thread_meta, thread_posts = connection.thread(
+                post["wiki_id"], post["thread_id"], post["post_id"]
+            )
+
+            # If there are no posts it means the thread is empty - consider it deleted
+            # (This is only true when targeting a specific post - if we were targeting a page number, no posts would mean that there are not that many pages)
+            if len(thread_posts) == 0:
+                raise ThreadNotExists
         except ThreadNotExists:
-            raise NotImplementedError  # TODO Reimplement deletion
+            logger.debug(
+                "Deleting thread context %s",
+                {"wiki_id": post["wiki_id"], "thread_id": post["thread_id"]},
+            )
+            database.delete_context_thread(post["thread_id"])
+            deleted_threads_ids.add(post["thread_id"])
+            continue
 
-        # If there are no posts it means the targeted page doesn't exist and therefore neither does the targeted post
-        if len(thread_posts) == 0:
-            raise NotImplementedError  # TODO Reimplement deletion
+        # The thread exists - might as well keep the context up to date while we're here
+        if thread_meta["current_page"] == 1:
+            # This won't happen more than once because other posts in page 1 will be marked as existing
+            logger.debug(
+                "Updating thread context %s",
+                {"wiki_id": post["wiki_id"], "thread_id": post["thread_id"]},
+            )
+            thread_first_post = thread_posts[0]
+            database.store_context_thread(
+                {
+                    "thread_id": post["thread_id"],
+                    "thread_created_timestamp": thread_meta[
+                        "created_timestamp"
+                    ],
+                    "thread_title": thread_meta["title"],
+                    "thread_snippet": thread_first_post["snippet"],
+                    "thread_creator_username": thread_meta["creator_username"],
+                    "first_post_id": thread_first_post["id"],
+                    "first_post_author_user_id": thread_first_post["user_id"],
+                    "first_post_author_username": thread_first_post[
+                        "username"
+                    ],
+                    "first_post_created_timestamp": thread_first_post[
+                        "posted_timestamp"
+                    ],
+                }
+            )
 
-        # If the post does exist, record all post IDs seen in that page, which are known to exist so don't need to be checked later
-        existing_posts.update(post["id"] for post in thread_posts)
+        thread_posts_ids = {tp["id"] for tp in thread_posts}
 
-    return deleted_threads, deleted_posts
+        # Record all post IDs seen in the page, which are known to exist so don't need to be checked later
+        existing_posts_ids.update(thread_posts_ids & posts_ids)
+
+        # Delete the post if it's not in the thread page
+        if post["post_id"] not in thread_posts_ids:
+            logger.debug("Deleting post %s", post)
+            database.delete_post(post["post_id"])
+            deleted_posts_count += 1
+            continue
+
+        # If there are more posts in the queue to be checked that a) have been deleted and b) would have been on this page, the page will unfortunately need to be redownloaded again for each, as there's no way to know from here that we can mark them as deleted
+
+    logger.debug(
+        "Finished deleting posts %s",
+        {"deleted_posts_count": deleted_posts_count},
+    )
 
 
 def rename_invalid_user_config_pages(

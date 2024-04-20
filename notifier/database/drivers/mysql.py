@@ -9,6 +9,7 @@ from pymysql.cursors import DictCursor
 
 from notifier.database.drivers.base import BaseDatabaseDriver
 from notifier.database.utils import BaseDatabaseWithSqlFileCache
+from notifier.deletions import delete_posts
 from notifier.types import (
     ActivationLogDump,
     CachedUserConfig,
@@ -17,6 +18,7 @@ from notifier.types import (
     LogDump,
     NotifiablePost,
     PostInfo,
+    PostMeta,
     RawUserConfig,
     Subscription,
     SupportedWikiConfig,
@@ -246,6 +248,16 @@ class MySqlDriver(BaseDatabaseDriver, BaseDatabaseWithSqlFileCache):
         ]
         return user_ids
 
+    def get_posts_to_check_for_deletion(
+        self, timestamp: int
+    ) -> List[PostMeta]:
+        return [
+            cast(PostMeta, row)
+            for row in self.execute_named(
+                "get_posts_to_check_for_deletion", {"timestamp": timestamp}
+            )
+        ]
+
     def store_user_configs(
         self,
         user_configs: List[RawUserConfig],
@@ -420,8 +432,16 @@ class MySqlDriver(BaseDatabaseDriver, BaseDatabaseWithSqlFileCache):
             },
         )
 
+    def delete_post(self, post_id: str) -> None:
+        self.execute_named("delete_post", {"post_id": post_id})
+        self.execute_named("delete_unused_post_context")
+
     def delete_non_notifiable_posts(self) -> None:
         self.execute_named("delete_non_notifiable_posts")
+        self.execute_named("delete_unused_post_context")
+
+    def delete_context_thread(self, thread_id: str) -> None:
+        self.execute_named("delete_context_thread", {"thread_id": thread_id})
         self.execute_named("delete_unused_post_context")
 
     def store_channel_log_dump(self, log: ChannelLogDump) -> None:

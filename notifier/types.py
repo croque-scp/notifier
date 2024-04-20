@@ -211,6 +211,14 @@ class PostInfo(TypedDict):
     flag_user_posted_parent: bool
 
 
+class PostMeta(TypedDict):
+    """Basic information needed to locate a post."""
+
+    wiki_id: str
+    thread_id: str
+    post_id: str
+
+
 # Email addresses keyed by Wikidot usernames.
 EmailAddresses = Dict[str, str]
 
