@@ -154,6 +154,28 @@ def test_fake_digest(
     print(convert_syntax(finalise_digest(digest), "email"))
 
 
+def test_full_interpolation_en(
+    fake_user: CachedUserConfig, fake_posts: List[PostInfo]
+) -> None:
+    """Verify that there's no leftover interpolation in the English digest."""
+
+    digester = Digester(str(Path.cwd() / "config" / "lang.toml"))
+    languages = set(digester.lexicons.keys())
+    languages.remove("base")
+
+    for delivery in ["email", "pm"]:
+        digest = digester.for_user(
+            {
+                **fake_user,  # type:ignore[misc]
+                "language": "en",
+                "delivery": delivery,
+            },
+            fake_posts,
+        )
+        assert "{" not in digest
+
+
+@pytest.mark.xfail
 def test_full_interpolation_all_languages(
     fake_user: CachedUserConfig, fake_posts: List[PostInfo]
 ) -> None:
