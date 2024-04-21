@@ -403,7 +403,6 @@ def test_get_replied_posts(new_posts_for_user: List[PostInfo]) -> None:
         "Post 111",
         "Post 211",
         "Post 212",
-        "Post 411",
         "Post 321",
     }
     assert titles([p for p in new_posts_for_user if not post_is_reply(p)]) == {
@@ -415,14 +414,6 @@ def test_get_replied_posts(new_posts_for_user: List[PostInfo]) -> None:
 def test_respect_ignored_thread(new_posts_for_user: List[PostInfo]) -> None:
     """Test that posts in ignored threads do not appear as thread posts."""
     assert titles(new_posts_for_user).isdisjoint({"Post 41", "Post 42"})
-
-
-@pytest.mark.needs_database
-def test_get_post_reply_even_if_ignored_thread(
-    new_posts_for_user: List[PostInfo],
-) -> None:
-    """Test that post replies are returned even if the thread is ignored."""
-    assert "Post 411" in titles(new_posts_for_user)
 
 
 @pytest.mark.needs_database

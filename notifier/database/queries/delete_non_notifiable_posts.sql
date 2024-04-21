@@ -49,12 +49,7 @@ WHERE
       AND user_config.notified_timestamp <= notifiable_post.posted_timestamp
 
       -- Filter out users unsubscribed to this post
-      AND (
-        thread_sub.sub IS NULL OR thread_sub.sub = 1
-        -- Post reply overrides thread unsubscription
-        OR post_sub.sub = 1
-        OR context_parent_post.author_user_id = user_config.user_id
-      )
+      AND (thread_sub.sub IS NULL OR thread_sub.sub = 1)
       AND (post_sub.sub IS NULL OR post_sub.sub = 1)
 
       -- Only users subscribed to this post

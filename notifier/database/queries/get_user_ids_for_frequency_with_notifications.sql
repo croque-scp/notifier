@@ -42,11 +42,6 @@ WHERE
       )
 
       -- Manual unsubscriptions
-      AND (
-        thread_sub.sub IS NULL OR thread_sub.sub = 1
-        -- Post reply overrides thread unsubscription
-        OR post_sub.sub = 1
-        OR post_with_context.parent_post_user_id = user_config.user_id
-      )
+      AND (thread_sub.sub IS NULL OR thread_sub.sub = 1)
       AND (post_sub.sub IS NULL OR post_sub.sub = 1)
   )
