@@ -39,7 +39,7 @@ WHERE
     WHERE
       -- Include only users with chosen frequency in a defined list - other users e.g. those on the 'never' frequency are effectively unsubscribed
       user_config.frequency IN (
-        "hourly", "8hourly", "daily", "weekly", "monthly"
+        "hourly", "8hourly", "daily", "weekly", "monthly", "test"
       )
 
       -- Users are not notified about their own posts
