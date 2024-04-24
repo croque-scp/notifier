@@ -205,7 +205,11 @@ class Connection:
                     "response": response,
                 },
             )
-            raise RuntimeError(response.get("message") or response["status"])
+            raise RuntimeError(
+                f"{response.get('message')} [{response['status']}]"
+                if response.get("message")
+                else response["status"]
+            )
         return cast(WikidotResponse, response)
 
     def paginated_module(

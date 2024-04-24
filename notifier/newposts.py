@@ -1,6 +1,7 @@
 import logging
 from operator import itemgetter
 from typing import Iterator, List, Optional, Set, TypedDict
+import time
 
 import feedparser
 
@@ -241,5 +242,5 @@ def fetch_new_posts_rss(wiki_id: str) -> Iterator[RssPost]:
         yield {
             "thread_id": thread_id,
             "post_id": post_id,
-            "posted_timestamp": int(entry["published_parsed"]),
+            "posted_timestamp": int(time.mktime(entry["published_parsed"])),
         }
