@@ -24,7 +24,7 @@ from notifier.types import (
     EmailAddresses,
     LocalConfig,
 )
-from notifier.wikiconnection import Connection, RestrictedInbox
+from notifier.wikiconnection import Connection, NotLoggedIn, RestrictedInbox
 
 logger = logging.getLogger(__name__)
 
@@ -292,6 +292,9 @@ def notify_channel(
                 exc_info=error,
             )
             continue
+        except NotLoggedIn as error:
+            logger.error("Failed to notify anyone; not logged in")
+            raise RuntimeError from error
         except Exception as error:
             logger.error(
                 "Failed to notify user %s",

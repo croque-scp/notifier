@@ -54,6 +54,10 @@ class RestrictedInbox(Exception):
     inbox is restricted."""
 
 
+class NotLoggedIn(Exception):
+    """Indicates that the client needs to be logged in to do that."""
+
+
 class OngoingConnectionError(Exception):
     """Indicates a persistent connection error that could not be resolved
     by trying it multiple times."""
@@ -194,6 +198,12 @@ class Connection:
             == "This user wishes to receive messages only from selected users."
         ):
             raise RestrictedInbox
+        if (
+            response["status"] == "no_permission"
+            and response["message"]
+            == "Please create a Wikidot account and/or sign in first"
+        ):
+            raise NotLoggedIn
         if response["status"] != "ok":
             logger.error(
                 "Bad response from Wikidot %s",
