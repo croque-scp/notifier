@@ -121,6 +121,7 @@ class Digester:
             wikis="\n".join(make_wikis_digest(posts, lexicon)),
             outro=outro,
         )
+        subject = pluralise(subject)
         body = finalise_digest(body)
         body = convert_syntax(body, user["delivery"])
         return subject, body
