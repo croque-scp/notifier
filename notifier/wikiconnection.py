@@ -17,6 +17,7 @@ from typing import (
 import requests
 from bs4 import BeautifulSoup
 from bs4.element import Tag
+from requests import Response
 
 from notifier.parsethread import (
     count_pages,
@@ -108,13 +109,13 @@ class Connection:
             }
             self.supported_wikis.append(self.config_wiki)
 
-    def post(self, url: str, **request_kwargs: Any) -> Any:
+    def post(self, url: str, **request_kwargs: Any) -> Response:
         """Make a POST request."""
         if self.dry_run:
             logger.warning(
                 "Dry run: Wikidot request was not sent %s", {"to": url}
             )
-            return None
+            return Response()
         return self._session.request("POST", url, **request_kwargs)
 
     def module(
@@ -340,7 +341,7 @@ class Connection:
     def login(self, username: str, password: str) -> None:
         """Log in to a Wikidot account."""
         logger.info("Logging in...")
-        self.post(
+        response = self.post(
             "https://www.wikidot.com/default--flow/login__LoginPopupScreen",
             data=dict(
                 login=username,
@@ -349,6 +350,8 @@ class Connection:
                 event="login",
             ),
         )
+        if "The login and password do not match" in response.text:
+            raise RuntimeError("Failed to login")
 
     def send_message(self, user_id: str, subject: str, body: str) -> None:
         """Send a Wikidot message to the given user with the given subject
