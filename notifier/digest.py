@@ -73,8 +73,7 @@ class Digester:
     ) -> Tuple[str, str]:
         """Compile a notification digest for a user.
 
-        Returns a tuple of notification count, message subject and the
-        digest body.
+        Returns a tuple of message subject and the digest body.
         """
         # Make the lexicon for this user's settings
         lexicon = self.make_lexicon(user["language"])

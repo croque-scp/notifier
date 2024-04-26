@@ -175,7 +175,6 @@ def test_full_interpolation_en(
         assert "{" not in digest
 
 
-@pytest.mark.xfail
 def test_full_interpolation_all_languages(
     fake_user: CachedUserConfig, fake_posts: List[PostInfo]
 ) -> None:
@@ -188,7 +187,7 @@ def test_full_interpolation_all_languages(
     for language in languages:
         for delivery in ["email", "pm"]:
             print(language, delivery)
-            digest = digester.for_user(
+            subject, body = digester.for_user(
                 {
                     **fake_user,  # type:ignore[misc]
                     "language": language,
@@ -196,4 +195,5 @@ def test_full_interpolation_all_languages(
                 },
                 fake_posts,
             )
-            assert "{" not in digest, language
+            print(subject, body)
+            assert "{" not in body, language
