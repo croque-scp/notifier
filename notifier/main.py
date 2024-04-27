@@ -10,7 +10,7 @@ from notifier.notify import (
     notify,
     pick_channels_to_notify,
 )
-from notifier.timing import delay, now, override_current_time
+from notifier import timing
 from notifier.types import AuthConfig, LocalConfig
 
 logger = logging.getLogger(__name__)
@@ -28,11 +28,11 @@ def main(
 ) -> None:
     """Main notifier application entrypoint."""
 
-    logger.info("The current time is %s", now)
+    logger.info("The current time is %s", timing.now)
 
     if force_current_time is not None:
-        override_current_time(force_current_time)
-        logger.info("The current time is %s", now)
+        timing.override_current_time(force_current_time)
+        logger.info("The current time is %s", timing.now)
 
     if dry_run:
         logger.info("Performing a dry run - no notifications will be sent")
@@ -40,7 +40,7 @@ def main(
         logger.info(
             "Not performing a dry run - cancel within 5s if not intended"
         )
-        delay()
+        timing.delay()
 
     # Database stores forum posts and caches subscriptions
     DatabaseDriver = resolve_driver_from_config(config["database"]["driver"])

@@ -11,11 +11,11 @@ logger = logging.getLogger(__name__)
 
 
 def parse_thread_meta(thread: Tag) -> RawThreadMeta:
-    """Parse the meta info of a thread to return forum category ID,
-    category name, and thread title.
+    """Parse the meta info of a thread to return forum category ID, category name, and thread title.
 
-    :param thread: The thread, as soup. Expected to start at
-    .forum-thread-box, which is what the ForumViewThreadModule returns.
+    :param thread: The thread, as soup. Expected to start at .forum-thread-box, which is what the ForumViewThreadModule returns.
+
+    Information returned is independent of the thread page passed to this function, except the returned value will include the active page number.
     """
     breadcrumbs = cast(Tag, thread.find(class_="forum-breadcrumbs"))
     category_link = list(cast(Iterable[Tag], breadcrumbs.find_all("a")))[-1]
@@ -32,13 +32,15 @@ def parse_thread_meta(thread: Tag) -> RawThreadMeta:
     created_timestamp = get_timestamp(statistics)
     if created_timestamp is None:
         raise ValueError("No timestamp for thread")
+    page_count, current_page = count_pages(thread)
     return {
         "category_id": category_id,
         "category_name": category_name,
         "title": list(breadcrumbs.stripped_strings)[-1].strip(" »"),
         "creator_username": creator_username,
         "created_timestamp": created_timestamp,
-        "page_count": count_pages(thread),
+        "page_count": page_count,
+        "current_page": current_page,
     }
 
 
@@ -202,31 +204,41 @@ def get_timestamp(element: Tag) -> Optional[int]:
     return posted_timestamp
 
 
-def count_pages(module_result: Union[str, Tag]) -> int:
-    """Counts the pages in a Wikidot module.
+def count_pages(module_result: Union[str, Tag]) -> Tuple[int, Optional[int]]:
+    """Counts the pages in a Wikidot module and gets the current page.
 
-    Takes the HTML (as text or soup) of the output of any module that can
-    return with a pager, and reads the text of the last page button to get
-    the page number.
+    Takes the HTML (as text or soup) of the output of any module that can return with a pager, and reads the text of the last page button to get the page number. The current page is 1-indexed.
 
     If a pager is not present, the page count is assumed to be 1.
+    It's possible that no page is marked as the current one (no idea what causes this, but I've seen it happen).
 
-    This process only works for modules that return pagers of a fixed
-    length (the only one that I know of that does not do this is page
-    history).
+    This process only works for modules that return pagers of a fixed length (the only one that I know of that does not do this is page history).
+
+    Returns a tuple of the number of pages and the current page.
     """
     if isinstance(module_result, str):
         module_result = BeautifulSoup(module_result, "html.parser")
+
+    page_count = 1
+    current_page = None
+
     page_selectors = cast(Optional[Tag], module_result.find(class_="pager"))
-    if not page_selectors:
-        # There are no page selectors if there is only one page
-        return 1
-    # The final page selector is the last one with numeric text. It may be
-    # .target (clickable) or .current (unclickable). Non-numeric text
-    # indicates e.g. a 'next' button
-    for selector in reversed(page_selectors.contents):
-        try:
-            return int(selector.get_text())
-        except ValueError:
-            continue
-    return 1
+    # Note that there are no page selectors if there is only one page
+
+    if page_selectors:
+        current_selector = page_selectors.find(class_="current")
+        if current_selector:
+            try:
+                current_page = int(current_selector.get_text())
+            except ValueError:
+                pass
+
+        # The final page selector is the last one with numeric text. It may be .target (clickable) or .current (unclickable). Non-numeric text indicates e.g. a 'next' button
+        for selector in reversed(page_selectors.contents):
+            try:
+                page_count = int(selector.get_text())
+                break
+            except ValueError:
+                continue
+
+    return page_count, current_page

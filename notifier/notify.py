@@ -1,7 +1,7 @@
 import logging
 import re
 from smtplib import SMTPAuthenticationError
-from typing import FrozenSet, Iterable, List, Optional, Any, Set, cast, Tuple
+from typing import FrozenSet, Iterable, List, Optional, Set, Tuple
 
 from notifier.config.remote import get_global_config
 from notifier.config.user import get_user_config
@@ -23,10 +23,8 @@ from notifier.types import (
     ChannelLogDump,
     EmailAddresses,
     LocalConfig,
-    NewPostsInfo,
-    PostInfo,
 )
-from notifier.wikiconnection import Connection, RestrictedInbox
+from notifier.wikiconnection import Connection, NotLoggedIn, RestrictedInbox
 
 logger = logging.getLogger(__name__)
 
@@ -157,14 +155,13 @@ def notify(
 
     logger.info("Cleaning up...")
 
-    for frequency in ["weekly", "monthly"]:
-        if channel_will_be_next(notification_channels[frequency]):
-            logger.info(
-                "Checking for deleted posts %s", {"for channel": frequency}
-            )
-            clear_deleted_posts(frequency, database, connection)
+    logger.info("Removing non-notifiable posts...")
+    database.delete_non_notifiable_posts()
 
-    logger.info("Purging invalid user config pages")
+    logger.info("Checking for deleted posts")
+    clear_deleted_posts(database, connection)
+
+    logger.info("Purging invalid user config pages...")
     delete_prepared_invalid_user_pages(config, connection)
     rename_invalid_user_config_pages(config, connection)
 
@@ -243,9 +240,7 @@ def notify_channel(
     # Filter the users only to those with notifications waiting
     logger.debug("Filtering users without notifications waiting...")
     user_count_pre_filter = len(user_configs)
-    notifiable_user_ids = database.get_notifiable_users(
-        channel, config["service_start_timestamp"]
-    )
+    notifiable_user_ids = database.get_notifiable_users(channel)
     user_configs = [
         user for user in user_configs if user["user_id"] in notifiable_user_ids
     ]
@@ -261,11 +256,10 @@ def notify_channel(
     # Notify each user on this frequency channel
     notified_users = 0
     notified_posts = 0
-    notified_threads = 0
     addresses: EmailAddresses = {}
     for user in user_configs:
         try:
-            sent, post_count, thread_count = notify_user(
+            sent, post_count = notify_user(
                 user,
                 channel=channel,
                 current_timestamp=current_timestamp,
@@ -281,7 +275,6 @@ def notify_channel(
             if sent:
                 notified_users += 1
                 notified_posts += post_count
-                notified_threads += thread_count
         except SMTPAuthenticationError as error:
             logger.error(
                 "Failed to notify user via email %s",
@@ -293,6 +286,9 @@ def notify_channel(
                 exc_info=error,
             )
             continue
+        except NotLoggedIn as error:
+            logger.error("Failed to notify anyone; not logged in")
+            raise RuntimeError from error
         except Exception as error:
             logger.error(
                 "Failed to notify user %s",
@@ -329,16 +325,12 @@ def notify_user(
     emailer: Emailer,
     addresses: EmailAddresses,
     dry_run: bool = False,
-) -> Tuple[bool, int, int]:
+) -> Tuple[bool, int]:
     """Compiles and sends a notification for a single user.
 
     Returns a tuple containing the following:
         1. a boolean indicating whether the notification was successful
         2. the number of posts notified about
-        3. the number of threads notified about.
-    The latter values will be 0 in the case that the notification was not
-    successful, even if there were posts to notify about (e.g. if the user has
-    an invalid config).
 
     :param addresses: A dict of email addresses to use for sending emails
     to. Should be set to an empty dict initially; if this is the case, this
@@ -348,13 +340,12 @@ def notify_user(
     logger.debug(
         "Making digest for user %s",
         {
-            **cast(Any, user),
-            "manual_subs": len(user["manual_subs"]),
-            "auto_subs": len(user["auto_subs"]),
+            "manual_subs_count": len(user["manual_subs"]),
+            **user,
         },
     )
     # Get new posts for this user
-    posts = database.get_new_posts_for_user(
+    posts = database.get_notifiable_posts_for_user(
         user["user_id"],
         (
             (user["last_notified_timestamp"] + 1)
@@ -363,7 +354,7 @@ def notify_user(
             current_timestamp,
         ),
     )
-    post_count = len(posts["thread_posts"]) + len(posts["post_replies"])
+    post_count = len(posts)
     logger.debug(
         "Found posts for notification %s",
         {
@@ -382,17 +373,12 @@ def notify_user(
                 "reason": "no posts",
             },
         )
-        return False, 0, 0
+        return False, 0
 
     # Extract the 'last notification time' that will be recorded -
     # it is the timestamp of the most recent post this user is
     # being notified about
-    last_notified_timestamp = max(
-        post["posted_timestamp"]
-        for post in (
-            posts["thread_posts"] + cast(List[PostInfo], posts["post_replies"])
-        )
-    )
+    last_notified_timestamp = max(post["posted_timestamp"] for post in posts)
 
     # Compile the digest
     subject, body = digester.for_user(user, posts)
@@ -403,7 +389,7 @@ def notify_user(
             {"for_user": user["username"]},
         )
         # Still return true to indicate that the user would have been notified
-        return True, post_count, count_threads(posts)
+        return True, post_count
 
     error_tags = {"restricted-inbox", "not-a-back-contact"}
 
@@ -466,7 +452,7 @@ def notify_user(
                 },
             )
             add_error_tag_to_user("restricted-inbox", post_count)
-            return False, 0, 0
+            return False, 0
         # This user has fixed the above issue, so remove error tags
         remove_error_tags_from_user()
 
@@ -500,7 +486,7 @@ def notify_user(
             )
             # They'll have to fix this themselves - inform them
             add_error_tag_to_user("not-a-back-contact", post_count)
-            return False, 0, 0
+            return False, 0
         # This user has fixed the above issue, so remove error tags
         remove_error_tags_from_user()
         logger.debug(
@@ -527,19 +513,8 @@ def notify_user(
     if user["tags"] != "":
         connection.set_tags(
             config["config_wiki"],
-            ":".join([config["user_config_category"], str(user["user_id"])]),
+            ":".join([config["user_config_category"], user["user_id"]]),
             "",
         )
 
-    return True, post_count, count_threads(posts)
-
-
-def count_threads(posts: NewPostsInfo) -> int:
-    """Counts the number of unique threads in a list of posts."""
-
-    def count_threads_in_posts(posts: Iterable[PostInfo]) -> int:
-        return len(set(post["thread_id"] for post in posts))
-
-    return count_threads_in_posts(
-        posts["post_replies"],
-    ) + count_threads_in_posts(posts["thread_posts"])
+    return True, post_count

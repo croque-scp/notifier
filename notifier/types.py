@@ -104,30 +104,18 @@ class CachedUserConfig(TypedDict):
     last_notified_timestamp: int
     tags: str
     manual_subs: List[Subscription]
-    auto_subs: List[Subscription]
 
 
 class RawThreadMeta(TypedDict):
     """Information about a thread from its header."""
 
+    title: str
     category_id: Optional[str]
     category_name: Optional[str]
-    title: str
     creator_username: Optional[str]
     created_timestamp: int
     page_count: int
-
-
-class ThreadInfo(TypedDict):
-    """Information about a thread to be stored in the database."""
-
-    id: str
-    title: str
-    wiki_id: str
-    category_id: Optional[str]
-    category_name: Optional[str]
-    creator_username: Optional[str]
-    created_timestamp: int
+    current_page: Optional[int]
 
 
 class RawPost(TypedDict):
@@ -143,43 +131,92 @@ class RawPost(TypedDict):
     username: str
 
 
+class NotifiablePost(TypedDict):
+    """Info about a notifiable post to be stored in the database."""
+
+    post_id: str
+    posted_timestamp: int
+    post_title: str
+    post_snippet: str
+    author_user_id: str
+    author_username: str
+    context_wiki_id: Optional[str]
+    context_forum_category_id: Optional[str]
+    context_thread_id: Optional[str]
+    context_parent_post_id: Optional[str]
+
+
+class Context:
+    """Types for different post contexts."""
+
+    class ForumCategory(TypedDict):
+        """Forum category context."""
+
+        category_id: str
+        category_name: str
+
+    class Thread(TypedDict):
+        """Thread context."""
+
+        thread_id: str
+        thread_created_timestamp: int
+        thread_title: str
+        thread_snippet: str
+        thread_creator_username: Optional[str]
+        first_post_id: str
+        first_post_author_user_id: str
+        first_post_author_username: str
+        first_post_created_timestamp: int
+
+    class ParentPost(TypedDict):
+        """Parent post context."""
+
+        post_id: str
+        posted_timestamp: int
+        post_title: str
+        post_snippet: str
+        author_user_id: str
+        author_username: str
+
+
 class PostInfo(TypedDict):
     """Information for a single post returned from the cache."""
 
     id: str
-    title: str
-    username: str
     posted_timestamp: int
+    title: str
     snippet: str
-    thread_id: str
-    thread_title: str
-    thread_creator: Optional[str]
-    thread_timestamp: int
+    username: str
+
     wiki_id: str
     wiki_name: str
     wiki_secure: IsSecure
+
     category_id: Optional[str]
     category_name: Optional[str]
 
+    thread_id: str
+    thread_timestamp: int
+    thread_title: str
+    thread_creator: str
 
-class ThreadPostInfo(PostInfo):
-    """Information for a new post made to a thread from the cache."""
+    parent_post_id: Optional[str]
+    parent_posted_timestamp: Optional[int]
+    parent_title: Optional[str]
+    parent_username: Optional[str]
+
+    flag_user_subscribed_to_thread: bool
+    flag_user_subscribed_to_post: bool
+    flag_user_started_thread: bool
+    flag_user_posted_parent: bool
 
 
-class PostReplyInfo(PostInfo):
-    """Information for a new reply to a post from the cache."""
+class PostMeta(TypedDict):
+    """Basic information needed to locate a post."""
 
-    parent_post_id: str
-    parent_title: str
-    parent_username: str
-    parent_posted_timestamp: int
-
-
-class NewPostsInfo(TypedDict):
-    """All new posts returned from the cache."""
-
-    thread_posts: List[ThreadPostInfo]
-    post_replies: List[PostReplyInfo]
+    wiki_id: str
+    thread_id: str
+    post_id: str
 
 
 # Email addresses keyed by Wikidot usernames.

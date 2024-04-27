@@ -10,6 +10,17 @@ WHERE
   AND EXISTS (
     SELECT NULL FROM
       post_with_context
+
+      LEFT JOIN manual_sub AS thread_sub
+      ON thread_sub.user_id = user_config.user_id
+      AND thread_sub.thread_id = post_with_context.thread_id
+      AND thread_sub.post_id IS NULL
+
+      LEFT JOIN manual_sub AS post_sub
+      ON post_sub.user_id = user_config.user_id
+      AND post_sub.thread_id = post_with_context.thread_id
+      AND post_sub.post_id = post_with_context.parent_post_id
+
     WHERE
       -- Remove posts made by the user
       post_with_context.post_user_id <> user_config.user_id
@@ -25,32 +36,12 @@ WHERE
         -- Replies to posts made by the user
         OR post_with_context.parent_post_user_id = user_config.user_id
 
-        -- Posts in threads subscribed to and replies to posts subscribed to
-        OR EXISTS (
-          SELECT NULL FROM
-            manual_sub
-          WHERE
-            manual_sub.user_id = user_config.user_id
-            AND manual_sub.thread_id = post_with_context.thread_id
-            AND (
-              manual_sub.post_id IS NULL  -- Threads
-              OR manual_sub.post_id = post_with_context.parent_post_id  -- Post replies
-            )
-            AND manual_sub.sub = 1
-        )
+        -- Manual subscriptions
+        OR thread_sub.sub = 1
+        OR post_sub.sub = 1
       )
 
-      -- Remove posts/replies in/to threads/posts unsubscribed from
-      AND NOT EXISTS (
-        SELECT NULL FROM
-          manual_sub
-        WHERE
-          manual_sub.user_id = user_config.user_id
-          AND manual_sub.thread_id = post_with_context.thread_id
-          AND (
-            manual_sub.post_id IS NULL  -- Threads
-            OR manual_sub.post_id = post_with_context.parent_post_id  -- Post replies
-          )
-          AND manual_sub.sub = -1
-      )
+      -- Manual unsubscriptions
+      AND (thread_sub.sub IS NULL OR thread_sub.sub = 1)
+      AND (post_sub.sub IS NULL OR post_sub.sub = 1)
   )

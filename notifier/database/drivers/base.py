@@ -1,16 +1,17 @@
 from abc import ABC, abstractmethod
-from typing import Any, Iterable, List, Tuple
+from typing import Any, List, Tuple
 
 from notifier.types import (
     ActivationLogDump,
     CachedUserConfig,
     ChannelLogDump,
     LogDump,
-    NewPostsInfo,
-    RawPost,
+    NotifiablePost,
+    PostInfo,
+    PostMeta,
     RawUserConfig,
     SupportedWikiConfig,
-    ThreadInfo,
+    Context,
 )
 
 
@@ -37,34 +38,15 @@ class BaseDatabaseDriver(ABC):
         """Initial setup for the database."""
 
     @abstractmethod
-    def find_new_posts(self, post_ids: Iterable[str]) -> List[str]:
-        """From a list of post IDs, return those that are not already
-        present in the cache."""
+    def get_latest_post_timestamp(self) -> int:
+        """Returns the timestamp of the latest stored post."""
 
     @abstractmethod
-    def find_new_threads(self, thread_ids: Iterable[str]) -> List[str]:
-        """From a list of thread IDs, return those that are not already
-        present in the cache."""
-
-    @abstractmethod
-    def mark_thread_as_deleted(self, thread_id: str) -> None:
-        """Marks a thread as deleted, preventing its posts from appearing
-        in notifications."""
-
-    @abstractmethod
-    def mark_post_as_deleted(self, post_id: str) -> None:
-        """Marks a post as deleted, preventing it from appearing in
-        notifications. Also mark its children as deleted, recursively."""
-
-    @abstractmethod
-    def get_new_posts_for_user(
+    def get_notifiable_posts_for_user(
         self, user_id: str, timestamp_range: Tuple[int, int]
-    ) -> NewPostsInfo:
+    ) -> List[PostInfo]:
         """Get new posts for the users with the given ID made during the
-        given time range.
-
-        Returns a dict containing the thread posts and the post replies.
-        """
+        given time range."""
 
     @abstractmethod
     def get_user_configs(self, frequency: str) -> List[CachedUserConfig]:
@@ -80,11 +62,18 @@ class BaseDatabaseDriver(ABC):
         """Count the number of subscribed users."""
 
     @abstractmethod
-    def get_notifiable_users(
-        self, frequency: str, post_lower_timestamp_limit: int
-    ) -> List[str]:
+    def get_notifiable_users(self, frequency: str) -> List[str]:
         """Get the list of IDs for users subscribed to the given channel
         frequency who have at least one notification waiting for them.
+        """
+
+    @abstractmethod
+    def get_posts_to_check_for_deletion(
+        self, timestamp: int
+    ) -> List[PostMeta]:
+        """Get a list of posts to check for having potentially been deleted.
+
+        Timestamp is assumed to be time to check relative to.
         """
 
     @abstractmethod
@@ -118,29 +107,41 @@ class BaseDatabaseDriver(ABC):
         """Get a list of supported wikis."""
 
     @abstractmethod
-    def count_supported_wikis(self) -> int:
-        """Count the number of supported wikis."""
-
-    @abstractmethod
     def store_supported_wikis(self, wikis: List[SupportedWikiConfig]) -> None:
         """Stores a set of supported wikis in the database, overwriting any
         that are already present."""
 
     @abstractmethod
-    def store_thread(self, thread: ThreadInfo) -> None:
-        """Store a thread.
-
-        Doesn't matter if the thread or category is already known or not.
-        """
-
-    @abstractmethod
-    def store_thread_first_post(self, thread_id: str, post_id: str) -> None:
-        """Store the relationship between a thread and the first post it
-        contains."""
-
-    @abstractmethod
-    def store_post(self, post: RawPost) -> None:
+    def store_post(self, post: NotifiablePost) -> None:
         """Store a post."""
+
+    @abstractmethod
+    def store_context_forum_category(
+        self, context_forum_category: Context.ForumCategory
+    ) -> None:
+        """Store a forum category for context."""
+
+    @abstractmethod
+    def store_context_thread(self, context_thread: Context.Thread) -> None:
+        """Store a thread for context."""
+
+    @abstractmethod
+    def store_context_parent_post(
+        self, context_parent_post: Context.ParentPost
+    ) -> None:
+        """Store a parent post for context."""
+
+    @abstractmethod
+    def delete_post(self, post_id: str) -> None:
+        """Delete a post."""
+
+    @abstractmethod
+    def delete_non_notifiable_posts(self) -> None:
+        """Delete posts that will not emit notifications."""
+
+    @abstractmethod
+    def delete_context_thread(self, thread_id: str) -> None:
+        """Delete posts with the given thread context."""
 
     @abstractmethod
     def store_channel_log_dump(self, log: ChannelLogDump) -> None:

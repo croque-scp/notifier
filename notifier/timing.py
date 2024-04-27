@@ -8,12 +8,13 @@ import pycron
 logger = logging.getLogger(__name__)
 
 # Store the current time as soon as possible
+# Must be imported as module and accessed from there (e.g. from notifier import timing) to be accurate
 now = datetime.now()
 
 
 def override_current_time(time: str) -> None:
     """Overrides the current time with the given ISO 8601 string."""
-    global now
+    global now  # pylint: disable=global-statement
     now = datetime.fromisoformat(time.replace("Z", "+00:00"))
     logger.info("Current time forcibly overridden with %s", time)
 

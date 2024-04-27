@@ -1,7 +1,6 @@
 import logging
 from contextlib import contextmanager
-from itertools import chain
-from typing import Any, Dict, Iterable, Iterator, List, Optional, Tuple, cast
+from typing import Any, Dict, Iterator, List, Optional, Tuple, cast
 
 import pymysql
 from pymysql import Connection
@@ -10,19 +9,19 @@ from pymysql.cursors import DictCursor
 
 from notifier.database.drivers.base import BaseDatabaseDriver
 from notifier.database.utils import BaseDatabaseWithSqlFileCache
+from notifier.deletions import delete_posts
 from notifier.types import (
     ActivationLogDump,
     CachedUserConfig,
     ChannelLogDump,
+    Context,
     LogDump,
-    NewPostsInfo,
-    PostReplyInfo,
-    RawPost,
+    NotifiablePost,
+    PostInfo,
+    PostMeta,
     RawUserConfig,
     Subscription,
     SupportedWikiConfig,
-    ThreadInfo,
-    ThreadPostInfo,
 )
 
 logger = logging.getLogger(__name__)
@@ -180,76 +179,32 @@ class MySqlDriver(BaseDatabaseDriver, BaseDatabaseWithSqlFileCache):
         with self.transaction() as cursor:
             self.execute_named("create_tables", None, cursor)
 
-    def find_new_posts(self, post_ids: Iterable[str]) -> List[str]:
-        return [
-            post_id
-            for post_id in post_ids
-            if (
-                row := self.execute_named(
-                    "check_post_exists", {"id": post_id}
-                ).fetchone()
-            )
-            is None
-            or not row["post_exists"]
-        ]
+    def get_latest_post_timestamp(self) -> int:
+        return cast(
+            int,
+            (
+                self.execute_named("get_latest_post_timestamp").fetchone()
+                or {"posted_timestamp": 0}
+            )["posted_timestamp"],
+        )
 
-    def find_new_threads(self, thread_ids: Iterable[str]) -> List[str]:
-        return [
-            thread_id
-            for thread_id in thread_ids
-            if (
-                row := self.execute_named(
-                    "check_thread_exists", {"id": thread_id}
-                ).fetchone()
-            )
-            is None
-            or not row["thread_exists"]
-        ]
-
-    def mark_thread_as_deleted(self, thread_id: str) -> None:
-        self.execute_named("mark_thread_as_deleted", {"id": thread_id})
-
-    def mark_post_as_deleted(self, post_id: str) -> None:
-        self.execute_named("mark_post_as_deleted", {"id": post_id})
-        # Find any children of this post and delete them, too
-        for child in self.execute_named(
-            "get_post_children", {"id": post_id}
-        ).fetchall():
-            self.mark_post_as_deleted(child["id"])
-
-    def get_new_posts_for_user(
+    def get_notifiable_posts_for_user(
         self, user_id: str, timestamp_range: Tuple[int, int]
-    ) -> NewPostsInfo:
+    ) -> List[PostInfo]:
         lower_timestamp, upper_timestamp = timestamp_range
-        criterion = {
-            "user_id": user_id,
-            "upper_timestamp": upper_timestamp,
-            "lower_timestamp": lower_timestamp,
-        }
-        thread_posts = cast(
-            List[ThreadPostInfo],
+        return cast(
+            List[PostInfo],
             list(
                 self.execute_named(
-                    "get_posts_in_subscribed_threads", criterion
+                    "get_notifiable_posts_for_user",
+                    {
+                        "user_id": user_id,
+                        "upper_timestamp": upper_timestamp,
+                        "lower_timestamp": lower_timestamp,
+                    },
                 ).fetchall()
             ),
         )
-        post_replies = cast(
-            List[PostReplyInfo],
-            list(
-                self.execute_named(
-                    "get_replies_to_subscribed_posts", criterion
-                ).fetchall()
-            ),
-        )
-        # Remove duplicate posts - keep the ones that are post replies
-        post_replies_ids = [post["id"] for post in post_replies]
-        thread_posts = [
-            thread_post
-            for thread_post in thread_posts
-            if thread_post["id"] not in post_replies_ids
-        ]
-        return {"thread_posts": thread_posts, "post_replies": post_replies}
 
     def get_user_configs(self, frequency: str) -> List[CachedUserConfig]:
         user_configs = [
@@ -269,19 +224,6 @@ class MySqlDriver(BaseDatabaseDriver, BaseDatabaseWithSqlFileCache):
                     {"user_id": user_config["user_id"]},
                 ).fetchall()
             ]
-            user_config["auto_subs"] = [
-                cast(Subscription, dict(row))
-                for row in chain(
-                    self.execute_named(
-                        "get_auto_sub_posts_for_user",
-                        {"user_id": user_config["user_id"]},
-                    ).fetchall(),
-                    self.execute_named(
-                        "get_auto_sub_threads_for_user",
-                        {"user_id": user_config["user_id"]},
-                    ).fetchall(),
-                )
-            ]
         return user_configs
 
     def count_user_configs(self) -> int:
@@ -293,14 +235,9 @@ class MySqlDriver(BaseDatabaseDriver, BaseDatabaseWithSqlFileCache):
             )["count"],
         )
 
-    def get_notifiable_users(
-        self, frequency: str, post_lower_timestamp_limit: int
-    ) -> List[str]:
+    def get_notifiable_users(self, frequency: str) -> List[str]:
         logger.debug("Caching post context...")
-        self.execute_named(
-            "cache_post_context",
-            {"post_lower_timestamp_limit": post_lower_timestamp_limit},
-        )
+        self.execute_named("cache_notifiable_post_context")
         logger.debug("Retrieving notifiable users users...")
         user_ids = [
             cast(str, row["user_id"])
@@ -310,6 +247,16 @@ class MySqlDriver(BaseDatabaseDriver, BaseDatabaseWithSqlFileCache):
             ).fetchall()
         ]
         return user_ids
+
+    def get_posts_to_check_for_deletion(
+        self, timestamp: int
+    ) -> List[PostMeta]:
+        return [
+            cast(PostMeta, row)
+            for row in self.execute_named(
+                "get_posts_to_check_for_deletion", {"now": timestamp}
+            )
+        ]
 
     def store_user_configs(
         self,
@@ -396,71 +343,106 @@ class MySqlDriver(BaseDatabaseDriver, BaseDatabaseWithSqlFileCache):
         wikis = self.execute_named("get_supported_wikis").fetchall()
         return cast(List[SupportedWikiConfig], list(wikis))
 
-    def count_supported_wikis(self) -> int:
-        return cast(
-            int,
-            (
-                self.execute_named("count_supported_wikis").fetchone()
-                or {"count": 0}
-            )["count"],
-        )
-
     def store_supported_wikis(self, wikis: List[SupportedWikiConfig]) -> None:
-        # Destroy all existing wikis in preparation for overwrite
         with self.transaction() as cursor:
-            self.execute_named("delete_wikis", None, cursor)
+            # Soft-delete all existing wikis
+            self.execute_named(
+                "mark_context_wikis_as_not_configured", None, cursor
+            )
+            # For each wiki, add or un-soft-delete it
             for wiki in wikis:
                 self.execute_named(
-                    "add_wiki",
+                    "store_context_wiki",
                     {
                         "wiki_id": wiki["id"],
                         "wiki_name": wiki["name"],
-                        "wiki_secure": wiki["secure"],
+                        "wiki_service_configured": 1,
+                        "wiki_uses_https": wiki["secure"],
                     },
                     cursor,
                 )
+            # Wikis that were removed from the service since the last run are still available as context
 
-    def store_thread(self, thread: ThreadInfo) -> None:
-        if (
-            thread["category_id"] is not None
-            and thread["category_name"] is not None
-        ):
-            self.execute_named(
-                "store_category",
-                {"id": thread["category_id"], "name": thread["category_name"]},
-            )
-        self.execute_named(
-            "store_thread",
-            {
-                "id": thread["id"],
-                "title": thread["title"],
-                "wiki_id": thread["wiki_id"],
-                "category_id": thread["category_id"],
-                "creator_username": thread["creator_username"],
-                "created_timestamp": thread["created_timestamp"],
-            },
-        )
-
-    def store_thread_first_post(self, thread_id: str, post_id: str) -> None:
-        self.execute_named(
-            "store_thread_first_post",
-            {"thread_id": thread_id, "post_id": post_id},
-        )
-
-    def store_post(self, post: RawPost) -> None:
+    def store_post(self, post: NotifiablePost) -> None:
         self.execute_named(
             "store_post",
             {
-                "id": post["id"],
-                "thread_id": post["thread_id"],
-                "parent_post_id": post["parent_post_id"],
+                "post_id": post["post_id"],
                 "posted_timestamp": post["posted_timestamp"],
-                "title": post["title"],
-                "snippet": post["snippet"],
-                "user_id": post["user_id"],
-                "username": post["username"],
+                "post_title": post["post_title"],
+                "post_snippet": post["post_snippet"],
+                "author_user_id": post["author_user_id"],
+                "author_username": post["author_username"],
+                "context_wiki_id": post["context_wiki_id"],
+                "context_forum_category_id": post["context_forum_category_id"],
+                "context_thread_id": post["context_thread_id"],
+                "context_parent_post_id": post["context_parent_post_id"],
             },
         )
+
+    def store_context_forum_category(
+        self, context_forum_category: Context.ForumCategory
+    ) -> None:
+        self.execute_named(
+            "store_context_forum_category",
+            {
+                "category_id": context_forum_category["category_id"],
+                "category_name": context_forum_category["category_name"],
+            },
+        )
+
+    def store_context_thread(self, context_thread: Context.Thread) -> None:
+        self.execute_named(
+            "store_context_thread",
+            {
+                "thread_id": context_thread["thread_id"],
+                "thread_created_timestamp": context_thread[
+                    "thread_created_timestamp"
+                ],
+                "thread_title": context_thread["thread_title"],
+                "thread_snippet": context_thread["thread_snippet"],
+                "thread_creator_username": context_thread[
+                    "thread_creator_username"
+                ],
+                "first_post_id": context_thread["first_post_id"],
+                "first_post_author_user_id": context_thread[
+                    "first_post_author_user_id"
+                ],
+                "first_post_author_username": context_thread[
+                    "first_post_author_username"
+                ],
+                "first_post_created_timestamp": context_thread[
+                    "first_post_created_timestamp"
+                ],
+            },
+        )
+
+    def store_context_parent_post(
+        self, context_parent_post: Context.ParentPost
+    ) -> None:
+        self.execute_named(
+            "store_context_parent_post",
+            {
+                "post_id": context_parent_post["post_id"],
+                "posted_timestamp": context_parent_post["posted_timestamp"],
+                "post_title": context_parent_post["post_title"],
+                "post_snippet": context_parent_post["post_snippet"],
+                "author_user_id": context_parent_post["author_user_id"],
+                "author_username": context_parent_post["author_username"],
+            },
+        )
+
+    def delete_post(self, post_id: str) -> None:
+        self.execute_named("delete_post", {"post_id": post_id})
+        self.execute_named("delete_unused_post_context")
+
+    def delete_non_notifiable_posts(self) -> None:
+        self.execute_named("delete_non_notifiable_posts")
+        self.execute_named("delete_unused_post_context")
+
+    def delete_context_thread(self, thread_id: str) -> None:
+        self.execute_named("delete_context_thread", {"thread_id": thread_id})
+        self.execute_named("delete_unused_post_context")
 
     def store_channel_log_dump(self, log: ChannelLogDump) -> None:
         """Store a channel log dump."""

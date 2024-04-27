@@ -2,11 +2,22 @@ import logging
 import re
 import time
 from json import JSONDecodeError
-from typing import Any, Iterable, Iterator, List, Match, Optional, Union, cast
+from typing import (
+    Any,
+    Iterable,
+    Iterator,
+    List,
+    Match,
+    Optional,
+    Tuple,
+    Union,
+    cast,
+)
 
 import requests
 from bs4 import BeautifulSoup
 from bs4.element import Tag
+from requests import Response
 
 from notifier.parsethread import (
     count_pages,
@@ -42,6 +53,10 @@ class ThreadNotExists(Exception):
 class RestrictedInbox(Exception):
     """Indicates that a user could not receive a Wikidot PM because their
     inbox is restricted."""
+
+
+class NotLoggedIn(Exception):
+    """Indicates that the client needs to be logged in to do that."""
 
 
 class OngoingConnectionError(Exception):
@@ -94,13 +109,13 @@ class Connection:
             }
             self.supported_wikis.append(self.config_wiki)
 
-    def post(self, url: str, **request_kwargs: Any) -> Any:
+    def post(self, url: str, **request_kwargs: Any) -> Response:
         """Make a POST request."""
         if self.dry_run:
             logger.warning(
                 "Dry run: Wikidot request was not sent %s", {"to": url}
             )
-            return None
+            return Response()
         return self._session.request("POST", url, **request_kwargs)
 
     def module(
@@ -184,6 +199,12 @@ class Connection:
             == "This user wishes to receive messages only from selected users."
         ):
             raise RestrictedInbox
+        if (
+            response["status"] == "no_permission"
+            and response["message"]
+            == "Please create a Wikidot account and/or sign in first"
+        ):
+            raise NotLoggedIn
         if response["status"] != "ok":
             logger.error(
                 "Bad response from Wikidot %s",
@@ -195,7 +216,11 @@ class Connection:
                     "response": response,
                 },
             )
-            raise RuntimeError(response.get("message") or response["status"])
+            raise RuntimeError(
+                f"{response.get('message')} [{response['status']}]"
+                if response.get("message")
+                else response["status"]
+            )
         return cast(WikidotResponse, response)
 
     def paginated_module(
@@ -232,7 +257,7 @@ class Connection:
         )
         first_page = self.module(wiki, module_name, **module_kwargs)
         yield first_page
-        page_count = count_pages(first_page["body"])
+        page_count, _ = count_pages(first_page["body"])
         # Iterate through the remaining pages
         # Start from the starting index plus one, because the first page
         # was already done
@@ -278,79 +303,45 @@ class Connection:
         return items
 
     def thread(
-        self, wiki_id: str, thread_id: str, post_id: Optional[str] = None
-    ) -> Iterator[Union[RawThreadMeta, RawPost]]:
-        """Analyse a Wikidot thread.
+        self,
+        wiki_id: str,
+        thread_id: str,
+        containing_post_id: Optional[str] = None,
+    ) -> Tuple[RawThreadMeta, List[RawPost]]:
+        """Get posts from a page of a wiki thread.
 
         :param wiki_id: The ID of the wiki that contains the thread.
         :param thread_id: The ID of the thread.
-        :param post_id: Either None, to get posts from the whole thread; or
-        the ID of a post to focus on specifically.
+        :param post_id: If provided, the thread page will be the one that contains this post; if not, the page will be the first in the thread.
 
-        Returns an iterator.
+        Returns a tuple with 2 items:
 
-        The first item of the iterator is meta information about the
-        thread. Note that the thread title may differ from the title of the
-        first post.
+        1. Meta info about the thread.
+        2. List of posts in this page of the thread.
 
-        All remaining items are posts. If post_id was provided, contains
-        just the posts from the thread page that contains it (the first
-        post might be the thread starter but probably isn't). Otherwise,
-        contains all posts from the thread (the first post is the thread
-        starter).
+        If no post with the given ID is in the thread, a null page is returned (i.e. the list of posts will be empty).
         """
+        module_kwargs = {"t": thread_id.lstrip("t-")}
+        if containing_post_id is not None:
+            module_kwargs["postId"] = containing_post_id.lstrip("post-")
 
-        if post_id is None:
-            # Use the thread module for the first page, as it contains
-            # thread meta information
-            first_page = BeautifulSoup(
-                self.module(
-                    wiki_id,
-                    "forum/ForumViewThreadModule",
-                    t=thread_id.lstrip("t-"),
-                )["body"],
-                "html.parser",
-            )
-            thread_meta = parse_thread_meta(first_page)
-            yield thread_meta
-            yield from parse_thread_page(thread_id, first_page)
-            # If the thread contains more than one page, use the thread
-            # posts module to iterate the remaining posts
-            if thread_meta["page_count"] > 1:
-                thread_pages = (
-                    BeautifulSoup(page["body"], "html.parser")
-                    for page in self.paginated_module(
-                        wiki_id,
-                        "forum/ForumViewThreadPostsModule",
-                        t=thread_id.lstrip("t-"),
-                        index_key="pageNo",
-                        starting_index=2,
-                    )
-                )
-                yield from (
-                    post
-                    for page in thread_pages
-                    for post in parse_thread_page(thread_id, page)
-                )
-        else:
-            # The thread module is able to return a thread page containing
-            # a specific post, in addition to thread meta information
-            thread_page = BeautifulSoup(
-                self.module(
-                    wiki_id,
-                    "forum/ForumViewThreadModule",
-                    t=thread_id.lstrip("t-"),
-                    postId=post_id.lstrip("post-"),
-                )["body"],
-                "html.parser",
-            )
-            yield parse_thread_meta(thread_page)
-            yield from parse_thread_page(thread_id, thread_page)
+        thread_page = BeautifulSoup(
+            self.module(
+                wiki_id,
+                "forum/ForumViewThreadModule",
+                **module_kwargs,
+            )["body"],
+            "html.parser",
+        )
+        return (
+            parse_thread_meta(thread_page),
+            parse_thread_page(thread_id, thread_page),
+        )
 
     def login(self, username: str, password: str) -> None:
         """Log in to a Wikidot account."""
         logger.info("Logging in...")
-        self.post(
+        response = self.post(
             "https://www.wikidot.com/default--flow/login__LoginPopupScreen",
             data=dict(
                 login=username,
@@ -359,6 +350,8 @@ class Connection:
                 event="login",
             ),
         )
+        if "The login and password do not match" in response.text:
+            raise RuntimeError("Failed to login")
 
     def send_message(self, user_id: str, subject: str, body: str) -> None:
         """Send a Wikidot message to the given user with the given subject
