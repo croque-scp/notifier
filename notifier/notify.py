@@ -158,14 +158,8 @@ def notify(
     logger.info("Removing non-notifiable posts...")
     database.delete_non_notifiable_posts()
 
-    if any(
-        [
-            channel_will_be_next(notification_channels["weekly"]),
-            channel_will_be_next(notification_channels["monthly"]),
-        ]
-    ):
-        logger.info("Checking for deleted posts")
-        clear_deleted_posts(database, connection)
+    logger.info("Checking for deleted posts")
+    clear_deleted_posts(database, connection)
 
     logger.info("Purging invalid user config pages...")
     delete_prepared_invalid_user_pages(config, connection)

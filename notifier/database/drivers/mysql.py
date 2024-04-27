@@ -254,7 +254,7 @@ class MySqlDriver(BaseDatabaseDriver, BaseDatabaseWithSqlFileCache):
         return [
             cast(PostMeta, row)
             for row in self.execute_named(
-                "get_posts_to_check_for_deletion", {"timestamp": timestamp}
+                "get_posts_to_check_for_deletion", {"now": timestamp}
             )
         ]
 
