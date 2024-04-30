@@ -1,19 +1,29 @@
-# notifier
+# Wikidot Notifications
 
 [![tests](https://github.com/croque-scp/notifier/actions/workflows/tests.yml/badge.svg)](https://github.com/croque-scp/notifier/actions/workflows/tests.yml)
 
-Wikidot notifications
+This is the open-source codebase for [Wikidot Notifications](http://notifications.wikidot.com?utm_source=github&utm_medium=referral&utm_campaign=ghreadme), a cloud service providing forum notifications for sites on Wikidot.
+
+This notifications service searches for new forum posts on Wikidot and delivers notifications for users that are subscribed to them via email or Wikidot private message. Manual subscriptions as well as a set of rules defining 'automatic subscriptions' are supported. Notifications can be delivered in [several languages](http://notifications.wikidot.com/faq#languages?utm_source=github&utm_medium=referral&utm_campaign=ghreadme) contributed by members of the Wikidot community.
+
+This service is operated and developed by Wikidot user Croquembouche and is not associated with Wikidot Inc. or any particular site hosted on Wikidot other than [notifications.wikidot.com](http://notifications.wikidot.com?utm_source=github&utm_medium=referral&utm_campaign=ghreadme).
+
+See also:
+
+* [Documentation](http://notifications.wikidot.com/faq?utm_source=github&utm_medium=referral&utm_campaign=ghreadme)
+* [Status page](http://notifications.wikidot.com/status?utm_source=github&utm_medium=referral&utm_campaign=ghreadme)
+* [List of supported Wikidot sites](http://notifications.wikidot.com/wikis?utm_source=github&utm_medium=referral&utm_campaign=ghreadme)
+* [List of subscribed users](http://notifications.wikidot.com/users?utm_source=github&utm_medium=referral&utm_campaign=ghreadme)
+* If you are a user, [your user configuration](http://notifications.wikidot.com/redirect-to-your-config?utm_source=github&utm_medium=referral&utm_campaign=ghreadme)
+
+The notifications service is written in Python and runs on AWS Lambda using a MySQL database on AWS EC2.
 
 # Usage
 
-Please note that there should only be one instance of this service running
-at once &mdash; any duplication would result in duplicated messages and
-would cause spam.
-
-These instructions are provided in case for whatever reason this specific
-service is no longer able to operate and/or I am no longer able to maintain
-it. Please do not actually attempt to launch another instance of this
-service outside of that circumstance.
+> [!WARNING]
+> **There must only be one instance of this service active.** Duplication would result in duplicated messages and would cause spam.
+> 
+> The instructions below are provided in case this specific service is no longer able to operate and/or I am no longer able to maintain it. Do not attempt to launch another instance of this service outside of that circumstance.
 
 ## Installation
 
@@ -39,9 +49,7 @@ poetry install
 
 ## Authentication
 
-In addition to the config file based on the one provided in this
-repository, notifier requires an additional authentication file to provide
-passwords etc. for the various services it requires.
+In addition to the config file based on the one provided in this repository, notifier requires an additional authentication file to provide passwords etc. for the various services it needs.
 
 See [docs/auth.md](/docs/auth.md) for more information and instructions.
 
