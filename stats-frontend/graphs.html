@@ -175,6 +175,7 @@
                 }
               },
               responsive: true,
+              maintainAspectRatio: false,
               spanGaps: 1000 * 60 * 60 * 24 * 2,
               scales: {
                 x: {
@@ -253,6 +254,7 @@
                 }
               },
               responsive: true,
+              maintainAspectRatio: false,
               spanGaps: 1000 * 60 * 60 * 24 * 2,
               scales: {
                 x: {
@@ -316,6 +318,12 @@
         padding: 0;
         margin: 0;
       }
+
+      .graph-container {
+        position: relative;
+        height: clamp(22rem, 50vw, 50rem);
+        max-height: 50rem;
+      }
     </style>
   </head>
   <body>
@@ -338,8 +346,12 @@
         3 months (max)
       </label>
     </p>
-    <canvas id="graph-duration"></canvas>
+    <div class="graph-container">
+      <canvas id="graph-duration"></canvas>
+    </div>
     <br>
-    <canvas id="graph-notifications"></canvas>
+    <div class="graph-container">
+      <canvas id="graph-notifications"></canvas>
+    </div>
   </body>
 </html>
