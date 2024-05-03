@@ -295,8 +295,10 @@
           if (threshold < 0) boundary = ""
 
           durationGraph.options.scales.x.min = boundary
+          durationGraph.options.scales.y.max = null
           durationGraph.update()
           notificationCountGraph.options.scales.x.min = boundary
+          notificationCountGraph.options.scales.y.max = null
           notificationCountGraph.update()
         }
         document.querySelectorAll("input[name=dataThreshold]").forEach(
