@@ -38,8 +38,8 @@ class BaseDatabaseDriver(ABC):
         """Initial setup for the database."""
 
     @abstractmethod
-    def get_latest_post_timestamp(self) -> int:
-        """Returns the timestamp of the latest stored post."""
+    def get_latest_post_timestamp(self, wiki_id: str) -> int:
+        """Returns the timestamp of the latest stored post with the given wiki context."""
 
     @abstractmethod
     def get_notifiable_posts_for_user(

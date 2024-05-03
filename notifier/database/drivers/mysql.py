@@ -179,11 +179,13 @@ class MySqlDriver(BaseDatabaseDriver, BaseDatabaseWithSqlFileCache):
         with self.transaction() as cursor:
             self.execute_named("create_tables", None, cursor)
 
-    def get_latest_post_timestamp(self) -> int:
+    def get_latest_post_timestamp(self, wiki_id: str) -> int:
         return cast(
             int,
             (
-                self.execute_named("get_latest_post_timestamp").fetchone()
+                self.execute_named(
+                    "get_latest_post_timestamp", {"wiki_id": wiki_id}
+                ).fetchone()
                 or {"posted_timestamp": 0}
             )["posted_timestamp"],
         )

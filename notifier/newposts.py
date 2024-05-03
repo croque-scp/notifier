@@ -53,14 +53,14 @@ def fetch_posts_with_context(
     the posts in the cache.
     """
     # Get the list of new posts from the forum's RSS
-    new_posts = list(fetch_new_posts_rss(wiki_id))
+    all_new_posts = list(fetch_new_posts_rss(wiki_id))
 
     # Filter out posts older than this run
-    latest_post_timestamp = database.get_latest_post_timestamp()
+    latest_post_timestamp = database.get_latest_post_timestamp(wiki_id)
     new_posts = sorted(
         [
             post
-            for post in new_posts
+            for post in all_new_posts
             if post["posted_timestamp"] > latest_post_timestamp
         ],
         key=lambda p: (p["thread_id"], p["posted_timestamp"]),
@@ -71,6 +71,7 @@ def fetch_posts_with_context(
         {
             "wiki_id": wiki_id,
             "new_post_count": len(new_posts),
+            "posts_in_rss": len(all_new_posts),
         },
     )
 
