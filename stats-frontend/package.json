@@ -1,7 +1,7 @@
 {
   "private":true,
   "scripts": {
-    "serve": "live-server"
+    "serve": "live-server --port=7683"
   },
   "devDependencies":{"live-server":"^1.2.2"}
 }
