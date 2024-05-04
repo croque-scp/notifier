@@ -112,6 +112,12 @@ class BaseDatabaseDriver(ABC):
         that are already present."""
 
     @abstractmethod
+    def store_latest_post_timestamp(
+        self, wiki_id: str, timestamp: int
+    ) -> None:
+        """Stores the latest seen post timestamp for the given wiki."""
+
+    @abstractmethod
     def store_post(self, post: NotifiablePost) -> None:
         """Store a post."""
 
