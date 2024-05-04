@@ -1,6 +1,6 @@
 SELECT
-  MAX(posted_timestamp) as posted_timestamp
+  new_posts_checked_timestamp AS posted_timestamp
 FROM
-  notifiable_post
+  context_wiki
 WHERE
-  notifiable_post.context_wiki_id = %(wiki_id)s
+  context_wiki.wiki_id = %(wiki_id)s

@@ -365,6 +365,14 @@ class MySqlDriver(BaseDatabaseDriver, BaseDatabaseWithSqlFileCache):
                 )
             # Wikis that were removed from the service since the last run are still available as context
 
+    def store_latest_post_timestamp(
+        self, wiki_id: str, timestamp: int
+    ) -> None:
+        self.execute_named(
+            "store_latest_post_timestamp",
+            {"wiki_id": wiki_id, "timestamp": timestamp},
+        )
+
     def store_post(self, post: NotifiablePost) -> None:
         self.execute_named(
             "store_post",
