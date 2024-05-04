@@ -217,7 +217,7 @@
         --status-icon: var(--status-icon-indeterminate);
       }
 
-      article {
+      .status-container {
         display: grid;
         grid-template-areas: "status header" "status footer";
         grid-template-columns: 3.25rem 10.75rem;
@@ -229,6 +229,35 @@
         background-color: #555;
         box-shadow: 0 0.1rem 0.1rem rgba(0, 0, 0, 0.5);
         overflow: hidden;
+
+        /* The status container is a link */
+        text-decoration: none;
+        color: white;
+      }
+
+      .status-container h1::after {
+        content: "";
+        background-image: url(assets/arrow.svg);
+        background-size: contain;
+        background-position: center;
+        background-repeat: no-repeat;
+        height: 0.8em;
+        width: 1.6em;
+        display: inline-block;
+
+        transition: opacity ease-in 0.08s, transform ease-in 0.1s;
+        opacity: 0;
+        transform: translateX(-100%);
+      }
+
+      .status-container:hover h1::after {
+        transition: opacity ease-out 0.1s, transform ease-out 0.1s;
+        opacity: 1;
+        transform: none;
+      }
+
+      .status-container:hover header {
+        text-decoration: underline;
       }
 
       aside {
@@ -332,7 +361,7 @@
   </head>
 
   <body>
-    <article>
+    <a class="status-container" href="//notifications.wikidot.com/status" target="_top">
       <aside>
         <div class="icon-logo"></div>
         <div class="icon-status-wrapper">
@@ -349,6 +378,6 @@
           Checking...
         </p>
       </footer>
-    </article>
+    </a>
   </body>
 </html>
