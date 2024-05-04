@@ -46,7 +46,7 @@ WHERE
       AND user_config.user_id <> notifiable_post.author_user_id
 
       -- Users whose last notified post was earlier than this one
-      AND user_config.notified_timestamp <= notifiable_post.posted_timestamp
+      AND user_config.notified_timestamp < notifiable_post.posted_timestamp
 
       -- Filter out users unsubscribed to this post
       AND (thread_sub.sub IS NULL OR thread_sub.sub = 1)
