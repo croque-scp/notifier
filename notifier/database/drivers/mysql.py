@@ -370,7 +370,7 @@ class MySqlDriver(BaseDatabaseDriver, BaseDatabaseWithSqlFileCache):
     ) -> None:
         self.execute_named(
             "store_latest_post_timestamp",
-            { "wiki_id": wiki_id, "timestamp": timestamp },
+            {"wiki_id": wiki_id, "timestamp": timestamp},
         )
 
     def store_post(self, post: NotifiablePost) -> None:

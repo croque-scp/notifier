@@ -1,5 +1,5 @@
 SELECT
-  new_posts_checked_timestamp
+  new_posts_checked_timestamp AS posted_timestamp
 FROM
   context_wiki
 WHERE
