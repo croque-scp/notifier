@@ -15,8 +15,8 @@ WHERE
   notifiable_post.posted_timestamp < ((
     SELECT latest_timestamp FROM (
       SELECT
-        MAX(posted_timestamp) AS latest_timestamp
-      FROM notifiable_post
+        MAX(new_posts_checked_timestamp) AS latest_timestamp
+      FROM context_wiki
     ) AS t
   ) - (60 * 60 * 24 * 365))
 
