@@ -99,9 +99,7 @@ def notify(
         logger.warning("No active channels; aborting")
         return
 
-    connection = Connection(
-        config, database.get_supported_wikis(), dry_run=dry_run
-    )
+    connection = Connection(database.get_supported_wikis(), dry_run=dry_run)
 
     activation_log_dump.update({"config_start_timestamp": timestamp()})
     if dry_run:
@@ -113,7 +111,7 @@ def notify(
         get_user_config(config, database, connection)
 
         # Refresh the connection to add any newly-configured wikis
-        connection = Connection(config, database.get_supported_wikis())
+        connection = Connection(database.get_supported_wikis())
     activation_log_dump.update({"config_end_timestamp": timestamp()})
 
     activation_log_dump.update({"getpost_start_timestamp": timestamp()})

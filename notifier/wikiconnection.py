@@ -27,7 +27,6 @@ from notifier.parsethread import (
 )
 from notifier.types import (
     EmailAddresses,
-    LocalConfig,
     RawPost,
     RawThreadMeta,
     SupportedWikiConfig,
@@ -72,7 +71,6 @@ class Connection:
 
     def __init__(
         self,
-        config: LocalConfig,
         supported_wikis: Optional[List[SupportedWikiConfig]] = None,
         *,
         dry_run: bool = False,
@@ -94,20 +92,6 @@ class Connection:
         ):
             self.supported_wikis.append(
                 {"id": "www", "name": "Wikidot", "secure": 1}
-            )
-        # Always add the configuration wiki, if it's not already present
-        if not any(
-            wiki
-            for wiki in self.supported_wikis
-            if wiki["id"] == config["config_wiki"]
-        ):
-            self.supported_wikis.append(
-                {
-                    "id": config["config_wiki"],
-                    "name": "Configuration",
-                    # Assume it's unsecure as that's most common
-                    "secure": 0,
-                }
             )
 
     def post(self, url: str, **request_kwargs: Any) -> Response:
