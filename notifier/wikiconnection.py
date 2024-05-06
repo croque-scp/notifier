@@ -73,7 +73,7 @@ class Connection:
     def __init__(
         self,
         config: LocalConfig,
-        supported_wikis: List[SupportedWikiConfig],
+        supported_wikis: Optional[List[SupportedWikiConfig]] = None,
         *,
         dry_run: bool = False,
     ):
@@ -85,7 +85,9 @@ class Connection:
             self._session = cast(requests.sessions.Session, object())
         else:
             self._session = requests.sessions.Session()
-        self.supported_wikis = supported_wikis
+        self.supported_wikis = (
+            supported_wikis if supported_wikis is not None else []
+        )
         # Always add the 'base' wiki, if it's not already present
         if not any(
             True for wiki in self.supported_wikis if wiki["id"] == "www"
@@ -94,20 +96,19 @@ class Connection:
                 {"id": "www", "name": "Wikidot", "secure": 1}
             )
         # Always add the configuration wiki, if it's not already present
-        try:
-            self.config_wiki = next(
-                wiki
-                for wiki in self.supported_wikis
-                if wiki["id"] == config["config_wiki"]
+        if not any(
+            wiki
+            for wiki in self.supported_wikis
+            if wiki["id"] == config["config_wiki"]
+        ):
+            self.supported_wikis.append(
+                {
+                    "id": config["config_wiki"],
+                    "name": "Configuration",
+                    # Assume it's unsecure as that's most common
+                    "secure": 0,
+                }
             )
-        except StopIteration:
-            self.config_wiki = {
-                "id": config["config_wiki"],
-                "name": "Configuration",
-                # Assume it's unsecure as that's most common
-                "secure": 0,
-            }
-            self.supported_wikis.append(self.config_wiki)
 
     def post(self, url: str, **request_kwargs: Any) -> Response:
         """Make a POST request."""
