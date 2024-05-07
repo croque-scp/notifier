@@ -408,8 +408,10 @@ class Connection:
             raise RuntimeError(
                 f"Cannot access page from unsupported wiki {wiki_id}"
             ) from error
-        page_url = "http{}://{}.wikidot.com/{}".format(
-            "s" if wiki["secure"] else "", wiki_id, slug
+        page_url = (
+            "http{}://{}.wikidot.com/{}/norender/true/noredirect/true".format(
+                "s" if wiki["secure"] else "", wiki_id, slug
+            )
         )
         page = self._session.get(page_url).text
         return int(
