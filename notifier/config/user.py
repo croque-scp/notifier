@@ -1,3 +1,4 @@
+from functools import lru_cache
 import logging
 from operator import itemgetter
 import re
@@ -77,6 +78,7 @@ def user_config_is_valid(slug: str, config: RawUserConfig) -> bool:
     return ":" in slug and slug.split(":")[1] == config["user_id"]
 
 
+@lru_cache(maxsize=1)
 def fetch_user_configs(
     local_config: LocalConfig, wikidot: Wikidot
 ) -> List[Tuple[str, RawUserConfig]]:
