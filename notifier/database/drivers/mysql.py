@@ -9,7 +9,6 @@ from pymysql.cursors import DictCursor
 
 from notifier.database.drivers.base import BaseDatabaseDriver
 from notifier.database.utils import BaseDatabaseWithSqlFileCache
-from notifier.deletions import delete_posts
 from notifier.types import (
     ActivationLogDump,
     CachedUserConfig,
