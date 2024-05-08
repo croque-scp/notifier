@@ -89,6 +89,7 @@ class RawUserConfig(TypedDict):
     delivery: DeliveryMethod
     user_base_notified: int
     tags: str
+    title: str
     subscriptions: List[Subscription]
     unsubscriptions: List[Subscription]
 

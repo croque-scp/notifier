@@ -1,3 +1,4 @@
+from functools import lru_cache
 import logging
 from operator import itemgetter
 import re
@@ -30,6 +31,7 @@ language = "%%form_raw{language}%%"
 delivery = "%%form_raw{method}%%"
 user_base_notified = """%%created_at%%"""
 tags = """%%tags%%"""
+title = """%%title%%"""
 subscriptions = """
 %%form_data{subscriptions}%%"""
 unsubscriptions = """
@@ -77,6 +79,7 @@ def user_config_is_valid(slug: str, config: RawUserConfig) -> bool:
     return ":" in slug and slug.split(":")[1] == config["user_id"]
 
 
+@lru_cache(maxsize=1)
 def fetch_user_configs(
     local_config: LocalConfig, connection: Connection
 ) -> List[Tuple[str, RawUserConfig]]:
