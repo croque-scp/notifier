@@ -1,3 +1,5 @@
+from contextlib import contextmanager
+from functools import lru_cache
 import logging
 import re
 import time
@@ -61,6 +63,10 @@ class NotLoggedIn(Exception):
 class OngoingConnectionError(Exception):
     """Indicates a persistent connection error that could not be resolved
     by trying it multiple times."""
+
+
+class LockNotEstablished(Exception):
+    """The requested edit lock could not be established."""
 
 
 class Wikidot:
@@ -398,6 +404,7 @@ class Wikidot:
             addresses[username.strip()] = address
         return addresses
 
+    @lru_cache(maxsize=1)
     def get_page_id(self, wiki_id: str, slug: str) -> int:
         """Get a page's ID from its source."""
         try:
@@ -418,8 +425,80 @@ class Wikidot:
             cast(Match[str], re.search(r"pageId = ([0-9]+);", page)).group(1)
         )
 
+    @contextmanager
+    def edit_lock(self, wiki_id: str, slug: str) -> Iterator[Tuple[str, str]]:
+        """Establishes an edit lock to commit an edit to a page.
+
+        Exposes the lock id and secret to be used in an edit request.
+
+        Connection needs to be logged in.
+        """
+        logger.debug(
+            "Establishing edit lock %s", {"wiki_id": wiki_id, "slug": slug}
+        )
+        page_id = self.get_page_id(wiki_id, slug)
+        response = self.module(
+            wiki_id,
+            "edit/PageEditModule",
+            page_id=str(page_id),
+            wiki_page=slug,
+            mode="page",
+        )
+        lock_id = str(response.get("lock_id"))
+        lock_secret = str(response.get("lock_secret"))
+        if response.get("locked", False) or not lock_id or not lock_secret:
+            logger.debug(
+                "Failed to acquire edit lock %s",
+                {"wiki_id": wiki_id, "slug": slug},
+            )
+            raise LockNotEstablished
+        try:
+            yield lock_id, lock_secret
+        except:
+            # If the edit fails, release the lock
+            logger.debug(
+                "Releasing edit lock %s", {"wiki_id": wiki_id, "slug": slug}
+            )
+            self.module(
+                wiki_id,
+                "Empty",
+                action="WikiPageAction",
+                event="removePageEditLock",
+                page_id="1453558361",
+                wiki_page=slug,
+                lock_id=lock_id,
+                lock_secret=lock_secret,
+                leave_draft="false",
+            )
+            raise
+
+    def edit_page_title(self, wiki_id: str, slug: str, title: str) -> None:
+        """Changes the title of a page.
+
+        Connection needs to be logged in.
+        """
+        page_id = self.get_page_id(wiki_id, slug)
+        with
+        logger.debug(
+            "Renaming page %s",
+            {
+                "with id": page_id,
+                "from slug": slug,
+                "to slug": to_slug,
+                "in wiki": wiki_id,
+            },
+        )
+        self.module(
+            wiki_id,
+            "Empty",
+            action="WikiPageAction",
+            event="renamePage",
+            page_id=str(page_id),
+            new_name=to_slug,
+        )
+
     def rename_page(self, wiki_id: str, from_slug: str, to_slug: str) -> None:
-        """Renames a page.
+        """Renames (i.e. moves) a page.
 
         Renames can take a while (30+ seconds) to take effect, so if
         renaming for safe deletion, probably don't bother deleting until
@@ -448,6 +527,8 @@ class Wikidot:
 
     def delete_page(self, wiki_id: str, slug: str) -> None:
         """Deletes a page.
+
+        Very rarely, a delete semi-fails and leaves the page in a corrupted state where it can no longer be interacted with. To avoid this affecting anything, rename the page to something random first.
 
         Connection needs to be logged in.
         """
