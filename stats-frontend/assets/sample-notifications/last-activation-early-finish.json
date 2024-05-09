@@ -1,0 +1,15 @@
+{
+  "activations": [
+    {
+      "start_timestamp": 1691179249,
+      "config_start_timestamp": 1691179249,
+      "config_end_timestamp": null,
+      "getpost_start_timestamp": null,
+      "getpost_end_timestamp": null,
+      "notify_start_timestamp": null,
+      "notify_end_timestamp": null,
+      "end_timestamp": 1691179281
+    }
+  ],
+  "channels": []
+}
