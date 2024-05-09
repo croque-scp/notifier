@@ -15,7 +15,7 @@ from notifier.digest import Digester
 from notifier.dumps import LogDumpCacher, record_activation_log
 from notifier.emailer import Emailer
 from notifier.newposts import get_new_posts
-from notifier.timing import channel_is_now, channel_will_be_next, timestamp
+from notifier.timing import channel_is_now, timestamp
 from notifier.types import (
     ActivationLogDump,
     AuthConfig,
@@ -87,87 +87,95 @@ def notify(
     getting data for new posts) and then triggers the relevant notification
     schedules.
     """
+
     activation_log_dump = LogDumpCacher[ActivationLogDump](
         {"start_timestamp": timestamp()},
         database.store_activation_log_dump,
         dry_run,
     )
 
-    # If there are no active channels, which shouldn't happen, there is
-    # nothing to do
-    if len(active_channels) == 0:
-        logger.warning("No active channels; aborting")
-        return
+    try:
+        # If there are no active channels, which shouldn't happen, there is
+        # nothing to do
+        if len(active_channels) == 0:
+            logger.warning("No active channels; aborting")
+            return
 
-    connection = Connection(database.get_supported_wikis(), dry_run=dry_run)
+        connection = Connection(
+            database.get_supported_wikis(), dry_run=dry_run
+        )
 
-    activation_log_dump.update({"config_start_timestamp": timestamp()})
-    if dry_run:
-        logger.info("Dry run: skipping remote config acquisition")
-    else:
-        logger.info("Getting remote config...")
-        get_global_config(config, database, connection)
-        logger.info("Getting user config...")
-        get_user_config(config, database, connection)
+        activation_log_dump.update({"config_start_timestamp": timestamp()})
+        if dry_run:
+            logger.info("Dry run: skipping remote config acquisition")
+        else:
+            logger.info("Getting remote config...")
+            get_global_config(config, database, connection)
+            logger.info("Getting user config...")
+            get_user_config(config, database, connection)
 
-        # Refresh the connection to add any newly-configured wikis
-        connection = Connection(database.get_supported_wikis())
-    activation_log_dump.update({"config_end_timestamp": timestamp()})
+            # Refresh the connection to add any newly-configured wikis
+            connection = Connection(database.get_supported_wikis())
+        activation_log_dump.update({"config_end_timestamp": timestamp()})
 
-    activation_log_dump.update({"getpost_start_timestamp": timestamp()})
-    if dry_run:
-        logger.info("Dry run: skipping new post acquisition")
-    else:
-        logger.info("Getting new posts...")
-        get_new_posts(database, connection, limit_wikis)
-    # The timestamp immediately after downloading posts will be used as the
-    # upper bound of posts to notify users about
-    activation_log_dump.update({"getpost_end_timestamp": timestamp()})
+        activation_log_dump.update({"getpost_start_timestamp": timestamp()})
+        if dry_run:
+            logger.info("Dry run: skipping new post acquisition")
+        else:
+            logger.info("Getting new posts...")
+            get_new_posts(database, connection, limit_wikis)
+        # The timestamp immediately after downloading posts will be used as the
+        # upper bound of posts to notify users about
+        activation_log_dump.update({"getpost_end_timestamp": timestamp()})
 
-    if dry_run:
-        logger.info("Dry run: skipping Wikidot login")
-    else:
-        connection.login(config["wikidot_username"], auth["wikidot_password"])
+        if dry_run:
+            logger.info("Dry run: skipping Wikidot login")
+        else:
+            connection.login(
+                config["wikidot_username"], auth["wikidot_password"]
+            )
 
-    activation_log_dump.update({"notify_start_timestamp": timestamp()})
-    logger.info("Notifying...")
-    notify_active_channels(
-        active_channels,
-        current_timestamp=activation_log_dump.data.get(
-            "getpost_end_timestamp", timestamp()
-        ),
-        config=config,
-        auth=auth,
-        database=database,
-        connection=connection,
-        force_initial_search_timestamp=force_initial_search_timestamp,
-        dry_run=dry_run,
-    )
-    activation_log_dump.update({"notify_end_timestamp": timestamp()})
+        activation_log_dump.update({"notify_start_timestamp": timestamp()})
+        logger.info("Notifying...")
+        notify_active_channels(
+            active_channels,
+            current_timestamp=activation_log_dump.data.get(
+                "getpost_end_timestamp", timestamp()
+            ),
+            config=config,
+            auth=auth,
+            database=database,
+            connection=connection,
+            force_initial_search_timestamp=force_initial_search_timestamp,
+            dry_run=dry_run,
+        )
+        activation_log_dump.update({"notify_end_timestamp": timestamp()})
 
-    # Notifications have been sent, so perform time-insensitive maintenance
+        # Notifications have been sent, so perform time-insensitive maintenance
 
-    if dry_run:
-        logger.info("Dry run: skipping cleanup")
-        return
+        if dry_run:
+            logger.info("Dry run: skipping cleanup")
+            return
 
-    logger.info("Cleaning up...")
+        logger.info("Cleaning up...")
 
-    logger.info("Removing non-notifiable posts...")
-    database.delete_non_notifiable_posts()
+        logger.info("Removing non-notifiable posts...")
+        database.delete_non_notifiable_posts()
 
-    logger.info("Checking for deleted posts")
-    clear_deleted_posts(database, connection)
+        logger.info("Checking for deleted posts")
+        clear_deleted_posts(database, connection)
 
-    logger.info("Purging invalid user config pages...")
-    delete_prepared_invalid_user_pages(config, connection)
-    rename_invalid_user_config_pages(config, connection)
+        logger.info("Purging invalid user config pages...")
+        delete_prepared_invalid_user_pages(config, connection)
+        rename_invalid_user_config_pages(config, connection)
 
-    activation_log_dump.update({"end_timestamp": timestamp()})
+    finally:
+        # Even if the run failed, record the end timestamp and upload if possible
+        activation_log_dump.update({"end_timestamp": timestamp()})
 
-    assert not dry_run
-    logger.info("Uploading log dumps...")
-    record_activation_log(config, database)
+        assert not dry_run
+        logger.info("Uploading log dumps...")
+        record_activation_log(config, database)
 
 
 def notify_active_channels(
