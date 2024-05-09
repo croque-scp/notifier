@@ -1,7 +1,8 @@
+from contextlib import contextmanager
 import logging
 import re
 from smtplib import SMTPAuthenticationError
-from typing import FrozenSet, Iterable, List, Optional, Set, Tuple
+from typing import FrozenSet, Iterable, Iterator, List, Optional, Set, Tuple
 
 from notifier.config.remote import get_global_config
 from notifier.config.user import get_user_config
@@ -70,6 +71,28 @@ def pick_channels_to_notify(
     return channels
 
 
+@contextmanager
+def activation_log_dump_context(
+    config: LocalConfig, database: BaseDatabaseDriver, dry_run: bool
+) -> Iterator[LogDumpCacher]:
+    """Creates a log dump context that ends the long if the wrapped process fails."""
+    activation_log_dump = LogDumpCacher[ActivationLogDump](
+        {"start_timestamp": timestamp()},
+        database.store_activation_log_dump,
+        dry_run,
+    )
+    try:
+        yield activation_log_dump
+
+    finally:
+        # Even if the run failed, record the end timestamp and upload if possible
+        activation_log_dump.update({"end_timestamp": timestamp()})
+
+        if not dry_run:
+            logger.info("Uploading log dumps...")
+            record_activation_log(config, database)
+
+
 def notify(
     *,
     config: LocalConfig,
@@ -88,13 +111,9 @@ def notify(
     schedules.
     """
 
-    activation_log_dump = LogDumpCacher[ActivationLogDump](
-        {"start_timestamp": timestamp()},
-        database.store_activation_log_dump,
-        dry_run,
-    )
-
-    try:
+    with activation_log_dump_context(
+        config, database, dry_run
+    ) as activation_log_dump:
         # If there are no active channels, which shouldn't happen, there is
         # nothing to do
         if len(active_channels) == 0:
@@ -168,14 +187,6 @@ def notify(
         logger.info("Purging invalid user config pages...")
         delete_prepared_invalid_user_pages(config, connection)
         rename_invalid_user_config_pages(config, connection)
-
-    finally:
-        # Even if the run failed, record the end timestamp and upload if possible
-        activation_log_dump.update({"end_timestamp": timestamp()})
-
-        assert not dry_run
-        logger.info("Uploading log dumps...")
-        record_activation_log(config, database)
 
 
 def notify_active_channels(
