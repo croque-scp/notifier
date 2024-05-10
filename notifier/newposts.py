@@ -8,7 +8,7 @@ import feedparser
 from notifier.config.user import parse_thread_url
 from notifier.database.drivers.base import BaseDatabaseDriver
 from notifier.types import RawPost, RawThreadMeta
-from notifier.wikiconnection import Connection
+from notifier.wikidot import Wikidot
 
 logger = logging.getLogger(__name__)
 
@@ -19,7 +19,7 @@ new_posts_rss = "http://{}.wikidot.com/feed/forum/posts.xml"
 
 def get_new_posts(
     database: BaseDatabaseDriver,
-    connection: Connection,
+    wikidot: Wikidot,
     limit_wikis: Optional[List[str]] = None,
 ) -> None:
     """For each configured wiki, retrieve and store new posts.
@@ -36,7 +36,7 @@ def get_new_posts(
             continue
         logger.info("Getting new posts %s", {"for wiki_id": wiki["id"]})
         try:
-            fetch_posts_with_context(wiki["id"], database, connection)
+            fetch_posts_with_context(wiki["id"], database, wikidot)
         except Exception as error:
             logger.error(
                 "Failed getting new posts %s",
@@ -47,7 +47,7 @@ def get_new_posts(
 
 
 def fetch_posts_with_context(
-    wiki_id: str, database: BaseDatabaseDriver, connection: Connection
+    wiki_id: str, database: BaseDatabaseDriver, wikidot: Wikidot
 ) -> None:
     """Look up new posts for a wiki and then attach their context. Stores
     the posts in the cache.
@@ -110,7 +110,7 @@ def fetch_posts_with_context(
                     "post_id": post_id,
                 },
             )
-            thread_meta, thread_page_posts = connection.thread(
+            thread_meta, thread_page_posts = wikidot.thread(
                 wiki_id, thread_id, post_id
             )
             post = next(
@@ -165,7 +165,7 @@ def fetch_posts_with_context(
                     "Downloading first thread page %s",
                     {"wiki_id": wiki_id, "thread_id": thread_id},
                 )
-                thread_first_post = connection.thread(wiki_id, thread_id)[1][0]
+                thread_first_post = wikidot.thread(wiki_id, thread_id)[1][0]
             database.store_context_thread(
                 {
                     "thread_id": thread_id,

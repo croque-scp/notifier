@@ -3,14 +3,13 @@ import logging
 from typing import Any, Dict, List, Tuple, cast
 
 import boto3
-import requests
 import tomlkit
 from tomlkit.exceptions import TOMLKitError
 
 from notifier.database.drivers.base import BaseDatabaseDriver
 from notifier.database.utils import try_cache
 from notifier.types import LocalConfig, SupportedWikiConfig
-from notifier.wikiconnection import Connection
+from notifier.wikidot import Wikidot
 
 logger = logging.getLogger(__name__)
 
@@ -25,22 +24,22 @@ secure = %%form_data{secure}%%
 def get_global_config(
     local_config: LocalConfig,
     database: BaseDatabaseDriver,
-    connection: Connection,
+    wikidot: Wikidot,
 ) -> None:
     """Retrieve remote global config for wikis."""
     try_cache(
-        get=lambda: fetch_supported_wikis(local_config, connection),
+        get=lambda: fetch_supported_wikis(local_config, wikidot),
         store=database.store_supported_wikis,
         do_not_store=[],
     )
 
 
 def fetch_supported_wikis(
-    local_config: LocalConfig, connection: Connection
+    local_config: LocalConfig, wikidot: Wikidot
 ) -> List[SupportedWikiConfig]:
     """Fetch the list of supported wikis from the configuration wiki."""
     configs = []
-    for config_soup in connection.listpages(
+    for config_soup in wikidot.listpages(
         local_config["config_wiki"],
         category=local_config["wiki_config_category"],
         module_body=wiki_config_listpages_body,

@@ -63,7 +63,7 @@ class OngoingConnectionError(Exception):
     by trying it multiple times."""
 
 
-class Connection:
+class Wikidot:
     """Connection to Wikidot facilitating communications with it."""
 
     PAGINATION_DELAY_S = 1.0

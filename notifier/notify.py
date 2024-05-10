@@ -25,7 +25,7 @@ from notifier.types import (
     EmailAddresses,
     LocalConfig,
 )
-from notifier.wikiconnection import Connection, NotLoggedIn, RestrictedInbox
+from notifier.wikidot import Wikidot, NotLoggedIn, RestrictedInbox
 
 logger = logging.getLogger(__name__)
 
@@ -120,21 +120,19 @@ def notify(
             logger.warning("No active channels; aborting")
             return
 
-        connection = Connection(
-            database.get_supported_wikis(), dry_run=dry_run
-        )
+        wikidot = Wikidot(database.get_supported_wikis(), dry_run=dry_run)
 
         activation_log_dump.update({"config_start_timestamp": timestamp()})
         if dry_run:
             logger.info("Dry run: skipping remote config acquisition")
         else:
             logger.info("Getting remote config...")
-            get_global_config(config, database, connection)
+            get_global_config(config, database, wikidot)
             logger.info("Getting user config...")
-            get_user_config(config, database, connection)
+            get_user_config(config, database, wikidot)
 
             # Refresh the connection to add any newly-configured wikis
-            connection = Connection(database.get_supported_wikis())
+            wikidot = Wikidot(database.get_supported_wikis())
         activation_log_dump.update({"config_end_timestamp": timestamp()})
 
         activation_log_dump.update({"getpost_start_timestamp": timestamp()})
@@ -142,7 +140,7 @@ def notify(
             logger.info("Dry run: skipping new post acquisition")
         else:
             logger.info("Getting new posts...")
-            get_new_posts(database, connection, limit_wikis)
+            get_new_posts(database, wikidot, limit_wikis)
         # The timestamp immediately after downloading posts will be used as the
         # upper bound of posts to notify users about
         activation_log_dump.update({"getpost_end_timestamp": timestamp()})
@@ -150,9 +148,7 @@ def notify(
         if dry_run:
             logger.info("Dry run: skipping Wikidot login")
         else:
-            connection.login(
-                config["wikidot_username"], auth["wikidot_password"]
-            )
+            wikidot.login(config["wikidot_username"], auth["wikidot_password"])
 
         activation_log_dump.update({"notify_start_timestamp": timestamp()})
         logger.info("Notifying...")
@@ -164,7 +160,7 @@ def notify(
             config=config,
             auth=auth,
             database=database,
-            connection=connection,
+            wikidot=wikidot,
             force_initial_search_timestamp=force_initial_search_timestamp,
             dry_run=dry_run,
         )
@@ -182,11 +178,11 @@ def notify(
         database.delete_non_notifiable_posts()
 
         logger.info("Checking for deleted posts")
-        clear_deleted_posts(database, connection)
+        clear_deleted_posts(database, wikidot)
 
         logger.info("Purging invalid user config pages...")
-        delete_prepared_invalid_user_pages(config, connection)
-        rename_invalid_user_config_pages(config, connection)
+        delete_prepared_invalid_user_pages(config, wikidot)
+        rename_invalid_user_config_pages(config, wikidot)
 
 
 def notify_active_channels(
@@ -196,7 +192,7 @@ def notify_active_channels(
     config: LocalConfig,
     auth: AuthConfig,
     database: BaseDatabaseDriver,
-    connection: Connection,
+    wikidot: Wikidot,
     force_initial_search_timestamp: Optional[int] = None,
     dry_run: bool = False,
 ) -> None:
@@ -212,7 +208,7 @@ def notify_active_channels(
             force_initial_search_timestamp=force_initial_search_timestamp,
             config=config,
             database=database,
-            connection=connection,
+            wikidot=wikidot,
             digester=digester,
             emailer=emailer,
             dry_run=dry_run,
@@ -226,7 +222,7 @@ def notify_channel(
     force_initial_search_timestamp: Optional[int] = None,
     config: LocalConfig,
     database: BaseDatabaseDriver,
-    connection: Connection,
+    wikidot: Wikidot,
     digester: Digester,
     emailer: Emailer,
     dry_run: bool = False,
@@ -283,7 +279,7 @@ def notify_channel(
                 force_initial_search_timestamp=force_initial_search_timestamp,
                 config=config,
                 database=database,
-                connection=connection,
+                wikidot=wikidot,
                 digester=digester,
                 emailer=emailer,
                 addresses=addresses,
@@ -337,7 +333,7 @@ def notify_user(
     force_initial_search_timestamp: Optional[int] = None,
     config: LocalConfig,
     database: BaseDatabaseDriver,
-    connection: Connection,
+    wikidot: Wikidot,
     digester: Digester,
     emailer: Emailer,
     addresses: EmailAddresses,
@@ -416,7 +412,7 @@ def notify_user(
         if old_tags == new_tags:
             return
         new_tags_string = " ".join(map(str, new_tags))
-        connection.set_tags(
+        wikidot.set_tags(
             config["config_wiki"],
             f"{config['user_config_category']}:{str(user['user_id'])}",
             new_tags_string,
@@ -457,7 +453,7 @@ def notify_user(
             {"to user": user["username"], "via": "pm", "channel": channel},
         )
         try:
-            connection.send_message(user["user_id"], subject, body)
+            wikidot.send_message(user["user_id"], subject, body)
         except RestrictedInbox:
             # If the inbox is restricted, inform the user
             logger.debug(
@@ -479,7 +475,7 @@ def notify_user(
             # Only get the contacts when there is actually a user who
             # needs to be emailed
             logger.info("Retrieving email contacts")
-            addresses.update(connection.get_contacts())
+            addresses.update(wikidot.get_contacts())
             logger.debug(
                 "Retrieved email contacts %s",
                 {"address_count": len(addresses)},
@@ -528,7 +524,7 @@ def notify_user(
 
     # If the delivery was successful, remove any error tags
     if user["tags"] != "":
-        connection.set_tags(
+        wikidot.set_tags(
             config["config_wiki"],
             ":".join([config["user_config_category"], user["user_id"]]),
             "",

@@ -21,7 +21,7 @@ from notifier.config.user import fetch_user_configs, user_config_is_valid
 from notifier.database.drivers.base import BaseDatabaseDriver
 from notifier import timing
 from notifier.types import LocalConfig, PostMeta
-from notifier.wikiconnection import Connection, ThreadNotExists
+from notifier.wikidot import Wikidot, ThreadNotExists
 
 logger = logging.getLogger(__name__)
 
@@ -32,7 +32,7 @@ StrictPostId = Tuple[str, str, str]
 
 
 def clear_deleted_posts(
-    database: BaseDatabaseDriver, connection: Connection
+    database: BaseDatabaseDriver, wikidot: Wikidot
 ) -> None:
     """Check for posts that have been deleted on the remote and delete them here too.
 
@@ -47,13 +47,13 @@ def clear_deleted_posts(
     now_hour_ts = int(datetime.timestamp(now_hour))
 
     posts = database.get_posts_to_check_for_deletion(now_hour_ts)
-    delete_posts(posts, database, connection)
+    delete_posts(posts, database, wikidot)
 
 
 def delete_posts(
     posts: List[PostMeta],
     database: BaseDatabaseDriver,
-    connection: Connection,
+    wikidot: Wikidot,
 ) -> None:
     """Sync post deletion states.
 
@@ -77,7 +77,7 @@ def delete_posts(
 
         try:
             # Throws ThreadNotExists if the thread doesn't exist
-            thread_meta, thread_posts = connection.thread(
+            thread_meta, thread_posts = wikidot.thread(
                 post["wiki_id"], post["thread_id"], post["post_id"]
             )
 
@@ -143,14 +143,14 @@ def delete_posts(
 
 
 def rename_invalid_user_config_pages(
-    local_config: LocalConfig, connection: Connection
+    local_config: LocalConfig, wikidot: Wikidot
 ) -> None:
     """Prepares invalid user config pages for deletion."""
     logger.info("Finding invalid user configs to prepare for deletion")
     # Get all user configs and filter out any that are valid
     invalid_configs = [
         (slug, config)
-        for slug, config in fetch_user_configs(local_config, connection)
+        for slug, config in fetch_user_configs(local_config, wikidot)
         if not user_config_is_valid(slug, config)
     ]
     logger.debug(
@@ -158,7 +158,7 @@ def rename_invalid_user_config_pages(
     )
     for slug, config in invalid_configs:
         try:
-            connection.rename_page(
+            wikidot.rename_page(
                 local_config["config_wiki"], slug, f"deleted:{uuid4()}"
             )
         except Exception as error:
@@ -171,11 +171,11 @@ def rename_invalid_user_config_pages(
 
 
 def delete_prepared_invalid_user_pages(
-    local_config: LocalConfig, connection: Connection
+    local_config: LocalConfig, wikidot: Wikidot
 ) -> None:
     """Deletes prepared invalid user config pages."""
     logger.info("Finding pages marked for deletion")
-    pages_to_delete = connection.listpages(
+    pages_to_delete = wikidot.listpages(
         local_config["config_wiki"],
         category="deleted",
         module_body="%%fullname%%",
@@ -183,7 +183,7 @@ def delete_prepared_invalid_user_pages(
     for page in pages_to_delete:
         slug = page.get_text()
         try:
-            connection.delete_page(local_config["config_wiki"], slug)
+            wikidot.delete_page(local_config["config_wiki"], slug)
         except Exception as error:
             logger.error(
                 "Couldn't delete page %s",

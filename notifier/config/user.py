@@ -15,7 +15,7 @@ from notifier.types import (
     Subscription,
     SubscriptionCardinality,
 )
-from notifier.wikiconnection import Connection
+from notifier.wikidot import Wikidot
 
 logger = logging.getLogger(__name__)
 
@@ -40,22 +40,22 @@ unsubscriptions = """
 def get_user_config(
     local_config: LocalConfig,
     database: BaseDatabaseDriver,
-    connection: Connection,
+    wikidot: Wikidot,
 ) -> None:
     """Retrieve remote user config."""
     try_cache(
-        get=lambda: find_valid_user_configs(local_config, connection),
+        get=lambda: find_valid_user_configs(local_config, wikidot),
         store=database.store_user_configs,
         do_not_store=[],
     )
 
 
 def find_valid_user_configs(
-    local_config: LocalConfig, connection: Connection
+    local_config: LocalConfig, wikidot: Wikidot
 ) -> List[RawUserConfig]:
     """Fetches user configs and returns those that are valid."""
     configs: List[RawUserConfig] = []
-    for slug, config in fetch_user_configs(local_config, connection):
+    for slug, config in fetch_user_configs(local_config, wikidot):
         if not user_config_is_valid(slug, config):
             # Only accept configs for the user who created the page
             logger.warning(
@@ -78,7 +78,7 @@ def user_config_is_valid(slug: str, config: RawUserConfig) -> bool:
 
 
 def fetch_user_configs(
-    local_config: LocalConfig, connection: Connection
+    local_config: LocalConfig, wikidot: Wikidot
 ) -> List[Tuple[str, RawUserConfig]]:
     """Fetches a list of user configurations from the configuration wiki.
 
@@ -86,7 +86,7 @@ def fetch_user_configs(
     cached in the database.
     """
     configs: List[Tuple[str, RawUserConfig]] = []
-    for config_soup in connection.listpages(
+    for config_soup in wikidot.listpages(
         local_config["config_wiki"],
         category=local_config["user_config_category"],
         module_body=user_config_listpages_body,
