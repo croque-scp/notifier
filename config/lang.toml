@@ -105,6 +105,16 @@ unknown_category_name = "Other"
 thread_opener = "Thread:"
 post_replies_opener = "Replies to post:"
 untitled_post_title = "(untitled post)"
+confirmation_subject = "[Forum Notifications] Signup confirmation"
+confirmation_message = """|
+Thank you for signing up for forum notifications at {link_site}! This is your confirmation that you're ready to receive notifications.
+
+Your user config is located at {link_your_config}. Edit it to change your frequency (currently {frequency}), language, subscriptions and unsubscriptions.
+
+Keep an eye on your user config page -- if there's a problem preventing notifications from being sent to you, a message will be added to it with info about the problem and instructions on how to fix it.
+
+To unsubscribe from notifications, [{link_your_config} edit your user config] and change your frequency to 'never', or ask [[*user Croquembouche]] to delete your config entirely.
+"""
 
 [vi]
 frequency_hourly = "hàng giờ"
