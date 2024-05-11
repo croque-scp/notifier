@@ -9,10 +9,12 @@ from typing import (
     Dict,
     Iterable,
     List,
+    Literal,
     Optional,
     Sequence,
     Set,
     Tuple,
+    Union,
     cast,
     Match,
 )
@@ -69,7 +71,11 @@ class Digester:
         return lexicon
 
     def for_user(
-        self, user: CachedUserConfig, posts: Sequence[PostInfo]
+        self,
+        user: CachedUserConfig,
+        posts: Sequence[PostInfo],
+        *,
+        template: Union[Literal["notification"], Literal["confirmation"]],
     ) -> Tuple[str, str]:
         """Compile a notification digest for a user.
 
@@ -77,53 +83,84 @@ class Digester:
         """
         # Make the lexicon for this user's settings
         lexicon = self.make_lexicon(user["language"])
-        # Get some stats for the message
-        manual_sub_count = len(
-            [sub for sub in user["manual_subs"] if sub["sub"] == 1]
-        )
-        total_notification_count = len(posts)
-        # Construct the message
-        subject = lexicon["subject"].format(
-            post_count=total_notification_count
-        )
-        frequency = {
+        if template == "confirmation":
+            return make_confirmation_message(user, lexicon)
+        if template == "notification":
+            return make_notification_digest(user, posts, lexicon)
+        raise ValueError(f"Unknown digest template f{template}")
+
+
+def make_confirmation_message(
+    user: CachedUserConfig, lexicon: Lexicon
+) -> Tuple[str, str]:
+    """Makes a signup confirmation message. Returns subject and body."""
+    subject = lexicon["confirmation_subject"]
+    body = lexicon["confirmation_message"].format(
+        link_site=lexicon["link_site"],
+        link_your_config=lexicon["link_your_config"].format(
+            link_site=lexicon["link_site"]
+        ),
+        frequency={
             "hourly": lexicon["frequency_hourly"],
             "8hourly": lexicon["frequency_8hourly"],
             "daily": lexicon["frequency_daily"],
             "weekly": lexicon["frequency_weekly"],
             "monthly": lexicon["frequency_monthly"],
             "test": lexicon["frequency_test"],
-        }.get(user["frequency"], "undefined")
-        intro = lexicon["intro"].format(
-            frequency=frequency,
-            link_site=lexicon["link_site"],
-            manual_sub_count=manual_sub_count,
-            link_your_config=lexicon["link_your_config"].format(
+        }.get(user["frequency"], "undefined"),
+    )
+    return subject, body
+
+
+def make_notification_digest(
+    user: CachedUserConfig, posts: Sequence[PostInfo], lexicon: Lexicon
+) -> Tuple[str, str]:
+    """Makes a notification digest. Returns subject and body."""
+    # Get some stats for the message
+    manual_sub_count = len(
+        [sub for sub in user["manual_subs"] if sub["sub"] == 1]
+    )
+    total_notification_count = len(posts)
+    # Construct the message
+    subject = lexicon["subject"].format(post_count=total_notification_count)
+    frequency = {
+        "hourly": lexicon["frequency_hourly"],
+        "8hourly": lexicon["frequency_8hourly"],
+        "daily": lexicon["frequency_daily"],
+        "weekly": lexicon["frequency_weekly"],
+        "monthly": lexicon["frequency_monthly"],
+        "test": lexicon["frequency_test"],
+    }.get(user["frequency"], "undefined")
+    intro = lexicon["intro"].format(
+        frequency=frequency,
+        link_site=lexicon["link_site"],
+        manual_sub_count=manual_sub_count,
+        link_your_config=lexicon["link_your_config"].format(
+            link_site=lexicon["link_site"]
+        ),
+        link_info_learning=lexicon["link_info_learning"].format(
+            link_site=lexicon["link_site"]
+        ),
+        link_info_automatic=lexicon["link_info_automatic"].format(
+            link_site=lexicon["link_site"]
+        ),
+    )
+    outro = lexicon["outro"].format(
+        unsub_footer=lexicon["unsub_footer"].format(
+            link_unsubscribe=lexicon["link_unsubscribe"].format(
                 link_site=lexicon["link_site"]
-            ),
-            link_info_learning=lexicon["link_info_learning"].format(
-                link_site=lexicon["link_site"]
-            ),
-            link_info_automatic=lexicon["link_info_automatic"].format(
-                link_site=lexicon["link_site"]
-            ),
-        )
-        outro = lexicon["outro"].format(
-            unsub_footer=lexicon["unsub_footer"].format(
-                link_unsubscribe=lexicon["link_unsubscribe"].format(
-                    link_site=lexicon["link_site"]
-                )
             )
         )
-        body = lexicon["body"].format(
-            intro=intro,
-            wikis="\n".join(make_wikis_digest(posts, lexicon)),
-            outro=outro,
-        )
-        subject = pluralise(subject)
-        body = finalise_digest(body)
-        body = convert_syntax(body, user["delivery"])
-        return subject, body
+    )
+    body = lexicon["body"].format(
+        intro=intro,
+        wikis="\n".join(make_wikis_digest(posts, lexicon)),
+        outro=outro,
+    )
+    subject = pluralise(subject)
+    body = finalise_digest(body)
+    body = convert_syntax(body, user["delivery"])
+    return subject, body
 
 
 def make_wikis_digest(
