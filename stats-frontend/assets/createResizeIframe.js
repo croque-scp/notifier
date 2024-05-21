@@ -5,8 +5,11 @@
  * @param {String} site - The base URL of the site.
  * @param {String} frameId - The last segment of the URL of the interwiki
  * iframe, used by Wikidot to identify it when resizing it.
+ * @param {Number=} [debounceTime] - Debounce delay to stagger repeated calls to the resizer. Defaults to 750 ms.
+ * @returns {((height: Number=) => void)}
  */
-function createResizeIframe(site, frameId) {
+function createResizeIframe(site, frameId, debounceTime) {
+  if (debounceTime == null) debounceTime = 750
   let container = document.getElementById("resizer-container")
   if (container == null) {
     container = document.createElement("div")
@@ -17,24 +20,23 @@ function createResizeIframe(site, frameId) {
   resizer.style.display = "none"
   container.appendChild(resizer)
 
+  // Prefix frame ID with leading slash, required for resize-iframe.html
   if (frameId[0] !== "/") frameId = "/" + frameId
 
-  return debounce(() => {
-    // Measure from the top of the document to the iframe container to get
-    // the document height - this takes into account inner margins, unlike
-    // e.g. document.body.clientHeight
-    // The container must not have display:none for this to work, which is
-    // why the iframe has it instead
-    var height = container.getBoundingClientRect().top
-    // Brute-force past any subpixel issues
-    if (height) height += 1
-    resizer.src =
-      site +
-      "/common--javascript/resize-iframe.html?" +
-      "#" +
-      height +
-      frameId
-  }, 750)
+  return debounce((height) => {
+    if (height == null) {
+      // Measure from the top of the document to the iframe container to get
+      // the document height - this takes into account inner margins, unlike
+      // e.g. document.body.clientHeight
+      // The container must not have display:none for this to work, which is
+      // why the iframe has it instead
+      let height = container.getBoundingClientRect().top
+      // Brute-force past any subpixel issues
+      if (height) height += 1
+    }
+
+    resizer.src = `${site}/common--javascript/resize-iframe.html?#${height}${frameId}`
+  }, debounceTime)
 }
 
 /**
@@ -47,7 +49,7 @@ function createResizeIframe(site, frameId) {
 function autoResizeIframe(site) {
   const frameId = location.href.replace(/^.*\//, "/")
   const resize = createResizeIframe(site, frameId)
-  const observer = new ResizeObserver(resize)
+  const observer = new ResizeObserver(() => resize())
   observer.observe(document.documentElement)
 }
 
@@ -59,6 +61,7 @@ function autoResizeIframe(site) {
  * @param {Function} func - The function to call.
  * @param {Number} wait - The number of milliseconds to wait after any call
  * to the debounced function before executing it.
+ * @returns {Function} The debounced function
  */
 function debounce(func, wait) {
   let timeout = 0
