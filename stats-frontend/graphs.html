@@ -8,7 +8,7 @@
     <script src="https://cdn.jsdelivr.net/npm/luxon@^3"></script>
     <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-luxon@^1"></script>
     <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@^3"></script>
-    <script src="assets/createResizeIframe.js"></script>
+    <script src="https://interwiki.scpwiki.com/resizeIframe.js"></script>
 
     <script>
       const palette = {
@@ -31,7 +31,11 @@
       }
 
       addEventListener("DOMContentLoaded", async () => {
-        autoResizeIframe("http://notifications.wikidot.com")
+        const resize = window.resizeIframe.createResizeIframe(
+          "http://notifications.wikidot.com",
+          location.href.replace(/^.*\//, "/")
+        )
+        new ResizeObserver(() => resize()).observe(document.documentElement)
 
         const abortController = new AbortController()
         const abortTimer = setTimeout(() => abortController.abort(), 10000)
