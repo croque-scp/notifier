@@ -103,10 +103,16 @@
 
         let successRate30Day = (() => {
           const timestamp30DaysAgo = Date.now() - (30 * 24 * 60 * 60 * 1000)
-          const activationIndex = recentNotifications.activations.findIndex(
-            a => a["start_timestamp"] > timestamp30DaysAgo / 1000
+          // Count the number of activations since 30 days ago
+          const recentActivations = recentNotifications.activations.filter(
+            a => (
+              a["start_timestamp"] > timestamp30DaysAgo / 1000
+              // Don't count activations that didn't finish sending notifications
+              && a["notify_end_timestamp"] != null
+            )
           )
-          return (recentNotifications.activations.length - activationIndex) / (30 * 24)
+          const perfectActivationsCount = 30 * 24
+          return recentActivations / perfectActivationsCount
         })()
 
         let missedActivations = (
