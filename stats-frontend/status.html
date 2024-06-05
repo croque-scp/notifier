@@ -133,9 +133,12 @@
             )
             return durations.reduce((a, b) => (a + b)) / durations.length
           })()
-          if (now - nearestHour(now) < avgRunTime)
+          if (now - nearestHour(now) < avgRunTime) {
+            // Include this run in the success rate
+            successRate30Day = max(1, successRate30Day + 1 / (30 * 24))
             return setStatus("waiting", successRate30Day, avgRunTime - (now - nearestHour(now)))
-          
+          }
+
           // Run might overrun - allow up to 15 mins
           if (now - nearestHour(now) < 900)
             return setStatus("waiting", successRate30Day, 900 - (now - nearestHour(now)))
