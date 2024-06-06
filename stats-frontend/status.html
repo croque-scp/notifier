@@ -112,7 +112,7 @@
             )
           )
           const perfectActivationsCount = 30 * 24
-          return recentActivations / perfectActivationsCount
+          return recentActivations.length / perfectActivationsCount
         })()
 
         let missedActivations = (
@@ -135,7 +135,7 @@
           })()
           if (now - nearestHour(now) < avgRunTime) {
             // Include this run in the success rate
-            successRate30Day = max(1, successRate30Day + 1 / (30 * 24))
+            successRate30Day = Math.max(1, successRate30Day + 1 / (30 * 24))
             return setStatus("waiting", successRate30Day, avgRunTime - (now - nearestHour(now)))
           }
 
