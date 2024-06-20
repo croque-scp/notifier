@@ -65,6 +65,11 @@
           }
         })
 
+        // Discard any activations that didn't start on the hour
+        recentNotifications.activations = recentNotifications.activations.filter(
+          activation => activation["start_timestamp"] % 3600 < 180
+        )
+
         // Bind channels data to activations data
         for (
           let activationIndex = 0;
