@@ -341,3 +341,37 @@ unknown_category_name = "Annet"
 thread_opener = "Diskusjon:"
 post_replies_opener = "Svar til innlegg:"
 untitled_post_title = "(innlegg uten navn)"
+
+[tr]
+frequency_hourly = "每小時"
+frequency_8hourly = "每8小時"
+frequency_daily = "每日"
+frequency_weekly = "每周"
+frequency_monthly = "每月"
+subject = "[論壇提醒] {post_count} 個新貼文"
+intro = """|
+您好！這是您在 {link_site} 訂閱的{frequency}提醒摘要，用於提醒您訂閱的討論區内發佈了新的討論貼文。
+
+本服務正在追蹤：
+
+* {manual_sub_count} 個手動訂閱，可在[{link_your_config} 您的個人設定]處設定。
+
+* 自動訂閱討論區和讨论帖。[{link_info_automatic} 了解自動訂閱內容的構成。]
+
+本賬號（[[*user Notifier]]）是全自動運營的——任何對本私訊發送的回復都將會被忽略。如果您遇到了任何問題，請直接聯絡我（[[*user Croquembouche]]）。
+
+-----
+
+[[=]]<>+ :closed_mailbox_with_raised_flag:<>[[/=]]
+
+-----
+"""
+unsub_footer = "取消訂閱本提醒：{link_unsubscribe}"
+main_summary = "您總共在 {wiki_count} 個維基訂閱了 {summary} 條貼文"
+summary = """|
+從 {thread_count} 個討論區收到 {notification_count} 條提醒
+"""
+unknown_category_name = "其它"
+thread_opener = "討論區："
+post_replies_opener = "回復："
+untitled_post_title = "（無標題貼文）"

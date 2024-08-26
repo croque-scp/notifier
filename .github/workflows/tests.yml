@@ -5,6 +5,7 @@ on:
     paths:
       - 'notifier/**'
       - 'tests/**'
+      - 'config/**'
       - 'pyproject.toml'
       - 'config/config.toml'
       - '.github/workflows/tests.yml'
@@ -15,6 +16,7 @@ on:
     paths:
       - 'notifier/**'
       - 'tests/**'
+      - 'config/**'
       - 'pyproject.toml'
       - 'config/config.toml'
       - '.github/workflows/tests.yml'
