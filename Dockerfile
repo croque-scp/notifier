@@ -18,7 +18,7 @@ RUN poetry config virtualenvs.in-project true
 RUN poetry install --no-interaction --no-root
 
 
-FROM base as build
+FROM base AS build
 
 COPY . .
 
