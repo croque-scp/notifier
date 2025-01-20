@@ -187,6 +187,12 @@ class Wikidot:
         if (
             response["status"] == "no_permission"
             and response["message"]
+            == "This user does wish to receive private messages."  # [sic]
+        ):
+            raise RestrictedInbox
+        if (
+            response["status"] == "no_permission"
+            and response["message"]
             == "Please create a Wikidot account and/or sign in first"
         ):
             raise NotLoggedIn
