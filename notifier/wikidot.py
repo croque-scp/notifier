@@ -50,8 +50,12 @@ class ThreadNotExists(Exception):
 
 
 class RestrictedInbox(Exception):
-    """Indicates that a user could not receive a Wikidot PM because their
-    inbox is restricted."""
+    """Indicates that a user could not receive a Wikidot PM because their inbox
+    is restricted to contacts only."""
+
+
+class BlockedInbox(Exception):
+    """Indicates that a user has blocked incoming PMs from all users."""
 
 
 class NotLoggedIn(Exception):
@@ -189,7 +193,7 @@ class Wikidot:
             and response["message"]
             == "This user does wish to receive private messages."  # [sic]
         ):
-            raise RestrictedInbox
+            raise BlockedInbox
         if (
             response["status"] == "no_permission"
             and response["message"]

@@ -25,7 +25,12 @@ from notifier.types import (
     EmailAddresses,
     LocalConfig,
 )
-from notifier.wikidot import Wikidot, NotLoggedIn, RestrictedInbox
+from notifier.wikidot import (
+    Wikidot,
+    NotLoggedIn,
+    RestrictedInbox,
+    BlockedInbox,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -455,7 +460,7 @@ def notify_user(
         try:
             wikidot.send_message(user["user_id"], subject, body)
         except RestrictedInbox:
-            # If the inbox is restricted, inform the user
+            # If the inbox is restricted to contacts only, inform the user
             logger.debug(
                 "Aborting notification %s",
                 {
@@ -465,6 +470,18 @@ def notify_user(
                 },
             )
             add_error_tag_to_user("restricted-inbox", post_count)
+            return False, 0
+        except BlockedInbox:
+            # If the inbox is blocked to all users, inform the user
+            logger.debug(
+                "Aborting notification %s",
+                {
+                    "for user": user["username"],
+                    "in channel": channel,
+                    "reason": "blocked Wikidot inbox",
+                },
+            )
+            add_error_tag_to_user("blocked-inbox", post_count)
             return False, 0
         # This user has fixed the above issue, so remove error tags
         remove_error_tags_from_user()
