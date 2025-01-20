@@ -170,6 +170,41 @@ def rename_invalid_user_config_pages(
             continue
 
 
+def rename_misnamed_user_config_pages(
+    local_config: LocalConfig, connection: Connection
+) -> None:
+    """Renames user configs to fix an error in the page creation link.
+
+    The link syntax breaks if it contains a space, but spaces are permitted in usernames. Therefore if a user has a space in their username, their user config create link will be broken and will have a nonsensical name.
+
+    Users are allowed to name their pages whatever they like but this cleans up that one case specifically.
+    """
+    logger.info("Finding user configs from users with spaces in their name")
+    misnamed_configs = [
+        (slug, config)
+        for slug, config in fetch_user_configs(local_config, connection)
+        if " " in config["username"]
+        and config["title"] == config["username"].split(" ")[0]
+    ]
+    logger.debug(
+        "Found misnamed configs to rename %s", {"count": len(misnamed_configs)}
+    )
+    for slug, config in misnamed_configs:
+        try:
+            connection.rename_page(
+                local_config["config_wiki"],
+                slug,
+                f"{local_config['user_config_category']}:{config['user_id']}",
+            )
+        except Exception as error:
+            logger.error(
+                "Couldn't rename config page %s",
+                {"slug": slug},
+                exc_info=error,
+            )
+            continue
+
+
 def delete_prepared_invalid_user_pages(
     local_config: LocalConfig, wikidot: Wikidot
 ) -> None:
