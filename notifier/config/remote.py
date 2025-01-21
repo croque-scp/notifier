@@ -40,7 +40,7 @@ def fetch_supported_wikis(
     """Fetch the list of supported wikis from the configuration wiki."""
     configs = []
     for config_soup in wikidot.listpages(
-        local_config["config_wiki"],
+        local_config["config_wiki_id"],
         category=local_config["wiki_config_category"],
         module_body=wiki_config_listpages_body,
     ):

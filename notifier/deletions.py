@@ -159,7 +159,7 @@ def rename_invalid_user_config_pages(
     for slug, config in invalid_configs:
         try:
             wikidot.rename_page(
-                local_config["config_wiki"], slug, f"deleted:{uuid4()}"
+                local_config["config_wiki_id"], slug, f"deleted:{uuid4()}"
             )
         except Exception as error:
             logger.error(
@@ -176,14 +176,14 @@ def delete_prepared_invalid_user_pages(
     """Deletes prepared invalid user config pages."""
     logger.info("Finding pages marked for deletion")
     pages_to_delete = wikidot.listpages(
-        local_config["config_wiki"],
+        local_config["config_wiki_id"],
         category="deleted",
         module_body="%%fullname%%",
     )
     for page in pages_to_delete:
         slug = page.get_text()
         try:
-            wikidot.delete_page(local_config["config_wiki"], slug)
+            wikidot.delete_page(local_config["config_wiki_id"], slug)
         except Exception as error:
             logger.error(
                 "Couldn't delete page %s",

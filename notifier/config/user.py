@@ -87,7 +87,7 @@ def fetch_user_configs(
     """
     configs: List[Tuple[str, RawUserConfig]] = []
     for config_soup in wikidot.listpages(
-        local_config["config_wiki"],
+        local_config["config_wiki_id"],
         category=local_config["user_config_category"],
         module_body=user_config_listpages_body,
     ):

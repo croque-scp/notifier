@@ -35,7 +35,9 @@ class LocalConfig(TypedDict):
     """Contents of the local config file."""
 
     wikidot_username: str
-    config_wiki: str
+    config_wiki_id: str
+    config_wiki_secure: IsSecure
+    config_wiki_name: str
     user_config_category: str
     wiki_config_category: str
     gmail_username: str

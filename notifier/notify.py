@@ -24,6 +24,7 @@ from notifier.types import (
     ChannelLogDump,
     EmailAddresses,
     LocalConfig,
+    SupportedWikiConfig,
 )
 from notifier.wikidot import (
     Wikidot,
@@ -79,7 +80,7 @@ def pick_channels_to_notify(
 @contextmanager
 def activation_log_dump_context(
     config: LocalConfig, database: BaseDatabaseDriver, dry_run: bool
-) -> Iterator[LogDumpCacher]:
+) -> Iterator[LogDumpCacher[ActivationLogDump]]:
     """Creates a log dump context that ends the long if the wrapped process fails."""
     activation_log_dump = LogDumpCacher[ActivationLogDump](
         {"start_timestamp": timestamp()},
@@ -125,7 +126,19 @@ def notify(
             logger.warning("No active channels; aborting")
             return
 
-        wikidot = Wikidot(database.get_supported_wikis(), dry_run=dry_run)
+        # Pull the cached supported wikis but override the config wiki with what's defined in the local config file
+        supported_wikis = [
+            wiki
+            for wiki in database.get_supported_wikis()
+            if wiki["id"] != config["config_wiki_id"]
+        ]
+        config_wiki: SupportedWikiConfig = {
+            "id": config["config_wiki_id"],
+            "name": config["config_wiki_name"],
+            "secure": config["config_wiki_secure"],
+        }
+        supported_wikis.append(config_wiki)
+        wikidot = Wikidot(supported_wikis, dry_run=dry_run)
 
         activation_log_dump.update({"config_start_timestamp": timestamp()})
         if dry_run:
@@ -418,7 +431,7 @@ def notify_user(
             return
         new_tags_string = " ".join(map(str, new_tags))
         wikidot.set_tags(
-            config["config_wiki"],
+            config["config_wiki_id"],
             f"{config['user_config_category']}:{str(user['user_id'])}",
             new_tags_string,
         )
@@ -542,7 +555,7 @@ def notify_user(
     # If the delivery was successful, remove any error tags
     if user["tags"] != "":
         wikidot.set_tags(
-            config["config_wiki"],
+            config["config_wiki_id"],
             ":".join([config["user_config_category"], user["user_id"]]),
             "",
         )

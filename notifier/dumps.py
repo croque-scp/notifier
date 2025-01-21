@@ -34,7 +34,7 @@ class LogDumpCacher(Generic[AnyLogDump]):
     cache_func: Callable[[AnyLogDump], None]
     dry_run: bool
 
-    def __post_init__(self):
+    def __post_init__(self) -> None:
         self.cache()
 
     def update(self, data: AnyLogDump) -> None:

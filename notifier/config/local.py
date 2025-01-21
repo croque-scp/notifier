@@ -45,7 +45,9 @@ def read_local_config(config_path: str) -> LocalConfig:
         assert_key = assert_key_for_scope("main config")
         # Main config
         assert_key(config, "wikidot_username", str)
-        assert_key(config, "config_wiki", str)
+        assert_key(config, "config_wiki_id", str)
+        assert_key(config, "config_wiki_secure", int)
+        assert_key(config, "config_wiki_name", str)
         assert_key(config, "user_config_category", str)
         assert_key(config, "wiki_config_category", str)
         assert_key(config, "gmail_username", str)

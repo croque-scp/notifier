@@ -1,5 +1,7 @@
 wikidot_username = "Notifier"
-config_wiki = "notifications"
+config_wiki_id = "notifications"
+config_wiki_secure = 1
+config_wiki_name = "Forum Notifications"
 user_config_category = "notify"
 wiki_config_category = "wiki"
 gmail_username = "wikidotnotifier@gmail.com"
