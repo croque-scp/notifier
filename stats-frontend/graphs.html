@@ -32,7 +32,7 @@
 
       addEventListener("DOMContentLoaded", async () => {
         const resize = window.resizeIframe.createResizeIframe(
-          "http://notifications.wikidot.com",
+          "https://notifications.wikidot.com",
           location.href.replace(/^.*\//, "/")
         )
         new ResizeObserver(() => resize()).observe(document.documentElement)

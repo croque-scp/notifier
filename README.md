@@ -2,19 +2,19 @@
 
 [![tests](https://github.com/croque-scp/notifier/actions/workflows/tests.yml/badge.svg)](https://github.com/croque-scp/notifier/actions/workflows/tests.yml)
 
-This is the open-source codebase for [Wikidot Notifications](http://notifications.wikidot.com?utm_source=github&utm_medium=referral&utm_campaign=ghreadme), a cloud service providing forum notifications for sites on Wikidot.
+This is the open-source codebase for [Wikidot Notifications](https://notifications.wikidot.com?utm_source=github&utm_medium=referral&utm_campaign=ghreadme), a cloud service providing forum notifications for sites on Wikidot.
 
-This notifications service searches for new forum posts on Wikidot and delivers notifications for users that are subscribed to them via email or Wikidot private message. Manual subscriptions as well as a set of rules defining 'automatic subscriptions' are supported. Notifications can be delivered in [several languages](http://notifications.wikidot.com/faq#languages?utm_source=github&utm_medium=referral&utm_campaign=ghreadme) contributed by members of the Wikidot community.
+This notifications service searches for new forum posts on Wikidot and delivers notifications for users that are subscribed to them via email or Wikidot private message. Manual subscriptions as well as a set of rules defining 'automatic subscriptions' are supported. Notifications can be delivered in [several languages](https://notifications.wikidot.com/faq#languages?utm_source=github&utm_medium=referral&utm_campaign=ghreadme) contributed by members of the Wikidot community.
 
-This service is operated and developed by Wikidot user Croquembouche and is not associated with Wikidot Inc. or any particular site hosted on Wikidot other than [notifications.wikidot.com](http://notifications.wikidot.com?utm_source=github&utm_medium=referral&utm_campaign=ghreadme).
+This service is operated and developed by Wikidot user Croquembouche and is not associated with Wikidot Inc. or any particular site hosted on Wikidot other than [notifications.wikidot.com](https://notifications.wikidot.com?utm_source=github&utm_medium=referral&utm_campaign=ghreadme).
 
 See also:
 
-* [Documentation](http://notifications.wikidot.com/faq?utm_source=github&utm_medium=referral&utm_campaign=ghreadme)
-* [Status page](http://notifications.wikidot.com/status?utm_source=github&utm_medium=referral&utm_campaign=ghreadme)
-* [List of supported Wikidot sites](http://notifications.wikidot.com/wikis?utm_source=github&utm_medium=referral&utm_campaign=ghreadme)
-* [List of subscribed users](http://notifications.wikidot.com/users?utm_source=github&utm_medium=referral&utm_campaign=ghreadme)
-* If you are a user, [your user configuration](http://notifications.wikidot.com/redirect-to-your-config?utm_source=github&utm_medium=referral&utm_campaign=ghreadme)
+* [Documentation](https://notifications.wikidot.com/faq?utm_source=github&utm_medium=referral&utm_campaign=ghreadme)
+* [Status page](https://notifications.wikidot.com/status?utm_source=github&utm_medium=referral&utm_campaign=ghreadme)
+* [List of supported Wikidot sites](https://notifications.wikidot.com/wikis?utm_source=github&utm_medium=referral&utm_campaign=ghreadme)
+* [List of subscribed users](https://notifications.wikidot.com/users?utm_source=github&utm_medium=referral&utm_campaign=ghreadme)
+* If you are a user, [your user configuration](https://notifications.wikidot.com/redirect-to-your-config?utm_source=github&utm_medium=referral&utm_campaign=ghreadme)
 
 The notifications service is written in Python and runs on AWS Lambda using a MySQL database on AWS EC2.
 

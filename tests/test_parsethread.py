@@ -56,7 +56,7 @@ def test_get_user_from_nametag() -> None:
     ).test()
     UserTag(
         "Normal user (from a forum post)",
-        """<span class="printuser avatarhover"><a href="http://www.wikidot.com/user:info/croquembouche" onclick="WIKIDOT.page.listeners.userInfo(2893766); return false;"><img class="small" src="https://www.wikidot.com/avatar.php?userid=2893766&amp;amp;size=small&amp;amp;timestamp=1686573582" alt="Croquembouche" style="background-image:url(https://www.wikidot.com/userkarma.php?u=2893766)"></a><a href="http://www.wikidot.com/user:info/croquembouche" onclick="WIKIDOT.page.listeners.userInfo(2893766); return false;">Croquembouche</a></span>""",
+        """<span class="printuser avatarhover"><a href="https://www.wikidot.com/user:info/croquembouche" onclick="WIKIDOT.page.listeners.userInfo(2893766); return false;"><img class="small" src="https://www.wikidot.com/avatar.php?userid=2893766&amp;amp;size=small&amp;amp;timestamp=1686573582" alt="Croquembouche" style="background-image:url(https://www.wikidot.com/userkarma.php?u=2893766)"></a><a href="https://www.wikidot.com/user:info/croquembouche" onclick="WIKIDOT.page.listeners.userInfo(2893766); return false;">Croquembouche</a></span>""",
         "2893766",
         "Croquembouche",
     ).test()
