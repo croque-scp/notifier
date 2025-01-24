@@ -1,7 +1,10 @@
 {
-  "private":true,
+  "private": true,
   "scripts": {
     "serve": "live-server --port=7683"
   },
-  "devDependencies":{"live-server":"^1.2.2"}
+  "devDependencies": {
+    "live-server": "^1.2.2",
+    "prettier": "^3.4.2"
+  }
 }

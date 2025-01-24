@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+<!doctype html>
 
 <html data-status="loading">
   <head>
@@ -60,9 +60,10 @@
       }
 
       function nextRunDue() {
-        const secondsRemaining = 3600 - (new Date().getTime() / 1000) % 3600
+        const secondsRemaining = 3600 - ((new Date().getTime() / 1000) % 3600)
         let minutesRemaining = "< 1"
-        if (secondsRemaining > 60) minutesRemaining = Math.ceil(secondsRemaining / 60)
+        if (secondsRemaining > 60)
+          minutesRemaining = Math.ceil(secondsRemaining / 60)
         if (secondsRemaining > 10) return `in <b>${minutesRemaining}</b> m`
         return "<b>now</b>"
       }
@@ -114,7 +115,7 @@
         )
 
         let successRate30Day = (() => {
-          const timestamp30DaysAgo = Date.now() - (30 * 24 * 60 * 60 * 1000)
+          const timestamp30DaysAgo = Date.now() - 30 * 24 * 60 * 60 * 1000
           // Count the number of activations since 30 days ago
           const recentActivations = recentNotifications.activations.filter(
             (a) =>
@@ -127,33 +128,47 @@
           return recentActivations.length / perfectActivationsCount
         })()
 
-        let missedActivations = (
-          nearestHour(now) - nearestHour(latestNotificationTimestamp)
-        ) / 3600
+        let missedActivations =
+          (nearestHour(now) - nearestHour(latestNotificationTimestamp)) / 3600
 
         // If there are 0 missed notifications, success
         if (missedActivations === 0)
-          return setStatus("success", successRate30Day, now - latestNotificationTimestamp)
+          return setStatus(
+            "success",
+            successRate30Day,
+            now - latestNotificationTimestamp,
+          )
 
         // If there is 1 missed notification, but is currently within the first ~quarter hour, we might just be waiting for it - show success but indicate waiting
         if (missedActivations === 1) {
           // Take the average of recent notifications to guess the ETA
-          const avgRunTime = 1.2 * (() => {
-            const recentActivations = recentNotifications.activations.slice(-24)
-            const durations = recentActivations.map(
-              a => Math.round((a["end_timestamp"] - a["start_timestamp"]))
-            )
-            return durations.reduce((a, b) => (a + b)) / durations.length
-          })()
+          const avgRunTime =
+            1.2 *
+            (() => {
+              const recentActivations =
+                recentNotifications.activations.slice(-24)
+              const durations = recentActivations.map((a) =>
+                Math.round(a["end_timestamp"] - a["start_timestamp"]),
+              )
+              return durations.reduce((a, b) => a + b) / durations.length
+            })()
           if (now - nearestHour(now) < avgRunTime) {
             // Include this run in the success rate
             successRate30Day = Math.max(1, successRate30Day + 1 / (30 * 24))
-            return setStatus("waiting", successRate30Day, avgRunTime - (now - nearestHour(now)))
+            return setStatus(
+              "waiting",
+              successRate30Day,
+              avgRunTime - (now - nearestHour(now)),
+            )
           }
 
           // Run might overrun - allow up to 15 mins
           if (now - nearestHour(now) < 900)
-            return setStatus("waiting", successRate30Day, 900 - (now - nearestHour(now)))
+            return setStatus(
+              "waiting",
+              successRate30Day,
+              900 - (now - nearestHour(now)),
+            )
 
           // There was legitimately a missed run
           return setStatus("missedSeveral", successRate30Day, 1)
@@ -161,18 +176,24 @@
 
         // If there are less than X missed notifications, show that number and indicate failure
         const missedActivationsThreshold = 24
-        if (missedActivations > 1 && missedActivations <= missedActivationsThreshold) {
+        if (
+          missedActivations > 1 &&
+          missedActivations <= missedActivationsThreshold
+        ) {
           // If in first 15 mins, there could be one running right now
-          if (now - nearestHour(now) < 900)
-            return setStatus("missedSeveral", successRate30Day, missedActivations - 1)
-          else return setStatus("missedSeveral", successRate30Day, missedActivations)
+          if (now - nearestHour(now) < 900) missedActivations -= 1
+          return setStatus("missedSeveral", successRate30Day, missedActivations)
         }
 
         // If there are more than X missed notifications, indicate that notifier is offline
         if (missedActivations > missedActivationsThreshold) {
           // Use last known notification to display date
           if (latestNotificationTimestamp)
-            return setStatus("missedLots", successRate30Day, latestNotificationTimestamp)
+            return setStatus(
+              "missedLots",
+              successRate30Day,
+              latestNotificationTimestamp,
+            )
           // If no last notification present (not currently possible?) imply permanently offline
           else return setStatus("missedAll")
         }
@@ -187,15 +208,18 @@
 
         // Refresh the stats each minute
         while (true) {
-          await new Promise(
-            resolve => setTimeout(resolve, 60000 - new Date().getTime() % 60000)
+          await new Promise((resolve) =>
+            setTimeout(resolve, 60000 - (new Date().getTime() % 60000)),
           )
 
           // If the most recent entry is not in the current hour, attempt to redownload it
           const latestNotificationTimestamp = Math.max(
-            ...recentNotifications.activations.map(a => a["end_timestamp"])
+            ...recentNotifications.activations.map((a) => a["end_timestamp"]),
           )
-          if (new Date(latestNotificationTimestamp * 1000).getHours() !== new Date().getHours()) {
+          if (
+            new Date(latestNotificationTimestamp * 1000).getHours() !==
+            new Date().getHours()
+          ) {
             setRootStatus("loading")
             recentNotifications = await retrieveStats()
           }
@@ -225,15 +249,15 @@
         --status-color: var(--status-color-loading);
         --status-icon: var(--status-icon-loading);
       }
-      :root[data-status=success] {
+      :root[data-status="success"] {
         --status-color: var(--status-color-success);
         --status-icon: var(--status-icon-success);
       }
-      :root[data-status=failure] {
+      :root[data-status="failure"] {
         --status-color: var(--status-color-failure);
         --status-icon: var(--status-icon-failure);
       }
-      :root[data-status=indeterminate] {
+      :root[data-status="indeterminate"] {
         --status-color: var(--status-color-indeterminate);
         --status-icon: var(--status-icon-indeterminate);
       }
@@ -266,13 +290,17 @@
         width: 1.6em;
         display: inline-block;
 
-        transition: opacity ease-in 0.08s, transform ease-in 0.1s;
+        transition:
+          opacity ease-in 0.08s,
+          transform ease-in 0.1s;
         opacity: 0;
         transform: translateX(-100%);
       }
 
       .status-container:hover h1::after {
-        transition: opacity ease-out 0.1s, transform ease-out 0.1s;
+        transition:
+          opacity ease-out 0.1s,
+          transform ease-out 0.1s;
         opacity: 1;
         transform: none;
       }
@@ -290,13 +318,19 @@
         justify-content: center;
         gap: 0.125rem;
 
-        background-image: linear-gradient(to bottom, rgb(238, 238, 238, 0.2), transparent, rgb(12, 12, 12, 0.1));
+        background-image: linear-gradient(
+          to bottom,
+          rgb(238, 238, 238, 0.2),
+          transparent,
+          rgb(12, 12, 12, 0.1)
+        );
         background-color: var(--status-color);
         box-shadow: 0.1rem 0 0.2rem rgba(0, 0, 0, 0.25);
         transition: background-color 0.3s ease;
       }
 
-      header, footer {
+      header,
+      footer {
         display: flex;
         align-items: center;
         padding: 0.5rem;
@@ -304,7 +338,11 @@
 
       header {
         grid-area: header;
-        background-image: linear-gradient(to bottom, rgb(238, 238, 238, 0.1), transparent);
+        background-image: linear-gradient(
+          to bottom,
+          rgb(238, 238, 238, 0.1),
+          transparent
+        );
         justify-content: space-between;
       }
 
@@ -314,17 +352,26 @@
         background-color: var(--status-color);
         width: 0.75rem;
         height: 0.75rem;
-        background-image: linear-gradient(to bottom, rgb(238, 238, 238, 0.2), transparent);
+        background-image: linear-gradient(
+          to bottom,
+          rgb(238, 238, 238, 0.2),
+          transparent
+        );
         box-shadow: 0 0rem 0.2rem rgba(0, 0, 0, 0.25);
       }
 
       footer {
         grid-area: footer;
-        background-image: linear-gradient(to bottom, rgb(12, 12, 12, 0.1), transparent);
+        background-image: linear-gradient(
+          to bottom,
+          rgb(12, 12, 12, 0.1),
+          transparent
+        );
         box-shadow: inset 0 0.1rem 0.2rem rgba(0, 0, 0, 0.25);
       }
 
-      h1, p {
+      h1,
+      p {
         margin: 0;
         font-size: 0.875rem;
         line-height: 1;
@@ -349,11 +396,13 @@
         padding-top: 0.125rem;
       }
 
-      .icon-logo, .icon-status {
+      .icon-logo,
+      .icon-status {
         background-size: contain;
         background-position: center;
       }
-      .icon-logo, .icon-status-wrapper {
+      .icon-logo,
+      .icon-status-wrapper {
         filter: drop-shadow(0.05rem 0.1rem rgba(0, 0, 0, 0.25));
       }
 
@@ -370,19 +419,27 @@
       }
 
       @media (prefers-reduced-motion: no-preference) {
-        :root[data-status=loading] .icon-status {
+        :root[data-status="loading"] .icon-status {
           animation: spin 1.5s infinite linear;
         }
       }
       @keyframes spin {
-        0% { transform: rotate(0deg); }
-        100% { transform: rotate(360deg); }
+        0% {
+          transform: rotate(0deg);
+        }
+        100% {
+          transform: rotate(360deg);
+        }
       }
     </style>
   </head>
 
   <body>
-    <a class="status-container" href="//notifications.wikidot.com/status" target="_top">
+    <a
+      class="status-container"
+      href="//notifications.wikidot.com/status"
+      target="_top"
+    >
       <aside>
         <div class="icon-logo"></div>
         <div class="icon-status-wrapper">
@@ -395,9 +452,7 @@
       </header>
 
       <footer>
-        <p id="status-details">
-          Checking...
-        </p>
+        <p id="status-details">Checking...</p>
       </footer>
     </a>
   </body>
