@@ -37,14 +37,16 @@
           },
           missedLots() {
             setRootStatus("failure")
-            if (detail)
-              setStatusDetails(
-                "Temporarily offline",
-                `Last run ${new Date(detail * 1000).toISOString().split("T")[0]}`,
-                `${uptime(successRate)}`,
-              )
-            else setStatusDetails("Offline")
-          }
+            setStatusDetails(
+              "Temporarily offline",
+              `Last run ${new Date(detail * 1000).toISOString().split("T")[0]}`,
+              `${uptime(successRate)}`,
+            )
+          },
+          missedAll() {
+            setRootStatus("failure")
+            setStatusDetails("Offline")
+          },
         }[status]()
       }
 
@@ -80,11 +82,14 @@
         try {
           const response = await fetch(
             "https://d30oi1o0d99sd7.cloudfront.net/logs/recent_notifications.json",
-            // "assets/sample_notifications.json",
-            { signal: abortController.signal }
+            // "/assets/sample-notifications/standard.json",
+            { signal: abortController.signal },
           )
           clearTimeout(abortTimer)
-          if (!response.ok) throw new Error(response)
+          if (!response.ok) {
+            console.error(response)
+            throw new Error(response.statusText)
+          }
           recentNotifications = await response.json()
         } catch (error) {
           console.error("Unable to retrieve notifier stats")
@@ -98,18 +103,25 @@
         // Use the current timestamp to work out how many missed activations there are
         const now = Math.floor(Date.now() / 1000)
         const latestNotificationTimestamp = Math.max(
-          ...recentNotifications.activations.map(a => a["end_timestamp"])
+          0,
+          ...recentNotifications.activations
+            .filter(
+              // Don't count activations that didn't complete
+              (a) =>
+                a["notify_end_timestamp"] != null && a["end_timestamp"] != null,
+            )
+            .map((a) => a["end_timestamp"]),
         )
 
         let successRate30Day = (() => {
           const timestamp30DaysAgo = Date.now() - (30 * 24 * 60 * 60 * 1000)
           // Count the number of activations since 30 days ago
           const recentActivations = recentNotifications.activations.filter(
-            a => (
-              a["start_timestamp"] > timestamp30DaysAgo / 1000
-              // Don't count activations that didn't finish sending notifications
-              && a["notify_end_timestamp"] != null
-            )
+            (a) =>
+              a["start_timestamp"] > timestamp30DaysAgo / 1000 &&
+              // Don't count activations that didn't complete
+              a["notify_end_timestamp"] != null &&
+              a["end_timestamp"] != null,
           )
           const perfectActivationsCount = 30 * 24
           return recentActivations.length / perfectActivationsCount
@@ -162,7 +174,7 @@
           if (latestNotificationTimestamp)
             return setStatus("missedLots", successRate30Day, latestNotificationTimestamp)
           // If no last notification present (not currently possible?) imply permanently offline
-          else return setStatus("missedLots")
+          else return setStatus("missedAll")
         }
 
         // That should match all conditions, but fallback just in case
