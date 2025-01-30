@@ -154,7 +154,7 @@ class Wikidot:
                     cookies={"wikidot_token7": token7},
                 )
             except ConnectionError as error:
-                will_retry = attempt_count > self.MODULE_ATTEMPT_LIMIT
+                will_retry = attempt_count < self.MODULE_ATTEMPT_LIMIT
                 logger.debug(
                     "Module connection failed %s",
                     {
@@ -189,7 +189,7 @@ class Wikidot:
                 and response["message"]
                 == "An error occurred while processing the request."
             ):
-                will_retry = attempt_count > self.MODULE_ATTEMPT_LIMIT
+                will_retry = attempt_count < self.MODULE_ATTEMPT_LIMIT
                 if will_retry:
                     logger.warning(
                         "Wikidot internal failure, retrying in 10 seconds %s",
