@@ -194,10 +194,11 @@ class Wikidot:
             == "This user does wish to receive private messages."  # [sic]
         ):
             raise BlockedInbox
-        if (
-            response["status"] == "no_permission"
-            and response["message"]
+        if response["status"] == "no_permission" and (
+            response["message"]
             == "Please create a Wikidot account and/or sign in first"
+            or response["message"]
+            == '<a onclick="WIKIDOT.page.listeners.loginClick(event)" href="javascript:;">Please sign in</a>'
         ):
             raise NotLoggedIn
         if response["status"] != "ok":
