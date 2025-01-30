@@ -67,10 +67,14 @@ class OngoingConnectionError(Exception):
     by trying it multiple times."""
 
 
+class Wikibork(Exception):
+    """Indicates that Wikidot is responding but it's having a senior moment."""
+
+
 class Wikidot:
     """Connection to Wikidot facilitating communications with it."""
 
-    PAGINATION_DELAY_S = 1.0
+    PAGINATION_DELAY_S = 2.0
     MODULE_ATTEMPT_LIMIT = 3
 
     def __init__(
@@ -125,6 +129,7 @@ class Wikidot:
         )
 
         # Try the module a few times with increasing delay in case it fails
+        response = None
         for attempt_count in range(self.MODULE_ATTEMPT_LIMIT):
             attempt_delay = 2**attempt_count * self.PAGINATION_DELAY_S
             logger.debug(
@@ -148,8 +153,6 @@ class Wikidot:
                     ),
                     cookies={"wikidot_token7": token7},
                 )
-                # Successful response, break to parsing
-                break
             except ConnectionError as error:
                 will_retry = attempt_count > self.MODULE_ATTEMPT_LIMIT
                 logger.debug(
@@ -162,24 +165,51 @@ class Wikidot:
                     },
                     exc_info=error,
                 )
-                if not will_retry:
-                    raise OngoingConnectionError from error
+                if will_retry:
+                    continue
+                raise OngoingConnectionError from error
 
-        try:
-            response = response_raw.json()
-        except JSONDecodeError:
-            logger.error(
-                "Could not decode response %s",
-                {
-                    "wiki_id": wiki_id,
-                    "secure": secure,
-                    "module_name": module_name,
-                    "module_kwargs": module_kwargs,
-                    "status": response_raw.status_code,
-                    "response_text": response_raw.text,
-                },
-            )
-            raise
+            try:
+                response = response_raw.json()
+            except JSONDecodeError:
+                logger.warning(
+                    "Could not decode response %s",
+                    {
+                        "wiki_id": wiki_id,
+                        "secure": secure,
+                        "module_name": module_name,
+                        "module_kwargs": module_kwargs,
+                        "status": response_raw.status_code,
+                        "response_text": response_raw.text,
+                    },
+                )
+                raise
+            if (
+                response["status"] == "not_ok"
+                and response["message"]
+                == "An error occurred while processing the request."
+            ):
+                will_retry = attempt_count > self.MODULE_ATTEMPT_LIMIT
+                if will_retry:
+                    logger.warning(
+                        "Wikidot internal failure, retrying in 10 seconds %s",
+                        {
+                            "attempt_number": attempt_count + 1,
+                            "max_attempts": self.MODULE_ATTEMPT_LIMIT,
+                            "will_retry": will_retry,
+                        },
+                    )
+                    time.sleep(10)
+                    continue
+                logger.warning(
+                    "Wikidot might be down %s", {"response": response}
+                )
+                raise Wikibork
+
+            # Successful response, break to parsing
+            break
+        assert response is not None
+
         if response["status"] == "no_thread":
             raise ThreadNotExists
         if (
