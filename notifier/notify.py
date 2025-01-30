@@ -27,6 +27,7 @@ from notifier.types import (
     SupportedWikiConfig,
 )
 from notifier.wikidot import (
+    Wikibork,
     Wikidot,
     NotLoggedIn,
     RestrictedInbox,
@@ -320,6 +321,17 @@ def notify_channel(
         except NotLoggedIn as error:
             logger.error("Failed to notify anyone; not logged in")
             raise RuntimeError from error
+        except Wikibork:
+            # Wikidot down - no point raising an error because I can't do anything about it
+            logger.warning(
+                "Wikibork detected, skipping user %s",
+                {
+                    "user": user["username"],
+                    "channel": channel,
+                    "user_config": user,
+                },
+            )
+            continue
         except Exception as error:
             logger.error(
                 "Failed to notify user %s",
