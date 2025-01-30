@@ -454,7 +454,29 @@ class Wikidot:
                 "s" if wiki["secure"] else "", wiki_id, slug
             )
         )
-        page = self._session.get(page_url).text
+
+        page = None
+        for attempt_count in range(self.MODULE_ATTEMPT_LIMIT):
+            attempt_delay = 2**attempt_count * self.PAGINATION_DELAY_S
+            will_retry = attempt_count < self.MODULE_ATTEMPT_LIMIT
+            time.sleep(attempt_delay)
+            page = self._session.get(page_url).text
+
+            if page.is_wikidot_error():
+                logger.warning(
+                    "Wikibork when getting page %s",
+                    {
+                        "url": page_url,
+                        "attempt_number": attempt_count + 1,
+                        "attempt_delay_s": attempt_delay,
+                        "max_attempts": self.MODULE_ATTEMPT_LIMIT,
+                        "will_retry": will_retry,
+                    },
+                )
+            if not will_retry:
+                raise Wikibork
+        assert page is not None
+
         return int(
             cast(Match[str], re.search(r"pageId = ([0-9]+);", page)).group(1)
         )
