@@ -154,7 +154,7 @@ class Wikidot:
                     cookies={"wikidot_token7": token7},
                 )
             except ConnectionError as error:
-                will_retry = attempt_count > self.MODULE_ATTEMPT_LIMIT
+                will_retry = attempt_count < self.MODULE_ATTEMPT_LIMIT
                 logger.debug(
                     "Module connection failed %s",
                     {
@@ -189,7 +189,7 @@ class Wikidot:
                 and response["message"]
                 == "An error occurred while processing the request."
             ):
-                will_retry = attempt_count > self.MODULE_ATTEMPT_LIMIT
+                will_retry = attempt_count < self.MODULE_ATTEMPT_LIMIT
                 if will_retry:
                     logger.warning(
                         "Wikidot internal failure, retrying in 10 seconds %s",
@@ -454,9 +454,52 @@ class Wikidot:
                 "s" if wiki["secure"] else "", wiki_id, slug
             )
         )
-        page = self._session.get(page_url).text
+
+        page_text = None
+        for attempt_count in range(self.MODULE_ATTEMPT_LIMIT):
+            attempt_delay = 2**attempt_count * self.PAGINATION_DELAY_S
+            will_retry = attempt_count < self.MODULE_ATTEMPT_LIMIT
+            time.sleep(attempt_delay)
+            response = self._session.get(page_url)
+
+            if response.status_code == 500:
+                logger.warning(
+                    "Wikibork when getting page %s",
+                    {
+                        "url": page_url,
+                        "attempt_number": attempt_count + 1,
+                        "attempt_delay_s": attempt_delay,
+                        "max_attempts": self.MODULE_ATTEMPT_LIMIT,
+                        "will_retry": will_retry,
+                    },
+                )
+                if will_retry:
+                    continue
+                raise Wikibork
+
+            if response.status_code != 200:
+                logger.warning(
+                    "Failed to get page %s",
+                    {
+                        "url": page_url,
+                        "status_code": response.status_code,
+                        "attempt_number": attempt_count + 1,
+                        "attempt_delay_s": attempt_delay,
+                        "max_attempts": self.MODULE_ATTEMPT_LIMIT,
+                        "will_retry": will_retry,
+                    },
+                )
+                if will_retry:
+                    continue
+                raise OngoingConnectionError
+
+            page_text = response.text
+        assert page_text is not None
+
         return int(
-            cast(Match[str], re.search(r"pageId = ([0-9]+);", page)).group(1)
+            cast(
+                Match[str], re.search(r"pageId = ([0-9]+);", page_text)
+            ).group(1)
         )
 
     def rename_page(self, wiki_id: str, from_slug: str, to_slug: str) -> None:
