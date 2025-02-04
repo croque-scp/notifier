@@ -130,6 +130,7 @@ def fetch_posts_with_context(
                     "post_id": post_id,
                 },
             )
+            raise RuntimeError("Requested post missing from downloaded thread")
 
         # For each kind of context, check if we already have it, and if not, fetch it
 
