@@ -494,6 +494,7 @@ class Wikidot:
                 raise OngoingConnectionError
 
             page_text = response.text
+            break
         assert page_text is not None
 
         return int(
