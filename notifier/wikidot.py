@@ -169,17 +169,37 @@ class Wikidot:
                     continue
                 raise OngoingConnectionError from error
 
+            if 500 <= response_raw.status_code <= 599:
+                will_retry = attempt_count < self.MODULE_ATTEMPT_LIMIT
+                if will_retry:
+                    logger.warning(
+                        "Wikidot internal failure, retrying in 10 seconds %s",
+                        {
+                            "attempt_number": attempt_count + 1,
+                            "max_attempts": self.MODULE_ATTEMPT_LIMIT,
+                            "will_retry": will_retry,
+                            "status_code": response_raw.status_code,
+                            "response_text": response_raw.text,
+                        },
+                    )
+                    time.sleep(10)
+                    continue
+                logger.warning(
+                    "Wikidot might be down %s", {"response": response}
+                )
+                raise Wikibork
+
             try:
                 response = response_raw.json()
             except JSONDecodeError:
-                logger.warning(
+                logger.error(
                     "Could not decode response %s",
                     {
                         "wiki_id": wiki_id,
                         "secure": secure,
                         "module_name": module_name,
                         "module_kwargs": module_kwargs,
-                        "status": response_raw.status_code,
+                        "status_code": response_raw.status_code,
                         "response_text": response_raw.text,
                     },
                 )
