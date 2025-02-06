@@ -75,12 +75,6 @@ def fetch_posts_with_context(
         },
     )
 
-    # If there's at least one post, store the new highest timestamp for this wiki
-    if len(new_posts) > 0:
-        database.store_latest_post_timestamp(
-            wiki_id, max(post["posted_timestamp"] for post in new_posts)
-        )
-
     # Cache the latest downloaded thread to prevent multiple identical downloads when multiple posts share a thread
     thread_meta: RawThreadMeta = None  # type:ignore
     thread_page_posts: List[RawPost] = []
@@ -224,6 +218,12 @@ def fetch_posts_with_context(
                 "context_thread_id": thread_id,
                 "context_parent_post_id": post["parent_post_id"],
             },
+        )
+
+    # If there was at least one post, store the new highest timestamp for this wiki
+    if len(new_posts) > 0:
+        database.store_latest_post_timestamp(
+            wiki_id, max(post["posted_timestamp"] for post in new_posts)
         )
 
 
