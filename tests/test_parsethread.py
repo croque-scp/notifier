@@ -49,6 +49,12 @@ def test_get_user_from_nametag() -> None:
         "chelonianmobile",
     ).test()
     UserTag(
+        "Guest user",
+        """<span class="printuser avatarhover"><a href="javascript:;"><img class="small" src="https://secure.gravatar.com/avatar.php?gravatar_id=b804142d40e0801797a7a7616c31d351&amp;default=https://www.wikidot.com/common--images/avatars/default/a16.png&amp;size=16" alt=""/></a>Dr Thomas (guest)</span> <span class="odate time_1236187867 format_%25e%20%25b%20%25Y%2C%20%25H%3A%25M%7Cagohover">04 Mar 2009 17:31</span>""",
+        None,
+        "Dr Thomas",
+    ).test()
+    UserTag(
         "Deleted user",
         """<span class="printuser deleted" data-id="462110"><img class="small" src="https://www.wikidot.com/common--images/avatars/default/a16.png" alt="">(account deleted)</span>""",
         "462110",
