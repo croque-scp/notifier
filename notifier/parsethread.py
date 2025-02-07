@@ -65,55 +65,82 @@ def parse_thread_page(thread_id: str, thread_page: Tag) -> List[RawPost]:
         Iterable[Tag], thread_page.find_all(class_="post-container")
     )
     for post_container in post_containers:
-        parent_post_id = get_post_parent_id(post_container)
-        # Move to the post itself, to avoid deep searches accidentally
-        # hitting replies
-        post = cast(Tag, post_container.find(class_="post"))
-        post_id = post.get_attribute_list("id")[0]
-        # The post author and timestamp are kept in a .info - jump here to
-        # avoid accidentally picking up users and timestamps from the post
-        # body
-        post_info = cast(Tag, post.find(class_="info"))
-        post_author_nametag = cast(Tag, post_info.find(class_="printuser"))
-        author_id, author_name = get_user_from_nametag(post_author_nametag)
+        parent_post_id = None
+        post = None
+        post_id = None
+        author_id = None
+        author_name = None
+        post_title = None
+        post_snippet = None
 
-        # Handle deleted/anonymous users by setting their info to an empty
-        # string, and deal with it down the line
-        if author_id is None:
-            author_id = ""
-        if author_name is None:
-            # Wikidot accepts 'Anonymous' as a null value to [[user]] syntax
-            author_name = "Anonymous"
+        try:
+            parent_post_id = get_post_parent_id(post_container)
+            # Move to the post itself, to avoid deep searches accidentally
+            # hitting replies
+            post = cast(Tag, post_container.find(class_="post"))
+            post_id = post.get_attribute_list("id")[0]
+            # The post author and timestamp are kept in a .info - jump here to
+            # avoid accidentally picking up users and timestamps from the post
+            # body
+            post_info = cast(Tag, post.find(class_="info"))
+            post_author_nametag = cast(Tag, post_info.find(class_="printuser"))
+            author_id, author_name = get_user_from_nametag(post_author_nametag)
 
-        posted_timestamp = get_timestamp(post_info)
-        if posted_timestamp is None:
-            logger.warning(
-                "Could not parse timestamp for post %s",
+            # Handle deleted/anonymous users by setting their info to an empty
+            # string, and deal with it down the line
+            if author_id is None:
+                author_id = ""
+            if author_name is None:
+                # Wikidot accepts 'Anonymous' as a null value to [[user]] syntax
+                author_name = "Anonymous"
+
+            posted_timestamp = get_timestamp(post_info)
+            if posted_timestamp is None:
+                logger.warning(
+                    "Could not parse timestamp for post %s",
+                    {
+                        "thread_id": thread_id,
+                        "post_id": post_id,
+                        "reason": "could not parse timestamp",
+                    },
+                )
+                # Set the timestamp to 0 so it will never appear in a
+                # notification, however, it must still be recorded to preserve
+                # parent post relationships
+                posted_timestamp = 0
+
+            post_title = (
+                cast(Tag, post.find(class_="title")).get_text().strip()
+            )
+            post_snippet = make_post_snippet(post)
+            raw_posts.append(
+                {
+                    "id": post_id,
+                    "thread_id": thread_id,
+                    "parent_post_id": parent_post_id,
+                    "posted_timestamp": posted_timestamp,
+                    "title": post_title,
+                    "snippet": post_snippet,
+                    "user_id": author_id,
+                    "username": author_name,
+                }
+            )
+        except Exception as error:
+            logger.error(
+                "Could not parse post %s",
                 {
                     "thread_id": thread_id,
                     "post_id": post_id,
-                    "reason": "could not parse timestamp",
+                    "parent_post_id": parent_post_id,
+                    "author_id": author_id,
+                    "author_name": author_name,
+                    "title": post_title,
+                    "snippet": post_snippet,
+                    "post": post,
                 },
+                exc_info=error,
             )
-            # Set the timestamp to 0 so it will never appear in a
-            # notification, however, it must still be recorded to preserve
-            # parent post relationships
-            posted_timestamp = 0
-
-        post_title = cast(Tag, post.find(class_="title")).get_text().strip()
-        post_snippet = make_post_snippet(post)
-        raw_posts.append(
-            {
-                "id": post_id,
-                "thread_id": thread_id,
-                "parent_post_id": parent_post_id,
-                "posted_timestamp": posted_timestamp,
-                "title": post_title,
-                "snippet": post_snippet,
-                "user_id": author_id,
-                "username": author_name,
-            }
-        )
+            raise
     return raw_posts
 
 
