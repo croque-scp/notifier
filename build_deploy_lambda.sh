@@ -8,4 +8,4 @@ aws ecr get-login-password --region eu-west-2 --profile notifier | docker login 
 
 docker push 288611151503.dkr.ecr.eu-west-2.amazonaws.com/wikidot_notifier:latest
 
-aws lambda update-function-code --function-name WikidotNotifier --image-uri 288611151503.dkr.ecr.eu-west-2.amazonaws.com/wikidot_notifier:latest --region eu-west-2 --profile notifier
+aws lambda update-function-code --function-name WikidotNotifier --image-uri 288611151503.dkr.ecr.eu-west-2.amazonaws.com/wikidot_notifier:latest --region eu-west-2 --profile notifier --no-cli-pager
