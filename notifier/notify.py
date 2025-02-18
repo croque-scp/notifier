@@ -424,7 +424,7 @@ def notify_user(
     last_notified_timestamp = max(post["posted_timestamp"] for post in posts)
 
     # Compile the digest
-    subject, body = composer.make_notification_digest(user, posts)
+    subject, body = composer.write_notification_digest(user, posts)
 
     if dry_run:
         logger.info(

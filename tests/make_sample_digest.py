@@ -14,6 +14,6 @@ if __name__ == "__main__":
     user["delivery"] = delivery
     posts = fake_posts()
     composer = Composer(str(Path.cwd() / "config" / "lang.toml"))
-    subject, digest = composer.make_notification_digest(user, posts)
+    subject, digest = composer.write_notification_digest(user, posts)
     print("Subject:", subject)
     print(digest)

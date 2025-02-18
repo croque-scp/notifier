@@ -6,14 +6,14 @@ import pytest
 from notifier.composer import (
     Composer,
     finalise_digest,
-    make_wikis_digest,
+    write_categories_digest,
+    write_wikis_digest,
     pluralise,
     process_long_lexicon_strings,
     process_long_string,
 )
 from notifier.formatter import convert_syntax
 from notifier.types import CachedUserConfig, PostInfo
-from notifier.digest import make_categories_digest
 
 
 fake_user_config: CachedUserConfig = {  # TODO Subscriptions
@@ -146,8 +146,8 @@ def test_fake_digest() -> None:
     """Construct a digest from fake data and compare it to the expected
     output."""
     composer = Composer(str(Path.cwd() / "config" / "lang.toml"))
-    lexicon = composer.make_lexicon(fake_user_config["language"])
-    digest = "\n".join(make_wikis_digest(fake_posts(), lexicon))
+    lexicon = composer.build_lexicon(fake_user_config["language"])
+    digest = "\n".join(write_wikis_digest(fake_posts(), lexicon))
     print(digest)
     print(digest[:25].replace("\n", "\\n"))
 
@@ -170,7 +170,7 @@ def test_full_interpolation_en() -> None:
     languages.remove("base")
 
     for delivery in ("pm", "email"):
-        digest = composer.make_notification_digest(
+        digest = composer.write_notification_digest(
             {
                 **fake_user_config,
                 "language": "en",
@@ -185,7 +185,7 @@ def test_categories_digest_duplication_bug() -> None:
     """Test that categories only show their own posts, not all posts."""
 
     composer = Composer(str(Path.cwd() / "config" / "lang.toml"))
-    lexicon = composer.make_lexicon("en")
+    lexicon = composer.build_lexicon("en")
 
     # Create posts in two different categories
     posts_category_1: List[PostInfo] = [
@@ -243,7 +243,7 @@ def test_categories_digest_duplication_bug() -> None:
     ]
 
     all_posts = posts_category_1 + posts_category_2
-    categories_digest = make_categories_digest(all_posts, lexicon)
+    categories_digest = write_categories_digest(all_posts, lexicon)
     assert len(categories_digest) == 2
     category_1_digest = (
         categories_digest[0]
@@ -282,7 +282,7 @@ def test_full_interpolation_all_languages() -> None:
     for language in languages:
         for delivery in ("pm", "email"):
             print(language, delivery)
-            subject, body = composer.make_notification_digest(
+            subject, body = composer.write_notification_digest(
                 {
                     **fake_user_config,
                     "language": language,
