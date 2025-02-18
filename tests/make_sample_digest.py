@@ -1,7 +1,7 @@
 import sys
 from pathlib import Path
 
-from notifier.digest import Digester
+from notifier.composer import Composer
 from tests.test_digest import fake_posts, fake_user  # type:ignore
 
 if __name__ == "__main__":
@@ -12,7 +12,7 @@ if __name__ == "__main__":
     user["language"] = lang
     user["delivery"] = delivery
     posts = fake_posts.__pytest_wrapped__.obj(user)
-    digester = Digester(str(Path.cwd() / "config" / "lang.toml"))
-    subject, digest = digester.for_user(user, posts)
+    composer = Composer(str(Path.cwd() / "config" / "lang.toml"))
+    subject, digest = composer.for_user(user, posts)
     print("Subject:", subject)
     print(digest)
