@@ -44,7 +44,7 @@ def make_thread_url(
 
 
 class Composer:
-    """Constructs notification digests."""
+    """Composes messages."""
 
     def __init__(self, lang_path: str):
         # Read the strings from the lang file into a lexicon
