@@ -3,8 +3,8 @@ from typing import List
 
 import pytest
 
-from notifier.digest import (
-    Digester,
+from notifier.composer import (
+    Composer,
     finalise_digest,
     make_wikis_digest,
     pluralise,
@@ -145,8 +145,8 @@ def test_pluralise() -> None:
 def test_fake_digest() -> None:
     """Construct a digest from fake data and compare it to the expected
     output."""
-    digester = Digester(str(Path.cwd() / "config" / "lang.toml"))
-    lexicon = digester.make_lexicon(fake_user_config["language"])
+    composer = Composer(str(Path.cwd() / "config" / "lang.toml"))
+    lexicon = composer.make_lexicon(fake_user_config["language"])
     digest = "\n".join(make_wikis_digest(fake_posts(), lexicon))
     print(digest)
     print(digest[:25].replace("\n", "\\n"))
@@ -165,12 +165,12 @@ def test_fake_digest() -> None:
 def test_full_interpolation_en() -> None:
     """Verify that there's no leftover interpolation in the English digest."""
 
-    digester = Digester(str(Path.cwd() / "config" / "lang.toml"))
-    languages = set(digester.lexicons.keys())
+    composer = Composer(str(Path.cwd() / "config" / "lang.toml"))
+    languages = set(composer.lexicons.keys())
     languages.remove("base")
 
     for delivery in ("email", "pm"):
-        digest = digester.for_user(
+        digest = composer.make_notification_digest(
             {
                 **fake_user_config,
                 "language": "en",
@@ -184,8 +184,8 @@ def test_full_interpolation_en() -> None:
 def test_categories_digest_duplication_bug() -> None:
     """Test that categories only show their own posts, not all posts."""
 
-    digester = Digester(str(Path.cwd() / "config" / "lang.toml"))
-    lexicon = digester.make_lexicon("en")
+    composer = Composer(str(Path.cwd() / "config" / "lang.toml"))
+    lexicon = composer.make_lexicon("en")
 
     # Create posts in two different categories
     posts_category_1: List[PostInfo] = [
@@ -275,14 +275,14 @@ def test_categories_digest_duplication_bug() -> None:
 def test_full_interpolation_all_languages() -> None:
     """Verify that there's no leftover interpolation in any language's digest."""
 
-    digester = Digester(str(Path.cwd() / "config" / "lang.toml"))
-    languages = set(digester.lexicons.keys())
+    composer = Composer(str(Path.cwd() / "config" / "lang.toml"))
+    languages = set(composer.lexicons.keys())
     languages.remove("base")
 
     for language in languages:
         for delivery in ("email", "pm"):
             print(language, delivery)
-            subject, body = digester.for_user(
+            subject, body = composer.make_notification_digest(
                 {
                     **fake_user_config,
                     "language": language,

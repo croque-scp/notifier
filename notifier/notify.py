@@ -12,7 +12,7 @@ from notifier.deletions import (
     delete_prepared_invalid_user_pages,
     rename_invalid_user_config_pages,
 )
-from notifier.digest import Digester
+from notifier.composer import Composer
 from notifier.dumps import LogDumpCacher, record_activation_log
 from notifier.emailer import Emailer
 from notifier.newposts import get_new_posts
@@ -216,7 +216,7 @@ def notify_active_channels(
     dry_run: bool = False,
 ) -> None:
     """Prepare and send notifications to all activated channels."""
-    digester = Digester(config["path"]["lang"])
+    composer = Composer(config["path"]["lang"])
     emailer = Emailer(
         config["gmail_username"], auth["gmail_password"], dry_run=dry_run
     )
@@ -228,7 +228,7 @@ def notify_active_channels(
             config=config,
             database=database,
             wikidot=wikidot,
-            digester=digester,
+            composer=composer,
             emailer=emailer,
             dry_run=dry_run,
         )
@@ -242,7 +242,7 @@ def notify_channel(
     config: LocalConfig,
     database: BaseDatabaseDriver,
     wikidot: Wikidot,
-    digester: Digester,
+    composer: Composer,
     emailer: Emailer,
     dry_run: bool = False,
 ) -> None:
@@ -299,7 +299,7 @@ def notify_channel(
                 config=config,
                 database=database,
                 wikidot=wikidot,
-                digester=digester,
+                composer=composer,
                 emailer=emailer,
                 addresses=addresses,
                 dry_run=dry_run,
@@ -364,7 +364,7 @@ def notify_user(
     config: LocalConfig,
     database: BaseDatabaseDriver,
     wikidot: Wikidot,
-    digester: Digester,
+    composer: Composer,
     emailer: Emailer,
     addresses: EmailAddresses,
     dry_run: bool = False,
@@ -424,7 +424,7 @@ def notify_user(
     last_notified_timestamp = max(post["posted_timestamp"] for post in posts)
 
     # Compile the digest
-    subject, body = digester.for_user(user, posts)
+    subject, body = composer.make_notification_digest(user, posts)
 
     if dry_run:
         logger.info(

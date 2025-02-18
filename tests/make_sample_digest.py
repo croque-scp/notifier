@@ -2,7 +2,7 @@ import sys
 from pathlib import Path
 from typing import Literal, cast
 
-from notifier.digest import Digester
+from notifier.composer import Composer
 from tests.test_digest import fake_posts, fake_user_config
 
 if __name__ == "__main__":
@@ -13,7 +13,7 @@ if __name__ == "__main__":
     user["language"] = lang
     user["delivery"] = delivery
     posts = fake_posts()
-    digester = Digester(str(Path.cwd() / "config" / "lang.toml"))
-    subject, digest = digester.for_user(user, posts)
+    composer = Composer(str(Path.cwd() / "config" / "lang.toml"))
+    subject, digest = composer.make_notification_digest(user, posts)
     print("Subject:", subject)
     print(digest)
