@@ -54,7 +54,7 @@ class Composer:
             )
 
     @lru_cache(maxsize=1)
-    def make_lexicon(self, lang: str) -> Lexicon:
+    def build_lexicon(self, lang: str) -> Lexicon:
         """Constructs a subset of the full lexicon for a given language."""
         # Later keys in the lexicon will override previous ones - e.g. for
         # a non-en language, its keys should override all of en's, but in
@@ -68,13 +68,13 @@ class Composer:
         lexicon = process_long_lexicon_strings(lexicon)
         return lexicon
 
-    def make_notification_digest(
+    def write_notification_digest(
         self,
         user: CachedUserConfig,
         posts: Sequence[PostInfo],
     ) -> Tuple[str, str]:
         """Makes a notification digest. Returns subject and body."""
-        lexicon = self.make_lexicon(user["language"])
+        lexicon = self.build_lexicon(user["language"])
         # Get some stats for the message
         manual_sub_count = len(
             [sub for sub in user["manual_subs"] if sub["sub"] == 1]
@@ -115,7 +115,7 @@ class Composer:
         )
         body = lexicon["body"].format(
             intro=intro,
-            wikis="\n".join(make_wikis_digest(posts, lexicon)),
+            wikis="\n".join(write_wikis_digest(posts, lexicon)),
             outro=outro,
         )
         subject = pluralise(subject)
@@ -124,7 +124,7 @@ class Composer:
         return subject, body
 
 
-def make_wikis_digest(
+def write_wikis_digest(
     posts: Sequence[PostInfo], lexicon: Lexicon
 ) -> List[str]:
     """Makes the notification list for wikis."""
@@ -138,14 +138,14 @@ def make_wikis_digest(
             lexicon["wiki"].format(
                 wiki_name=wiki_posts[0]["wiki_name"],
                 categories="\n".join(
-                    make_categories_digest(wiki_posts, lexicon)
+                    write_categories_digest(wiki_posts, lexicon)
                 ),
             )
         )
     return digests
 
 
-def make_categories_digest(
+def write_categories_digest(
     posts: Sequence[PostInfo], lexicon: Lexicon
 ) -> List[str]:
     """Makes the notification list for categories in a given wiki."""
@@ -154,7 +154,7 @@ def make_categories_digest(
     # Sort categories by notification count
     for category_id in frequent_ids(grouped_posts):
         category_posts = grouped_posts[category_id]
-        threads = make_threads_digest(posts, lexicon)
+        threads = write_threads_digest(posts, lexicon)
         digests.append(
             lexicon["category"].format(
                 category_name=category_posts[0].get("category_name")
@@ -169,7 +169,7 @@ def make_categories_digest(
     return digests
 
 
-def make_threads_digest(
+def write_threads_digest(
     posts: Sequence[PostInfo],
     lexicon: Lexicon,
 ) -> List[str]:
@@ -197,13 +197,13 @@ def make_threads_digest(
         posts_section = ""
         if len(posts) > 0:
             posts_section = lexicon["posts_section"].format(
-                posts="\n".join(make_posts_digest(posts, lexicon))
+                posts="\n".join(write_posts_digest(posts, lexicon))
             )
         replies_section = ""
         if len(replies) > 0:
             replies_section = lexicon["replies_section"].format(
                 posts_replied_to="\n".join(
-                    make_post_replies_digest(replies, lexicon)
+                    write_post_replies_digest(replies, lexicon)
                 )
             )
         first_post = (posts + replies)[0]
@@ -233,7 +233,7 @@ def make_threads_digest(
     return digests
 
 
-def make_post_replies_digest(
+def write_post_replies_digest(
     post_replies: Sequence[PostInfo], lexicon: Lexicon
 ) -> List[str]:
     """Makes the notification list for replies in a given thread."""
@@ -245,7 +245,7 @@ def make_post_replies_digest(
     )
     for parent_post_id, replies_group in grouped_replies:
         replies = list(replies_group)
-        posts = make_posts_digest(replies, lexicon)
+        posts = write_posts_digest(replies, lexicon)
         digests.append(
             lexicon["post_replied_to"].format(
                 post_replies_opener=lexicon["post_replies_opener"],
@@ -272,14 +272,14 @@ def make_post_replies_digest(
     return digests
 
 
-def make_posts_digest(
+def write_posts_digest(
     posts: Iterable[PostInfo], lexicon: Lexicon
 ) -> List[str]:
     """Makes the notification list for new posts."""
-    return [make_post_digest(post, lexicon) for post in posts]
+    return [write_post_digest(post, lexicon) for post in posts]
 
 
-def make_post_digest(post: PostInfo, lexicon: Lexicon) -> str:
+def write_post_digest(post: PostInfo, lexicon: Lexicon) -> str:
     """Makes a notification for a single post."""
     return lexicon["post"].format(
         post_url=make_thread_url(
