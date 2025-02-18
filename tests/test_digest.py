@@ -163,10 +163,10 @@ def test_full_interpolation_en(
     languages = set(composer.lexicons.keys())
     languages.remove("base")
 
-    for delivery in ["email", "pm"]:
+    for delivery in ("pm", "email"):
         digest = composer.make_notification_digest(
             {
-                **fake_user,  # type:ignore[misc]
+                **fake_user,
                 "language": "en",
                 "delivery": delivery,
             },
@@ -185,11 +185,11 @@ def test_full_interpolation_all_languages(
     languages.remove("base")
 
     for language in languages:
-        for delivery in ["email", "pm"]:
+        for delivery in ("pm", "email"):
             print(language, delivery)
             subject, body = composer.make_notification_digest(
                 {
-                    **fake_user,  # type:ignore[misc]
+                    **fake_user,
                     "language": language,
                     "delivery": delivery,
                 },
