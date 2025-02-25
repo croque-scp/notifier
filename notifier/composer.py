@@ -81,8 +81,8 @@ class Composer:
         )
         total_notification_count = len(posts)
         # Construct the message
-        subject = lexicon["subject"].format(
-            post_count=total_notification_count
+        subject = pluralise(
+            lexicon["subject"].format(post_count=total_notification_count)
         )
         frequency = {
             "hourly": lexicon["frequency_hourly"],
@@ -118,8 +118,64 @@ class Composer:
             wikis="\n".join(write_wikis_digest(posts, lexicon)),
             outro=outro,
         )
-        subject = pluralise(subject)
-        body = finalise_digest(body)
+        body = postprocess_message(body)
+        body = convert_syntax(body, user["delivery"])
+        return subject, body
+
+    def write_signup_confirmation(
+        self,
+        user: CachedUserConfig,
+    ) -> Tuple[str, str]:
+        """Writes a signup confirmation message."""
+        lexicon = self.build_lexicon(user["language"])
+        frequency = {
+            "hourly": lexicon["frequency_hourly"],
+            "8hourly": lexicon["frequency_8hourly"],
+            "daily": lexicon["frequency_daily"],
+            "weekly": lexicon["frequency_weekly"],
+            "monthly": lexicon["frequency_monthly"],
+            "test": lexicon["frequency_test"],
+        }.get(user["frequency"], "undefined")
+
+        subject = lexicon["signup_confirmation_subject"]
+
+        body = lexicon["signup_confirmation_body"].format(
+            link_site=lexicon["link_site"],
+            link_your_config=lexicon["link_your_config"].format(
+                link_site=lexicon["link_site"]
+            ),
+            frequency=frequency,
+        )
+        body = postprocess_message(body)
+        body = convert_syntax(body, user["delivery"])
+        return subject, body
+
+    def write_methodchange_confirmation(
+        self,
+        user: CachedUserConfig,
+    ) -> Tuple[str, str]:
+        """Writes a delivery method change confirmation message."""
+        lexicon = self.build_lexicon(user["language"])
+
+        subject = lexicon["methodchange_confirmation_subject"]
+
+        body = lexicon["methodchange_confirmation_message"].format(
+            link_site=lexicon["link_site"],
+            link_your_config=lexicon["link_your_config"].format(
+                link_site=lexicon["link_site"]
+            ),
+            old_method=(
+                lexicon["method_pm"]
+                if user["delivery"] == "pm"
+                else lexicon["method_email"]
+            ),
+            new_method=(
+                lexicon["method_pm"]
+                if user["delivery"] == "email"
+                else lexicon["method_email"]
+            ),
+        )
+        body = postprocess_message(body)
         body = convert_syntax(body, user["delivery"])
         return subject, body
 
@@ -345,8 +401,8 @@ def make_plural(match: Match[str]) -> str:
     return multiple
 
 
-def finalise_digest(digest: str) -> str:
-    """Performs final postprocessing on a digest."""
+def postprocess_message(digest: str) -> str:
+    """Performs final postprocessing on a message."""
     return emojize(pluralise(digest), variant="emoji_type")
 
 
