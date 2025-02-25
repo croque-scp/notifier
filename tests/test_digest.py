@@ -5,7 +5,7 @@ import pytest
 
 from notifier.composer import (
     Composer,
-    finalise_digest,
+    postprocess_message,
     write_categories_digest,
     write_wikis_digest,
     pluralise,
@@ -159,7 +159,7 @@ def test_fake_digest() -> None:
     assert digest.count("Response...") == 8
 
     # Print an email output for review
-    print(convert_syntax(finalise_digest(digest, "en"), "email"))
+    print(convert_syntax(postprocess_message(digest, "en"), "email"))
 
 
 def test_full_interpolation_en() -> None:
