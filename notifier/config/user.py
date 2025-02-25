@@ -77,7 +77,27 @@ def user_config_is_valid(slug: str, config: RawUserConfig) -> bool:
     return ":" in slug and slug.split(":")[1] == config["user_id"]
 
 
+class UserConfigFetchResult(TypedDict):
+    """Result of fetching user configs, including valid configs and invalid configs to be deleted later."""
+
+    valid: List[Tuple[str, RawUserConfig]]
+    invalid: List[Tuple[str, RawUserConfig]]
+
+
 def fetch_user_configs(
+    local_config: LocalConfig, wikidot: Wikidot, database: BaseDatabaseDriver
+) -> UserConfigFetchResult:
+    """Fetches the list of user configs.
+
+    Returns both valid configs (to be stored) and invalid configs (to be removed)."""
+    # TODO Use listpages filter 'updated_at="last X hour"' to only fetch new/updated pages
+    return {
+        "valid": [],
+        "invalid": [],
+    }
+
+
+def fetch_user_configs_OLD(
     local_config: LocalConfig, wikidot: Wikidot
 ) -> List[Tuple[str, RawUserConfig]]:
     """Fetches a list of user configurations from the configuration wiki.
