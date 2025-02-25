@@ -80,7 +80,7 @@ frequency_weekly = "weekly"
 frequency_monthly = "monthly"
 subject = "[Forum Notifications] {post_count} new plural({post_count}|post|posts)"
 intro = """|
-Hello! This is your {frequency} notification digest from {link_site}, notifying you of new posts to threads that you're subscribed to.
+Hello! This is your {frequency} notification digest from {link_site}, notifying you of new posts to Wikidot threads that you're subscribed to.
 
 This service is keeping track of:
 
@@ -105,6 +105,30 @@ unknown_category_name = "Other"
 thread_opener = "Thread:"
 post_replies_opener = "Replies to post:"
 untitled_post_title = "(untitled post)"
+
+signup_confirmation_subject = "[Forum Notifications] Signup confirmation"
+signup_confirmation_message = """|
+Thank you for signing up for [{link_site} Wikidot forum notifications]! This is your confirmation that you're ready to receive notifications.
+
+Your user config is located at {link_your_config}. Consider bookmarking it.
+
+Edit your user config to change your frequency (currently {frequency}), delivery method, language, subscriptions and unsubscriptions.
+
+Keep an eye on your user config -- if there's a problem preventing notifications from being sent to you, a message will be added to it with info about the problem and instructions on how to fix it.
+
+To unsubscribe from notifications, edit your user config and change your frequency to 'never'. Or, you can ask [[*user Croquembouche]] to delete your user config entirely.
+"""
+
+method_pm = "Wikidot private message"
+method_email = "email"
+methodchange_confirmation_subject = "[Forum Notifications] Delivery method changed"
+methodchange_confirmation_message = """|
+This is your confirmation that your delivery method for [{link_site} Wikidot forum notifications] has been changed.
+
+If you received this message, your delivery method was successfully changed from {old_method} to {new_method}.
+
+You change it back by editing your user config at {link_your_config}.
+"""
 
 [vi]
 frequency_hourly = "hàng giờ"
@@ -162,8 +186,7 @@ Ce service suit actuellement :
 
 * Abonnements automatiques à des fils et des messages. [{link_info_automatic} Apprenez ce que constitue un abonnement automatique.]
 
-Ce compte ([[*user Notifier]]) est automatisé -- les réponses à ce message ne seront pas prises en compte. Si vous avez un problème, contactez directement [[*user
-Croquembouche]] (en anglais).
+Ce compte ([[*user Notifier]]) est automatisé -- les réponses à ce message ne seront pas prises en compte. Si vous avez un problème, contactez directement [[*user Croquembouche]] (en anglais).
 
 -----
 

@@ -43,8 +43,8 @@ def make_thread_url(
     )
 
 
-class Digester:
-    """Constructs notification digests."""
+class Composer:
+    """Composes messages."""
 
     def __init__(self, lang_path: str):
         # Read the strings from the lang file into a lexicon
@@ -54,7 +54,7 @@ class Digester:
             )
 
     @lru_cache(maxsize=1)
-    def make_lexicon(self, lang: str) -> Lexicon:
+    def build_lexicon(self, lang: str) -> Lexicon:
         """Constructs a subset of the full lexicon for a given language."""
         # Later keys in the lexicon will override previous ones - e.g. for
         # a non-en language, its keys should override all of en's, but in
@@ -68,23 +68,21 @@ class Digester:
         lexicon = process_long_lexicon_strings(lexicon)
         return lexicon
 
-    def for_user(
-        self, user: CachedUserConfig, posts: Sequence[PostInfo]
+    def write_notification_digest(
+        self,
+        user: CachedUserConfig,
+        posts: Sequence[PostInfo],
     ) -> Tuple[str, str]:
-        """Compile a notification digest for a user.
-
-        Returns a tuple of message subject and the digest body.
-        """
-        # Make the lexicon for this user's settings
-        lexicon = self.make_lexicon(user["language"])
+        """Makes a notification digest. Returns subject and body."""
+        lexicon = self.build_lexicon(user["language"])
         # Get some stats for the message
         manual_sub_count = len(
             [sub for sub in user["manual_subs"] if sub["sub"] == 1]
         )
         total_notification_count = len(posts)
         # Construct the message
-        subject = lexicon["subject"].format(
-            post_count=total_notification_count
+        subject = pluralise(
+            lexicon["subject"].format(post_count=total_notification_count)
         )
         frequency = {
             "hourly": lexicon["frequency_hourly"],
@@ -117,16 +115,72 @@ class Digester:
         )
         body = lexicon["body"].format(
             intro=intro,
-            wikis="\n".join(make_wikis_digest(posts, lexicon)),
+            wikis="\n".join(write_wikis_digest(posts, lexicon)),
             outro=outro,
         )
-        subject = pluralise(subject)
-        body = finalise_digest(body)
+        body = postprocess_message(body)
+        body = convert_syntax(body, user["delivery"])
+        return subject, body
+
+    def write_signup_confirmation(
+        self,
+        user: CachedUserConfig,
+    ) -> Tuple[str, str]:
+        """Writes a signup confirmation message."""
+        lexicon = self.build_lexicon(user["language"])
+        frequency = {
+            "hourly": lexicon["frequency_hourly"],
+            "8hourly": lexicon["frequency_8hourly"],
+            "daily": lexicon["frequency_daily"],
+            "weekly": lexicon["frequency_weekly"],
+            "monthly": lexicon["frequency_monthly"],
+            "test": lexicon["frequency_test"],
+        }.get(user["frequency"], "undefined")
+
+        subject = lexicon["signup_confirmation_subject"]
+
+        body = lexicon["signup_confirmation_body"].format(
+            link_site=lexicon["link_site"],
+            link_your_config=lexicon["link_your_config"].format(
+                link_site=lexicon["link_site"]
+            ),
+            frequency=frequency,
+        )
+        body = postprocess_message(body)
+        body = convert_syntax(body, user["delivery"])
+        return subject, body
+
+    def write_methodchange_confirmation(
+        self,
+        user: CachedUserConfig,
+    ) -> Tuple[str, str]:
+        """Writes a delivery method change confirmation message."""
+        lexicon = self.build_lexicon(user["language"])
+
+        subject = lexicon["methodchange_confirmation_subject"]
+
+        body = lexicon["methodchange_confirmation_message"].format(
+            link_site=lexicon["link_site"],
+            link_your_config=lexicon["link_your_config"].format(
+                link_site=lexicon["link_site"]
+            ),
+            old_method=(
+                lexicon["method_pm"]
+                if user["delivery"] == "pm"
+                else lexicon["method_email"]
+            ),
+            new_method=(
+                lexicon["method_pm"]
+                if user["delivery"] == "email"
+                else lexicon["method_email"]
+            ),
+        )
+        body = postprocess_message(body)
         body = convert_syntax(body, user["delivery"])
         return subject, body
 
 
-def make_wikis_digest(
+def write_wikis_digest(
     posts: Sequence[PostInfo], lexicon: Lexicon
 ) -> List[str]:
     """Makes the notification list for wikis."""
@@ -140,14 +194,14 @@ def make_wikis_digest(
             lexicon["wiki"].format(
                 wiki_name=wiki_posts[0]["wiki_name"],
                 categories="\n".join(
-                    make_categories_digest(wiki_posts, lexicon)
+                    write_categories_digest(wiki_posts, lexicon)
                 ),
             )
         )
     return digests
 
 
-def make_categories_digest(
+def write_categories_digest(
     posts: Sequence[PostInfo], lexicon: Lexicon
 ) -> List[str]:
     """Makes the notification list for categories in a given wiki."""
@@ -156,7 +210,7 @@ def make_categories_digest(
     # Sort categories by notification count
     for category_id in frequent_ids(grouped_posts):
         category_posts = grouped_posts[category_id]
-        threads = make_threads_digest(posts, lexicon)
+        threads = write_threads_digest(posts, lexicon)
         digests.append(
             lexicon["category"].format(
                 category_name=category_posts[0].get("category_name")
@@ -171,7 +225,7 @@ def make_categories_digest(
     return digests
 
 
-def make_threads_digest(
+def write_threads_digest(
     posts: Sequence[PostInfo],
     lexicon: Lexicon,
 ) -> List[str]:
@@ -199,13 +253,13 @@ def make_threads_digest(
         posts_section = ""
         if len(posts) > 0:
             posts_section = lexicon["posts_section"].format(
-                posts="\n".join(make_posts_digest(posts, lexicon))
+                posts="\n".join(write_posts_digest(posts, lexicon))
             )
         replies_section = ""
         if len(replies) > 0:
             replies_section = lexicon["replies_section"].format(
                 posts_replied_to="\n".join(
-                    make_post_replies_digest(replies, lexicon)
+                    write_post_replies_digest(replies, lexicon)
                 )
             )
         first_post = (posts + replies)[0]
@@ -235,7 +289,7 @@ def make_threads_digest(
     return digests
 
 
-def make_post_replies_digest(
+def write_post_replies_digest(
     post_replies: Sequence[PostInfo], lexicon: Lexicon
 ) -> List[str]:
     """Makes the notification list for replies in a given thread."""
@@ -247,7 +301,7 @@ def make_post_replies_digest(
     )
     for parent_post_id, replies_group in grouped_replies:
         replies = list(replies_group)
-        posts = make_posts_digest(replies, lexicon)
+        posts = write_posts_digest(replies, lexicon)
         digests.append(
             lexicon["post_replied_to"].format(
                 post_replies_opener=lexicon["post_replies_opener"],
@@ -274,14 +328,14 @@ def make_post_replies_digest(
     return digests
 
 
-def make_posts_digest(
+def write_posts_digest(
     posts: Iterable[PostInfo], lexicon: Lexicon
 ) -> List[str]:
     """Makes the notification list for new posts."""
-    return [make_post_digest(post, lexicon) for post in posts]
+    return [write_post_digest(post, lexicon) for post in posts]
 
 
-def make_post_digest(post: PostInfo, lexicon: Lexicon) -> str:
+def write_post_digest(post: PostInfo, lexicon: Lexicon) -> str:
     """Makes a notification for a single post."""
     return lexicon["post"].format(
         post_url=make_thread_url(
@@ -347,8 +401,8 @@ def make_plural(match: Match[str]) -> str:
     return multiple
 
 
-def finalise_digest(digest: str) -> str:
-    """Performs final postprocessing on a digest."""
+def postprocess_message(digest: str) -> str:
+    """Performs final postprocessing on a message."""
     return emojize(pluralise(digest), variant="emoji_type")
 
 
