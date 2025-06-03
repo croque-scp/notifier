@@ -416,13 +416,13 @@ frequency_8hourly = "co 8 godzin"
 frequency_daily = "codziennie"
 frequency_weekly = "co tydzień"
 frequency_monthly = "raz na miesiąc"
-subject = "[Powiadomienia Forum] {post_count} plural({post_count}|nowy post|nowe posty|PL|nowych postów")
+subject = "[Powiadomienia Forum] {post_count} plural({post_count}|nowy post|nowych postów|PL|nowe posty")
 intro = """|
 Cześć! to jest twoje podsumowanie powiadomień wysyłane {frequency} z {link_site}, informujące ciebie o nowych postach w wątkach do których jesteś zasubskrybowany.
 
 Ten serwis obecnie śledzi:
 
-* {manual_sub_count} plural({manual_sub_count}|manualną subskrypcję|manualne subskrypcje|PL|manualnych subskrypcji), zgodnie z twoją definicją w [{link_your_config} konfiguracji użytkownika].
+* {manual_sub_count} plural({manual_sub_count}|manualną subskrypcję|manualnych subskrypcji|PL|manualne subskrypcje), zgodnie z twoją definicją w [{link_your_config} konfiguracji użytkownika].
 
 * Automatyczne subskrypcje do postów i wątków. [{link_info_automatic} Dowiedz się co stanowi automatyczną subskrypcję]
 
@@ -437,7 +437,7 @@ Te konto ([[*user Notifier]]) jest zautomatyzowane -- jakakolwiek odpowiedź na 
 unsub_footer = "Zrezygnuj z subskrypcji: {link_unsubscribe}"
 main_summary = "Masz {summary} z {wiki_count} wiki"
 summary = """|
-{notification_count} plural({notification_count}|powiadomienie|powiadomienia|powiadomień) w {thread_count} plural({thread_count}|wątku|wątkach)
+{notification_count} plural({notification_count}|powiadomienie|powiadomień|PL|powiadomienia) w {thread_count} plural({thread_count}|wątku|wątkach)
 """
 unknown_category_name = "Inne"
 thread_opener = "Wątek:"
