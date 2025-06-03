@@ -330,22 +330,39 @@ def pluralise(string: str) -> str:
 
     Substrings of the form `plural(N|X|Y)` with are replaced with X if N is
     an integer and is 1, and Y otherwise.
+
+    For specific languages a Substring form of 'plural(N|X|Y|LANG|S)' 
+    can be used to pass the pluraliser a language code and special information
+    Check the polish language translation for more information!
     """
-    plural = re.compile(r"plural\((.*?)\|(.*?)\|(.*?)\)")
+    plural = re.compile(r"plural\(([^|]+)\|([^|]+)\|([^|]+)(?:\|([^|]*))?(?:\|([^|]*))?\)")
     return plural.sub(make_plural, string)
 
 
 def make_plural(match: Match[str]) -> str:
     """Returns the single or plural result from a pluralisation match."""
-    amount_str, single, multiple = match.groups()
+    amount_str, single, multiple, lang, special = match.groups()
+
     try:
         amount = int(amount_str)
     except ValueError:
         return multiple
-    if amount == 1:
-        return single
-    return multiple
-
+    
+    if lang == "PL": # Polish handling
+        if amount == 1:
+            return single
+        
+        # This condition checks for a specific plural form used in polish
+        # it returns true for numbers ending 2,3 or 4 
+        # except endings with 12, 13 or 14 which are exceptions
+        elif 2 <= amount % 10 <= 4 and not (12 <= amount % 100 <= 14):
+            return special
+        return multiple
+    
+    else: # Regular handling
+        if amount == 1:
+            return single
+        return multiple
 
 def finalise_digest(digest: str) -> str:
     """Performs final postprocessing on a digest."""
