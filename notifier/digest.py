@@ -335,7 +335,7 @@ def pluralise(string: str) -> str:
     can be used to pass the pluraliser a language code and special information
     Check the polish language translation for more information!
     """
-    plural = re.compile(r"plural\(([^|]+)\|([^|]+)\|([^|]+)(?:\|([^|]*))?(?:\|([^|]*))?\)")
+    plural = re.compile(r"plural\((.*?)\|(.*?)\|(.*?)(?:\|(.*?))?(?:\|(.*?))?\)")
     return plural.sub(make_plural, string)
 
 
