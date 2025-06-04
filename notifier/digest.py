@@ -349,7 +349,7 @@ def make_plural(match: Match[str]) -> str:
         return multiple
     
     if amount == 1:
-            return single
+        return single
 
     if lang == "PL":
         # This condition checks for a specific plural form used in polish
