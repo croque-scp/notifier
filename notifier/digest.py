@@ -348,21 +348,17 @@ def make_plural(match: Match[str]) -> str:
     except ValueError:
         return multiple
     
-    if lang == "PL": # Polish handling
-        if amount == 1:
+    if amount == 1:
             return single
-        
+
+    if lang == "PL":
         # This condition checks for a specific plural form used in polish
         # it returns true for numbers ending 2,3 or 4 
         # except endings with 12, 13 or 14 which are exceptions
-        elif 2 <= amount % 10 <= 4 and not (12 <= amount % 100 <= 14):
+        if 2 <= amount % 10 <= 4 and not (12 <= amount % 100 <= 14):
             return special
-        return multiple
     
-    else: # Regular handling
-        if amount == 1:
-            return single
-        return multiple
+    return multiple
 
 def finalise_digest(digest: str) -> str:
     """Performs final postprocessing on a digest."""
