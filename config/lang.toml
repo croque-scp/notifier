@@ -416,7 +416,7 @@ frequency_8hourly = "co 8 godzin"
 frequency_daily = "codziennie"
 frequency_weekly = "co tydzień"
 frequency_monthly = "raz na miesiąc"
-subject = "[Powiadomienia Forum] {post_count} plural({post_count}|nowy post|nowych postów|PL|nowe posty")
+subject = "[Powiadomienia Forum] {post_count} plural({post_count}|nowy post|nowych postów|PL|nowe posty)"
 intro = """|
 Cześć! to jest twoje podsumowanie powiadomień wysyłane {frequency} z {link_site}, informujące ciebie o nowych postach w wątkach do których jesteś zasubskrybowany.
 
