@@ -30,7 +30,14 @@ category = """
 """
 thread = """
 [[li]]
-**{thread_opener} [{thread_url} {thread_title}]** plural({thread_has_creator}||-- [[*user {thread_creator}]]) -- {date}
+**{thread_opener} [{thread_url} {thread_title}]** -- [[*user {thread_creator}]] -- {date}
+{replies_section}
+{posts_section}
+[[/li]]
+"""
+thread_no_creator = """
+[[li]]
+**{thread_opener} [{thread_url} {thread_title}]** -- {date}
 {replies_section}
 {posts_section}
 [[/li]]
@@ -437,7 +444,7 @@ Te konto ([[*user Notifier]]) jest zautomatyzowane -- jakakolwiek odpowiedź na 
 unsub_footer = "Zrezygnuj z subskrypcji: {link_unsubscribe}"
 main_summary = "Masz {summary} z {wiki_count} wiki"
 summary = """|
-{notification_count} plural({notification_count}|powiadomienie|powiadomienia|powiadomień) w {thread_count} plural({thread_count}|wątku|wątkach)
+{notification_count} plural({notification_count}|powiadomienie|powiadomienia|powiadomień) w {thread_count} plural({thread_count}|wątku|wątkach|wątkach)
 """
 unknown_category_name = "Inne"
 thread_opener = "Wątek:"

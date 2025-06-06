@@ -210,8 +210,11 @@ def make_threads_digest(
                 )
             )
         first_post = (posts + replies)[0]
+        thread_has_creator = int(bool(first_post["thread_creator"]))
         digests.append(
-            lexicon["thread"].format(
+            lexicon[
+                "thread" if thread_has_creator else "thread_no_creator"
+            ].format(
                 thread_opener=lexicon["thread_opener"],
                 thread_url=make_thread_url(
                     first_post["wiki_id"],
@@ -224,7 +227,6 @@ def make_threads_digest(
                 )
                 .replace("[", "(")
                 .replace("]", ")"),
-                thread_has_creator=int(bool(first_post["thread_creator"])),
                 thread_creator=first_post["thread_creator"],
                 date=lexicon["date"].format(
                     timestamp=first_post["thread_timestamp"]
