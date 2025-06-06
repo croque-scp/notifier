@@ -76,7 +76,8 @@ class Digester:
         Returns a tuple of message subject and the digest body.
         """
         # Make the lexicon for this user's settings
-        lexicon = self.make_lexicon(user["language"])
+        lang = user["language"]
+        lexicon = self.make_lexicon(lang)
         # Get some stats for the message
         manual_sub_count = len(
             [sub for sub in user["manual_subs"] if sub["sub"] == 1]
@@ -120,8 +121,8 @@ class Digester:
             wikis="\n".join(make_wikis_digest(posts, lexicon)),
             outro=outro,
         )
-        subject = pluralise(subject)
-        body = finalise_digest(body)
+        subject = pluralise(subject, lang)
+        body = finalise_digest(body, lang)
         body = convert_syntax(body, user["delivery"])
         return subject, body
 
@@ -325,44 +326,50 @@ def process_long_string(string: str) -> str:
     return string.strip()
 
 
-def pluralise(string: str) -> str:
+def pluralise(string: str, lang: str) -> str:
     """Pluralises a string.
 
     Substrings of the form `plural(N|X|Y)` with are replaced with X if N is
     an integer and is 1, and Y otherwise.
 
-    For specific languages a Substring form of 'plural(N|X|Y|LANG|S)' 
+    For specific languages a Substring form of 'plural(N|X|Y|LANG|S)'
     can be used to pass the pluraliser a language code and special information
     Check the polish language translation for more information!
     """
-    plural = re.compile(r"plural\((.*?)\|(.*?)\|(.*?)(?:\|(.*?))?(?:\|(.*?))?\)")
+    plural = re.compile(r"plural\((.*?)\|(.*?)\)")
+
+    def make_plural(match: Match[str]) -> str:
+        return make_plural_for_lang(match, lang)
+
     return plural.sub(make_plural, string)
 
 
-def make_plural(match: Match[str]) -> str:
+def make_plural_for_lang(match: Match[str], lang: str) -> str:
     """Returns the single or plural result from a pluralisation match."""
-    amount_str, single, multiple, lang, special = match.groups()
+    amount = int(match.groups()[0])
+    forms: List[str] = match.groups()[1].split("|")
 
-    try:
-        amount = int(amount_str)
-    except ValueError:
+    if lang == "pl":
+        assert len(forms) == 3, f"{lang} plural() requires 3 forms: {forms}"
+        single, paucal, multiple = forms
+
+        if amount == 1:
+            return single
+        if 2 <= amount % 10 <= 4 and not 12 <= amount % 100 <= 14:
+            return paucal
         return multiple
-    
+
+    assert len(forms) == 2, f"plural() requires 2 forms: {forms}"
+    single, multiple = forms
+
     if amount == 1:
         return single
-
-    if lang == "PL":
-        # This condition checks for a specific plural form used in polish
-        # it returns true for numbers ending 2,3 or 4 
-        # except endings with 12, 13 or 14 which are exceptions
-        if 2 <= amount % 10 <= 4 and not (12 <= amount % 100 <= 14):
-            return special
-    
     return multiple
 
-def finalise_digest(digest: str) -> str:
+
+def finalise_digest(digest: str, lang: str) -> str:
     """Performs final postprocessing on a digest."""
-    return emojize(pluralise(digest), variant="emoji_type")
+    return emojize(pluralise(digest, lang), variant="emoji_type")
 
 
 def group_posts(

@@ -1,6 +1,8 @@
 from pathlib import Path
 from typing import List
 
+import pytest
+
 from notifier.digest import (
     Digester,
     finalise_digest,
@@ -117,12 +119,25 @@ def test_lexicon_processor() -> None:
 
 def test_pluralise() -> None:
     """Test the pluralisation string replacement algorithm."""
-    assert pluralise("plural(0|s|m)") == "m"
-    assert pluralise("plural(1|s|m)") == "s"
-    assert pluralise("plural(2|s|m)") == "m"
-    assert pluralise("plural(X|s|m)") == "m"
-    assert pluralise("aaaaaplural(1|s|m)aaaaa") == "aaaaasaaaaa"
-    assert pluralise("plural(X|s|m)plural(1|y god|olasses)") == "my god"
+    assert pluralise("plural(0|s|m)", "en") == "m"
+    assert pluralise("plural(1|s|m)", "en") == "s"
+    assert pluralise("plural(2|s|m)", "en") == "m"
+    with pytest.raises(ValueError):
+        pluralise("plural(X|s|m)", "en")
+    assert pluralise("aaaaaplural(1|s|m)aaaaa", "en") == "aaaaasaaaaa"
+    assert (
+        pluralise("plural(1000|s|m)plural(1|y god|olasses)", "en") == "my god"
+    )
+
+    # Polish
+    # 1 - singular, 2-4 - paucal, 0/5+ - multiple
+    assert pluralise("plural(1|single|paucal|multiple)", "pl") == "single"
+    assert pluralise("plural(2|single|paucal|multiple)", "pl") == "paucal"
+    assert pluralise("plural(22|single|paucal|multiple)", "pl") == "paucal"
+    assert pluralise("plural(102|single|paucal|multiple)", "pl") == "paucal"
+    assert pluralise("plural(5|single|paucal|multiple)", "pl") == "multiple"
+    assert pluralise("plural(0|single|paucal|multiple)", "pl") == "multiple"
+    assert pluralise("plural(112|single|paucal|multiple)", "pl") == "multiple"
 
 
 def test_fake_digest() -> None:
@@ -142,7 +157,7 @@ def test_fake_digest() -> None:
     assert digest.count("Response...") == 8
 
     # Print an email output for review
-    print(convert_syntax(finalise_digest(digest), "email"))
+    print(convert_syntax(finalise_digest(digest, "en"), "email"))
 
 
 def test_full_interpolation_en() -> None:
@@ -182,5 +197,6 @@ def test_full_interpolation_all_languages() -> None:
                 },
                 fake_posts(),
             )
-            print(subject, body)
+            # print(subject, body)
             assert "{" not in body, language
+            assert "plural(" not in body, language
