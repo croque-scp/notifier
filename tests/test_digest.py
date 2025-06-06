@@ -1,8 +1,6 @@
 from pathlib import Path
 from typing import List
 
-import pytest
-
 from notifier.digest import (
     Digester,
     finalise_digest,
@@ -14,24 +12,19 @@ from notifier.digest import (
 from notifier.formatter import convert_syntax
 from notifier.types import CachedUserConfig, PostInfo
 
-
-@pytest.fixture(scope="module")
-def fake_user() -> CachedUserConfig:
-    """Create a fake user config."""
-    return {  # TODO Subscriptions
-        "user_id": "1000",
-        "username": "Me",
-        "frequency": "hourly",
-        "language": "en",
-        "delivery": "pm",
-        "last_notified_timestamp": 0,
-        "tags": "",
-        "manual_subs": [],
-    }
+fake_user_config: CachedUserConfig = {  # TODO Subscriptions
+    "user_id": "1000",
+    "username": "Me",
+    "frequency": "hourly",
+    "language": "en",
+    "delivery": "pm",
+    "last_notified_timestamp": 0,
+    "tags": "",
+    "manual_subs": [],
+}
 
 
-@pytest.fixture(scope="module")
-def fake_posts(fake_user: CachedUserConfig) -> List[PostInfo]:
+def fake_posts() -> List[PostInfo]:
     """Create a set of posts as would be returned from the cache."""
     thread_posts: List[PostInfo] = [
         {
@@ -61,7 +54,7 @@ def fake_posts(fake_user: CachedUserConfig) -> List[PostInfo]:
         for thread_index in range(1, 2 + 1)
         for post_index in range(1, 3 + 1)
         for post_timestamp in [thread_index * 10 + post_index]
-        if post_timestamp >= fake_user["last_notified_timestamp"]
+        if post_timestamp >= fake_user_config["last_notified_timestamp"]
     ]
     thread_replies: List[PostInfo] = [
         {
@@ -94,7 +87,7 @@ def fake_posts(fake_user: CachedUserConfig) -> List[PostInfo]:
             (parent_index * 10) + post_index for post_index in range(1, 2 + 1)
         ]
         for post_timestamp in [(thread_index + parent_index) * 10 + post_index]
-        if post_timestamp >= fake_user["last_notified_timestamp"]
+        if post_timestamp >= fake_user_config["last_notified_timestamp"]
     ]
     return thread_posts + thread_replies
 
@@ -132,14 +125,12 @@ def test_pluralise() -> None:
     assert pluralise("plural(X|s|m)plural(1|y god|olasses)") == "my god"
 
 
-def test_fake_digest(
-    fake_user: CachedUserConfig, fake_posts: List[PostInfo]
-) -> None:
+def test_fake_digest() -> None:
     """Construct a digest from fake data and compare it to the expected
     output."""
     digester = Digester(str(Path.cwd() / "config" / "lang.toml"))
-    lexicon = digester.make_lexicon(fake_user["language"])
-    digest = "\n".join(make_wikis_digest(fake_posts, lexicon))
+    lexicon = digester.make_lexicon(fake_user_config["language"])
+    digest = "\n".join(make_wikis_digest(fake_posts(), lexicon))
     print(digest)
     print(digest[:25].replace("\n", "\\n"))
 
@@ -154,30 +145,26 @@ def test_fake_digest(
     print(convert_syntax(finalise_digest(digest), "email"))
 
 
-def test_full_interpolation_en(
-    fake_user: CachedUserConfig, fake_posts: List[PostInfo]
-) -> None:
+def test_full_interpolation_en() -> None:
     """Verify that there's no leftover interpolation in the English digest."""
 
     digester = Digester(str(Path.cwd() / "config" / "lang.toml"))
     languages = set(digester.lexicons.keys())
     languages.remove("base")
 
-    for delivery in ["email", "pm"]:
+    for delivery in ("email", "pm"):
         digest = digester.for_user(
             {
-                **fake_user,  # type:ignore[misc]
+                **fake_user_config,
                 "language": "en",
                 "delivery": delivery,
             },
-            fake_posts,
+            fake_posts(),
         )
         assert "{" not in digest
 
 
-def test_full_interpolation_all_languages(
-    fake_user: CachedUserConfig, fake_posts: List[PostInfo]
-) -> None:
+def test_full_interpolation_all_languages() -> None:
     """Verify that there's no leftover interpolation in any language's digest."""
 
     digester = Digester(str(Path.cwd() / "config" / "lang.toml"))
@@ -185,15 +172,15 @@ def test_full_interpolation_all_languages(
     languages.remove("base")
 
     for language in languages:
-        for delivery in ["email", "pm"]:
+        for delivery in ("email", "pm"):
             print(language, delivery)
             subject, body = digester.for_user(
                 {
-                    **fake_user,  # type:ignore[misc]
+                    **fake_user_config,
                     "language": language,
                     "delivery": delivery,
                 },
-                fake_posts,
+                fake_posts(),
             )
             print(subject, body)
             assert "{" not in body, language
