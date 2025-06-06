@@ -29,6 +29,24 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
       - name: Run tests
         run: ./tests/run_tests.sh
+
+  typecheck:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v4
+        id: setup-python
+        with:
+          python-version-file: pyproject.toml
+      - uses: actions/cache@v3
+        with:
+          path: ~/.cache/pypoetry
+          key: poetry-venv-${{ runner.os }}-${{ steps.setup-python.outputs.python-version }}-${{ hashFiles('**/poetry.lock') }}
+          restore-keys: |
+            poetry-venv-${{ runner.os }}-
+      - run: pip install poetry
+      - run: poetry install --with dev
+      - run: poetry run mypy notifier tests
