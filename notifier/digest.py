@@ -76,7 +76,8 @@ class Digester:
         Returns a tuple of message subject and the digest body.
         """
         # Make the lexicon for this user's settings
-        lexicon = self.make_lexicon(user["language"])
+        lang = user["language"]
+        lexicon = self.make_lexicon(lang)
         # Get some stats for the message
         manual_sub_count = len(
             [sub for sub in user["manual_subs"] if sub["sub"] == 1]
@@ -120,8 +121,8 @@ class Digester:
             wikis="\n".join(make_wikis_digest(posts, lexicon)),
             outro=outro,
         )
-        subject = pluralise(subject)
-        body = finalise_digest(body)
+        subject = pluralise(subject, lang)
+        body = finalise_digest(body, lang)
         body = convert_syntax(body, user["delivery"])
         return subject, body
 
@@ -209,8 +210,11 @@ def make_threads_digest(
                 )
             )
         first_post = (posts + replies)[0]
+        thread_has_creator = int(bool(first_post["thread_creator"]))
         digests.append(
-            lexicon["thread"].format(
+            lexicon[
+                "thread" if thread_has_creator else "thread_no_creator"
+            ].format(
                 thread_opener=lexicon["thread_opener"],
                 thread_url=make_thread_url(
                     first_post["wiki_id"],
@@ -223,7 +227,6 @@ def make_threads_digest(
                 )
                 .replace("[", "(")
                 .replace("]", ")"),
-                thread_has_creator=int(bool(first_post["thread_creator"])),
                 thread_creator=first_post["thread_creator"],
                 date=lexicon["date"].format(
                     timestamp=first_post["thread_timestamp"]
@@ -325,31 +328,50 @@ def process_long_string(string: str) -> str:
     return string.strip()
 
 
-def pluralise(string: str) -> str:
+def pluralise(string: str, lang: str) -> str:
     """Pluralises a string.
 
     Substrings of the form `plural(N|X|Y)` with are replaced with X if N is
     an integer and is 1, and Y otherwise.
+
+    For specific languages a Substring form of 'plural(N|X|Y|LANG|S)'
+    can be used to pass the pluraliser a language code and special information
+    Check the polish language translation for more information!
     """
-    plural = re.compile(r"plural\((.*?)\|(.*?)\|(.*?)\)")
+    plural = re.compile(r"plural\((.*?)\|(.*?)\)")
+
+    def make_plural(match: Match[str]) -> str:
+        return make_plural_for_lang(match, lang)
+
     return plural.sub(make_plural, string)
 
 
-def make_plural(match: Match[str]) -> str:
+def make_plural_for_lang(match: Match[str], lang: str) -> str:
     """Returns the single or plural result from a pluralisation match."""
-    amount_str, single, multiple = match.groups()
-    try:
-        amount = int(amount_str)
-    except ValueError:
+    amount = int(match.groups()[0])
+    forms: List[str] = match.groups()[1].split("|")
+
+    if lang == "pl":
+        assert len(forms) == 3, f"{lang} plural() requires 3 forms: {forms}"
+        single, paucal, multiple = forms
+
+        if amount == 1:
+            return single
+        if 2 <= amount % 10 <= 4 and not 12 <= amount % 100 <= 14:
+            return paucal
         return multiple
+
+    assert len(forms) == 2, f"plural() requires 2 forms: {forms}"
+    single, multiple = forms
+
     if amount == 1:
         return single
     return multiple
 
 
-def finalise_digest(digest: str) -> str:
+def finalise_digest(digest: str, lang: str) -> str:
     """Performs final postprocessing on a digest."""
-    return emojize(pluralise(digest), variant="emoji_type")
+    return emojize(pluralise(digest, lang), variant="emoji_type")
 
 
 def group_posts(

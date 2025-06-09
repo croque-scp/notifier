@@ -51,3 +51,9 @@ COPY ./config ${LAMBDA_TASK_ROOT}/config
 ENV PATH=${LAMBDA_TASK_ROOT}/.venv/bin:$PATH
 COPY ./lambda_function.py ${LAMBDA_TASK_ROOT}
 CMD ["lambda_function.lambda_handler"]
+
+
+FROM base AS typecheck
+COPY . .
+RUN poetry install --with dev
+ENTRYPOINT ["poetry", "run", "mypy", "notifier", "tests"]
