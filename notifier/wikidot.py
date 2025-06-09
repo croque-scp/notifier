@@ -387,15 +387,50 @@ class Wikidot:
     def login(self, username: str, password: str) -> None:
         """Log in to a Wikidot account."""
         logger.info("Logging in...")
-        response = self.post(
-            "https://www.wikidot.com/default--flow/login__LoginPopupScreen",
-            data=dict(
-                login=username,
-                password=password,
-                action="Login2Action",
-                event="login",
-            ),
-        )
+
+        for attempt_count in range(self.MODULE_ATTEMPT_LIMIT):
+            attempt_delay = 2**attempt_count * self.PAGINATION_DELAY_S
+            will_retry = attempt_count < self.MODULE_ATTEMPT_LIMIT
+            time.sleep(attempt_delay)
+            response = self.post(
+                "https://www.wikidot.com/default--flow/login__LoginPopupScreen",
+                data=dict(
+                    login=username,
+                    password=password,
+                    action="Login2Action",
+                    event="login",
+                ),
+            )
+            if response.status_code >= 500:
+                logger.warning(
+                    "Wikibork when logging in %s",
+                    {
+                        "attempt_number": attempt_count + 1,
+                        "attempt_delay_s": attempt_delay,
+                        "max_attempts": self.MODULE_ATTEMPT_LIMIT,
+                        "will_retry": will_retry,
+                    },
+                )
+                if will_retry:
+                    continue
+                raise Wikibork
+
+            if response.status_code != 200:
+                logger.warning(
+                    "Failed to log in %s",
+                    {
+                        "status_code": response.status_code,
+                        "attempt_number": attempt_count + 1,
+                        "attempt_delay_s": attempt_delay,
+                        "max_attempts": self.MODULE_ATTEMPT_LIMIT,
+                        "will_retry": will_retry,
+                    },
+                )
+                if will_retry:
+                    continue
+                raise OngoingConnectionError
+            break
+
         if "The login and password do not match" in response.text:
             raise RuntimeError("Failed to login")
 
