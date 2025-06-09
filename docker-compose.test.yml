@@ -35,3 +35,10 @@ services:
       timeout: 3s
       retries: 10
       start_period: 20s
+
+  typecheck:
+    image: notifier:typecheck
+    build:
+      context: .
+      dockerfile: ./Dockerfile
+      target: typecheck

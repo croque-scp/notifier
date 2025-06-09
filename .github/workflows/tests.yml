@@ -37,11 +37,4 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - run: pipx install poetry==1.7.1
-      - uses: actions/setup-python@v4
-        id: setup-python
-        with:
-          python-version-file: pyproject.toml
-          cache: poetry
-      - run: poetry install --with dev
-      - run: poetry run mypy notifier tests
+      - run: docker compose -f docker-compose.test.yml up --build typecheck --exit-code-from typecheck
