@@ -329,14 +329,10 @@ def process_long_string(string: str) -> str:
 
 
 def pluralise(string: str, lang: str) -> str:
-    """Pluralises a string.
+    """Pluralises a string based on the language.
 
-    Substrings of the form `plural(N|X|Y)` with are replaced with X if N is
-    an integer and is 1, and Y otherwise.
-
-    For specific languages a Substring form of 'plural(N|X|Y|LANG|S)'
-    can be used to pass the pluraliser a language code and special information
-    Check the polish language translation for more information!
+    E.g. for English, substrings of the form `plural(N|X|Y)` with are replaced
+    with X if N is 1, and Y otherwise.
     """
     plural = re.compile(r"plural\((.*?)\|(.*?)\)")
 
