@@ -453,9 +453,9 @@ untitled_post_title = "(post bez tytułu)"
 
 [ua]
 frequency_hourly = "кожну годину"
-frequency_8hourly = "кожні 8 годин
-frequency_daily = "кожного дня
-frequency_weekly = "кожного тижня
+frequency_8hourly = "кожні 8 годин"
+frequency_daily = "кожного дня"
+frequency_weekly = "кожного тижня"
 frequency_monthly = "кожного місяця"
 subject = "[Сповіщення з Форуму] {post_count} новий(нові) plural({post_count}|пост|пости)"
 intro = """|
