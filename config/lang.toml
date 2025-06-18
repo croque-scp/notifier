@@ -457,7 +457,7 @@ frequency_8hourly = "кожні 8 годин"
 frequency_daily = "кожного дня"
 frequency_weekly = "кожного тижня"
 frequency_monthly = "кожного місяця"
-subject = "[Сповіщення з Форуму] {post_count} новий(нові) plural({post_count}|пост|пости)"
+subject = "[Сповіщення з Форуму] {post_count} plural({post_count}|новий пост|нові пости)"
 intro = """|
 Вітаю! Це ваш {frequency} дайджест повідомлень з {link_site}, повідомляємо вам про нові пости на теми, на яких ви підписані!
 
