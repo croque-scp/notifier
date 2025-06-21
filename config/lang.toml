@@ -450,3 +450,37 @@ unknown_category_name = "Inne"
 thread_opener = "Wątek:"
 post_replies_opener = "Odpowiedzi do postu:"
 untitled_post_title = "(post bez tytułu)"
+
+[ua]
+frequency_hourly = "кожну годину"
+frequency_8hourly = "кожні 8 годин"
+frequency_daily = "кожного дня"
+frequency_weekly = "кожного тижня"
+frequency_monthly = "кожного місяця"
+subject = "[Сповіщення з Форуму] {post_count} plural({post_count}|новий пост|нові пости)"
+intro = """|
+Вітаю! Це ваш {frequency} дайджест повідомлень з {link_site}, повідомляємо вам про нові пости на теми, на яких ви підписані!
+
+Ця служба наглядає за:
+
+* {manual_sub_count} plural({manual_sub_count}|підписка|підписки), що визначені в [{link_your_config} ваших налаштуваннях користувача].
+
+* Автоматична підписка на теми та дописи. [{link_info_automatic} Дізнатися що таке автоматичні підписки.]
+
+Цей акаунт ([[*user Notifier]]) автоматизований -- Будь яка відповідь чи повідомлення відправлене назад НЕ буде побачене. Якщо ви помітили певні проблеми, зверніться до [[*user Croquembouche]] напряму.
+
+-----
+
+[[=]]<>+ :closed_mailbox_with_raised_flag:<>[[/=]]
+
+-----
+"""
+unsub_footer = "Відписатися від цих повідомлень: {link_unsubscribe}"
+main_summary = "Ви маєте {summary} з {wiki_count}"
+summary = """|
+{notification_count} повідомлення в {thread_count} plural({thread_count}|темі|темах)
+"""
+unknown_category_name = "Інші"
+thread_opener = "Тема:"
+post_replies_opener = "Відповідає на ваш пост:"
+untitled_post_title = "(пост без назви)"
