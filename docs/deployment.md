@@ -334,7 +334,7 @@ Create a new Lambda function:
 
 - Use the *Author from scratch* template.
 - Give it a good name &mdash; I named mine `WikidotNotifier`.
-- Set the runtime to Python 3.8.
+- Set the runtime to Python 3.13.
 - In *Change default execution role*, ensure that *Create a new role with
   basic Lambda permissions* is selected.
 - Don't add the Lambda to the VPC yet &mdash; leave that field empty.

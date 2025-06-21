@@ -1,4 +1,4 @@
-FROM python:3.8 AS base
+FROM python:3.13 AS base
 
 ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONUNBUFFERED=1
@@ -8,7 +8,7 @@ WORKDIR /app
 ENV PIP_DEFAULT_TIMEOUT=100
 ENV PIP_DISABLE_PIP_VERSION_CHECK=1
 ENV PIP_NO_CACHE_DIR=1
-ENV POETRY_VERSION=1.3.2
+ENV POETRY_VERSION=2.1.3
 
 RUN pip install "poetry==$POETRY_VERSION"
 
@@ -44,7 +44,7 @@ COPY notifier/ notifier/
 ENTRYPOINT ["pytest", "-vvx"]
 
 
-FROM amazon/aws-lambda-python:3.8 AS execute_lambda
+FROM amazon/aws-lambda-python:3.13 AS execute_lambda
 COPY --from=build /app/dist ${LAMBDA_TASK_ROOT}
 RUN pip install ${LAMBDA_TASK_ROOT}/*.whl
 COPY ./config ${LAMBDA_TASK_ROOT}/config

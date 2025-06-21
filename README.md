@@ -39,7 +39,7 @@ docker build --target execute --tag notifier:latest .
 
 ### Locally
 
-Requires at least Python 3.8.
+Requires at least Python 3.13.
 
 Via [Poetry](https://python-poetry.org/):
 
