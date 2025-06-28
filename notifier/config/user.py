@@ -7,7 +7,6 @@ import tomlkit
 from tomlkit.exceptions import TOMLKitError
 
 from notifier.database.drivers.base import BaseDatabaseDriver
-from notifier.database.utils import try_cache
 from notifier.parsethread import get_timestamp
 from notifier.types import (
     LocalConfig,
@@ -43,11 +42,10 @@ def get_user_config(
     wikidot: Wikidot,
 ) -> None:
     """Retrieve remote user config."""
-    try_cache(
-        get=lambda: find_valid_user_configs(local_config, wikidot),
-        store=database.store_user_configs,
-        do_not_store=[],
-    )
+    configs = find_valid_user_configs(local_config, wikidot)
+    if len(configs) == 0:
+        return
+    database.store_user_configs(configs)
 
 
 def find_valid_user_configs(
