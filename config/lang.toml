@@ -384,22 +384,22 @@ post_replies_opener = "回復："
 untitled_post_title = "（無標題貼文）"
 
 [eo]
-frequency_hourly = "ĉiuhora"
-frequency_8hourly = "ĉiu-8-horoj"
-frequency_daily = "ĉiutaga"
-frequency_weekly = "ĉiusemajna"
-frequency_monthly = "ĉiumonata"
+frequency_hourly = "ĉiuhore"
+frequency_8hourly = "ĉiu-8-hore"
+frequency_daily = "ĉiutage"
+frequency_weekly = "ĉiusemajne"
+frequency_monthly = "ĉiumonate"
 subject = "[Foruma Sciigo] {post_count} plural({post_count}|nova|novaj) plural({post_count}|afiŝo|afiŝoj)"
 intro = """|
-Saluton! Ĉi tiu estas via {frequency} resumo de sciigoj el {link_site}, kio sciigantas vin pri novaj afiŝoj de fadenoj kiujn vi abonis.
+Saluton! Ĉi tiu estas via {frequency} resumo de sciigoj el {link_site}, kio sciigas vin pri novaj afiŝoj de fadenoj kiujn vi abonis.
 
-Ĉi tiu servo estas spuranta:
+Ĉi tiu servo spuras:
 
 * {manual_sub_count} plural({manual_sub_count}|manan|manajn) plural({manual_sub_count}|abonon|abonojn), laŭ [{link_your_config} via uzanta agordo].
 
 * Aŭtomataj fadenaj kaj afiŝaj abonoj. [{link_info_automatic} Ekscii kio konsistigas aŭtomatan abonon.]
 
-Ĉi tiu konto ([[*user Notifier]]) estas aŭtomata -- neniu respondo al ĉi tiu mesaĝo estos videbla. Se estas problemoj, rekte komuniku al [[*user Croquembouche]].
+Ĉi tiu konto ([[*user Notifier]]) estas aŭtomata -- neniu respondo al ĉi tiu mesaĝo estos videbla. Se estus problemoj, rekte komuniku al [[*user Croquembouche]].
 
 -----
 
