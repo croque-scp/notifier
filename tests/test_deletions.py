@@ -1,18 +1,17 @@
+import time
 from unittest.mock import MagicMock
 import pytest
-from notifier.database.drivers.mysql import MySqlDriver
-from notifier.deletions import clear_deleted_posts
-from notifier.types import PostMeta
+
 from notifier.database.drivers.base import BaseDatabaseDriver
-import time
-from notifier.types import (
-    NotifiablePost,
-    Context,
-    RawUserConfig,
-    SupportedWikiConfig,
-)
+from notifier.database.drivers.mysql import MySqlDriver
 from notifier.database.utils import resolve_driver_from_config
-from notifier.types import AuthConfig, LocalConfig
+from notifier.deletions import clear_deleted_posts, delete_posts
+from notifier.types import (
+    AuthConfig,
+    LocalConfig,
+    NotifiablePost,
+    PostMeta,
+)
 
 
 @pytest.fixture(scope="module")
@@ -38,12 +37,12 @@ def deletions_test_database(
     )
     db.store_context_thread(
         {
-            "thread_id": "thread-1",
+            "thread_id": "t-1",
             "thread_title": "Thread 1",
             "thread_created_timestamp": now - 1000,
             "thread_snippet": "",
             "thread_creator_username": "user1",
-            "first_post_id": "post-1",
+            "first_post_id": "p-1",
             "first_post_author_user_id": "user1",
             "first_post_author_username": "user1",
             "first_post_created_timestamp": now - 1000,
@@ -51,7 +50,7 @@ def deletions_test_database(
     )
     db.store_context_parent_post(
         {
-            "post_id": "post-1",
+            "post_id": "p-1",
             "posted_timestamp": now - 1000,
             "post_title": "Post 1",
             "post_snippet": "",
@@ -61,35 +60,22 @@ def deletions_test_database(
     )
     # Add posts at specific times that should and should not be selected by get_posts_to_check_for_deletion
     posts: list[NotifiablePost] = [
-        # This post should be selected (within the 3 hour window)
+        # Should be selected (0-3 hour window)
         {
-            "post_id": "post-should-check",
+            "post_id": "p-1",
             "posted_timestamp": now - 2 * 3600,  # 2 hours ago
-            "post_title": "Should Check",
+            "post_title": "Should Check 1",
             "post_snippet": "",
             "author_user_id": "user1",
             "author_username": "user1",
             "context_wiki_id": "test-wiki",
             "context_forum_category_id": None,
-            "context_thread_id": "thread-1",
+            "context_thread_id": "t-1",
             "context_parent_post_id": None,
         },
-        # This post should NOT be selected (too old)
+        # Should be selected (5-6 hour window)
         {
-            "post_id": "post-too-old",
-            "posted_timestamp": now - 10 * 3600,  # 10 hours ago
-            "post_title": "Too Old",
-            "post_snippet": "",
-            "author_user_id": "user1",
-            "author_username": "user1",
-            "context_wiki_id": "test-wiki",
-            "context_forum_category_id": None,
-            "context_thread_id": "thread-1",
-            "context_parent_post_id": None,
-        },
-        # This post should be selected (in the 5-6 hour window)
-        {
-            "post_id": "post-should-check2",
+            "post_id": "p-2",
             "posted_timestamp": now - 5 * 3600 - 1800,  # 5.5 hours ago
             "post_title": "Should Check 2",
             "post_snippet": "",
@@ -97,7 +83,20 @@ def deletions_test_database(
             "author_username": "user1",
             "context_wiki_id": "test-wiki",
             "context_forum_category_id": None,
-            "context_thread_id": "thread-1",
+            "context_thread_id": "t-1",
+            "context_parent_post_id": None,
+        },
+        # Should NOT be selected (in gap between windows)
+        {
+            "post_id": "p-3",
+            "posted_timestamp": now - 4 * 3600,  # between 3-5 hour windows
+            "post_title": "Should Not Check",
+            "post_snippet": "",
+            "author_user_id": "user1",
+            "author_username": "user1",
+            "context_wiki_id": "test-wiki",
+            "context_forum_category_id": None,
+            "context_thread_id": "t-1",
             "context_parent_post_id": None,
         },
     ]
@@ -111,13 +110,13 @@ def test_clear_deleted_posts_checks_expected_posts(
     deletions_test_database: BaseDatabaseDriver, mocker: MagicMock
 ) -> None:
     """Test that `clear_deleted_posts` checks the expected posts for deletion using controlled timestamps."""
-    from notifier.deletions import clear_deleted_posts
-
     mock_wikidot = MagicMock()
     called_posts = []
 
     def fake_delete_posts(
-        posts: list[PostMeta], database: BaseDatabaseDriver, wikidot: MagicMock
+        posts: list[PostMeta],
+        _database: BaseDatabaseDriver,
+        _wikidot: MagicMock,
     ) -> None:
         called_posts.extend(posts)
 
@@ -125,12 +124,115 @@ def test_clear_deleted_posts_checks_expected_posts(
         "notifier.deletions.delete_posts", side_effect=fake_delete_posts
     )
     clear_deleted_posts(deletions_test_database, mock_wikidot)
-    import datetime
-    from notifier import timing
+    expected_post_ids = {
+        "p-1",  # 2 hours ago (0-3 hour window)
+        "p-2",  # 5.5 hours ago (5-6 hour window)
+    }
+    actual_post_ids = {post["post_id"] for post in called_posts}
+    assert actual_post_ids == expected_post_ids
 
-    now_hour = timing.now.replace(minute=0, second=0, microsecond=0)
-    now_hour_ts = int(datetime.datetime.timestamp(now_hour))
-    expected_posts = deletions_test_database.get_posts_to_check_for_deletion(
-        now_hour_ts
+
+@pytest.mark.needs_database
+def test_delete_posts_with_existing_post(
+    deletions_test_database: BaseDatabaseDriver, mocker: MagicMock
+) -> None:
+    """Test that delete_posts doesn't delete posts that still exist remotely."""
+    mock_wikidot = MagicMock()
+
+    # Thread exists and contains the post we're checking
+    thread_meta = {
+        "current_page": 1,
+        "created_timestamp": 1000000000,
+        "title": "Test Thread",
+        "creator_username": "user1",
+    }
+    thread_posts = [
+        {
+            "id": "post-exists",
+            "snippet": "This post exists",
+            "user_id": "user1",
+            "username": "user1",
+            "posted_timestamp": 1000000000,
+        }
+    ]
+    mock_wikidot.thread.return_value = (thread_meta, thread_posts)
+    posts: list[PostMeta] = [
+        {
+            "wiki_id": "test-wiki",
+            "thread_id": "thread-1",
+            "post_id": "post-exists",
+        }
+    ]
+    delete_post_spy = mocker.spy(deletions_test_database, "delete_post")
+    store_context_thread_spy = mocker.spy(
+        deletions_test_database, "store_context_thread"
     )
-    assert called_posts == expected_posts
+    delete_posts(posts, deletions_test_database, mock_wikidot)
+    delete_post_spy.assert_not_called()
+
+    # Thread context should be updated since it's page 1
+    store_context_thread_spy.assert_called_once()
+
+
+@pytest.mark.needs_database
+def test_delete_posts_with_empty_thread(
+    deletions_test_database: BaseDatabaseDriver, mocker: MagicMock
+) -> None:
+    """Test that delete_posts treats empty threads as deleted."""
+    mock_wikidot = MagicMock()
+    mock_wikidot.thread.return_value = (
+        {
+            "current_page": 1,
+            "created_timestamp": 1000000000,
+            "title": "Empty Thread",
+            "creator_username": "user1",
+        },
+        [],  # No posts
+    )
+    posts: list[PostMeta] = [
+        {
+            "wiki_id": "test-wiki",
+            "thread_id": "thread-empty",
+            "post_id": "post-in-empty-thread",
+        }
+    ]
+    delete_context_thread_spy = mocker.spy(
+        deletions_test_database, "delete_context_thread"
+    )
+    delete_posts(posts, deletions_test_database, mock_wikidot)
+    delete_context_thread_spy.assert_called_once_with("thread-empty")
+
+
+@pytest.mark.needs_database
+def test_delete_posts_with_missing_post(
+    deletions_test_database: BaseDatabaseDriver, mocker: MagicMock
+) -> None:
+    """Test that delete_posts deletes posts that don't exist remotely."""
+    mock_wikidot = MagicMock()
+    thread_meta = {
+        "current_page": 2,
+        "created_timestamp": 1000000000,
+        "title": "Test Thread",
+        "creator_username": "user1",
+    }
+    # Thread exists but doesn't contain the post we're checking
+    thread_posts = [
+        {
+            "id": "other-post",
+            "snippet": "Some other post",
+            "user_id": "user2",
+            "username": "user2",
+            "posted_timestamp": 1000000001,
+        }
+    ]
+    mock_wikidot.thread.return_value = (thread_meta, thread_posts)
+    posts: list[PostMeta] = [
+        {
+            "wiki_id": "test-wiki",
+            "thread_id": "thread-1",
+            "post_id": "missing-post",
+        }
+    ]
+    delete_post_spy = mocker.spy(deletions_test_database, "delete_post")
+    delete_posts(posts, deletions_test_database, mock_wikidot)
+    delete_post_spy.assert_called_once_with("missing-post")
