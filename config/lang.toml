@@ -484,3 +484,37 @@ unknown_category_name = "Інші"
 thread_opener = "Тема:"
 post_replies_opener = "Відповідає на ваш пост:"
 untitled_post_title = "(пост без назви)"
+
+[de]
+frequency_hourly = "stündliche"
+frequency_8hourly = "8-stündliche"
+frequency_daily = "tägliche"
+frequency_weekly = "wöchentliche"
+frequency_monthly = "monatliche"
+subject = "[Forum Benachrichtigungen] {post_count} plural({post_count}|neue Nachricht|neue Nachrichten)"
+intro = """|
+Hallo! Das ist deine {frequency} Benachrichtungsübersicht von {link_site}, die dich über neue Benachrichtigungen in Threads, die du abonniert hast, benachrichtigt.
+
+Dieser Service hält dich am Laufenden über:
+
+* {manual_sub_count} manual plural({manual_sub_count}|Abonnement|Abonnements), wie über deine [{link_your_config} bestimmt].
+
+* Automatische Thread- und Nachrichten-Abonnements. [{link_info_automatic} Finde heraus was ein automatisches Abonnement bestimmt.]
+
+Dieser Account ([[*user Notifier]]) ist automatisiert -- jede Antwort auf diese Nachricht wird nicht gesehen. Falls ein Problem vorliegen sollte, kontaktiere [[*user Croquembouche]] direkt (auf englisch).
+
+-----
+
+[[=]]<>+ :closed_mailbox_with_raised_flag:<>[[/=]]
+
+-----
+"""
+unsub_footer = "Diese Benachrichtigungen deabonnieren: {link_unsubscribe}"
+main_summary = "Du hast {summary} von {wiki_count} plural({wiki_count}|wiki|wikis)"
+summary = """|
+{notification_count} plural({notification_count}|Benachrichtigung|Benachrichtigungen) in {thread_count} plural({thread_count}|thread|threads)
+"""
+unknown_category_name = "Sonstige"
+thread_opener = "Thread:"
+post_replies_opener = "Antworten auf Nachrichten:"
+untitled_post_title = "(Titellose Nachricht)"
