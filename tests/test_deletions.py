@@ -1,7 +1,8 @@
-import time
+from datetime import datetime
 from unittest.mock import MagicMock
 import pytest
 
+from notifier import timing
 from notifier.database.drivers.base import BaseDatabaseDriver
 from notifier.database.drivers.mysql import MySqlDriver
 from notifier.database.utils import resolve_driver_from_config
@@ -30,7 +31,9 @@ def deletions_test_database(
         password=notifier_auth["mysql_password"],
     )
     db.scrub_database()
-    now = int(time.time())
+    # Use the same hour-rounded 'now' as the production code
+    now_hour = timing.now.replace(minute=0, second=0, microsecond=0)
+    now = int(datetime.timestamp(now_hour))
     # Add a wiki, thread, and parent post context
     db.store_supported_wikis(
         [{"id": "test-wiki", "name": "Test Wiki", "secure": 1}]
@@ -76,7 +79,7 @@ def deletions_test_database(
         # Should be selected (5-6 hour window)
         {
             "post_id": "p-2",
-            "posted_timestamp": now - 5 * 3600 - 1800,  # 5.5 hours ago
+            "posted_timestamp": now - (5 * 3600) - 1800,  # 5.5 hours ago
             "post_title": "Should Check 2",
             "post_snippet": "",
             "author_user_id": "user1",

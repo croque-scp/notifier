@@ -43,6 +43,8 @@ def clear_deleted_posts(
 
     logger.info("Checking for deleted posts to clear")
 
+    # Look for deleted posts by rounding down to the previous hour - this ensures consistent raking even when this function is called at irregular intervals
+    # Process is normally run shortly after the hour so this is approximately accurate - note that this is not the case for tests which can be run at any time
     now_hour = timing.now.replace(minute=0, second=0, microsecond=0)
     now_hour_ts = int(datetime.timestamp(now_hour))
 
