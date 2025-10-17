@@ -13,6 +13,8 @@ from notifier.digest import (
 )
 from notifier.formatter import convert_syntax
 from notifier.types import CachedUserConfig, PostInfo
+from notifier.digest import make_categories_digest
+
 
 fake_user_config: CachedUserConfig = {  # TODO Subscriptions
     "user_id": "1000",
@@ -177,6 +179,97 @@ def test_full_interpolation_en() -> None:
             fake_posts(),
         )
         assert "{" not in digest
+
+
+def test_categories_digest_duplication_bug() -> None:
+    """Test that categories only show their own posts, not all posts."""
+
+    digester = Digester(str(Path.cwd() / "config" / "lang.toml"))
+    lexicon = digester.make_lexicon("en")
+
+    # Create posts in two different categories
+    posts_category_1: List[PostInfo] = [
+        {
+            "id": "post-1",
+            "posted_timestamp": 100,
+            "title": "Post in Category 1",
+            "snippet": "Content for category 1",
+            "username": "User1",
+            "wiki_id": "test-wiki",
+            "wiki_name": "Test Wiki",
+            "wiki_secure": 1,
+            "category_id": "cat-1",
+            "category_name": "Category 1",
+            "thread_id": "thread-1",
+            "thread_timestamp": 100,
+            "thread_title": "Thread 1",
+            "thread_creator": "User1",
+            "parent_post_id": None,
+            "parent_posted_timestamp": None,
+            "parent_title": None,
+            "parent_username": None,
+            "flag_user_subscribed_to_thread": True,
+            "flag_user_subscribed_to_post": False,
+            "flag_user_started_thread": False,
+            "flag_user_posted_parent": False,
+        }
+    ]
+
+    posts_category_2: List[PostInfo] = [
+        {
+            "id": "post-2",
+            "posted_timestamp": 200,
+            "title": "Post in Category 2",
+            "snippet": "Content for category 2",
+            "username": "User2",
+            "wiki_id": "test-wiki",
+            "wiki_name": "Test Wiki",
+            "wiki_secure": 1,
+            "category_id": "cat-2",
+            "category_name": "Category 2",
+            "thread_id": "thread-2",
+            "thread_timestamp": 200,
+            "thread_title": "Thread 2",
+            "thread_creator": "User2",
+            "parent_post_id": None,
+            "parent_posted_timestamp": None,
+            "parent_title": None,
+            "parent_username": None,
+            "flag_user_subscribed_to_thread": True,
+            "flag_user_subscribed_to_post": False,
+            "flag_user_started_thread": False,
+            "flag_user_posted_parent": False,
+        }
+    ]
+
+    all_posts = posts_category_1 + posts_category_2
+    categories_digest = make_categories_digest(all_posts, lexicon)
+    assert len(categories_digest) == 2
+    category_1_digest = (
+        categories_digest[0]
+        if "Category 1" in categories_digest[0]
+        else categories_digest[1]
+    )
+    category_2_digest = (
+        categories_digest[1]
+        if "Category 2" in categories_digest[1]
+        else categories_digest[0]
+    )
+
+    assert "Content for category 1" in category_1_digest
+    assert "Content for category 2" not in category_1_digest
+
+    assert "Content for category 2" in category_2_digest
+    assert "Content for category 1" not in category_2_digest
+
+    assert (
+        "1 plural(1|notification|notifications) in 1 plural(1|thread|threads)"
+        in category_1_digest
+    )
+    assert (
+        "1 plural(1|notification|notifications) in 1 plural(1|thread|threads)"
+        in category_2_digest
+    )
 
 
 def test_full_interpolation_all_languages() -> None:

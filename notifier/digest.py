@@ -157,7 +157,7 @@ def make_categories_digest(
     # Sort categories by notification count
     for category_id in frequent_ids(grouped_posts):
         category_posts = grouped_posts[category_id]
-        threads = make_threads_digest(posts, lexicon)
+        threads = make_threads_digest(category_posts, lexicon)
         digests.append(
             lexicon["category"].format(
                 category_name=category_posts[0].get("category_name")
