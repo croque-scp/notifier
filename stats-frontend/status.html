@@ -5,46 +5,48 @@
     <title>Notifier - status indicator</title>
 
     <script>
-      function setStatus(status, successRate, detail) {
+      function setStatus(status, successRate, notificationCount30Day, detail) {
         void {
           indeterminate() {
             setRootStatus("indeterminate")
+            setSummaryBar(null, null)
             setStatusDetails("Failed to check status.")
           },
           success() {
             setRootStatus("success")
+            setSummaryBar(successRate, notificationCount30Day)
             setStatusDetails(
               `Last run ended <b>${Math.floor((detail % 3600) / 60)}</b> m ago`,
               `Next run due ${nextRunDue()}`,
-              `${uptime(successRate)}`,
             )
           },
           waiting() {
             setRootStatus("success")
+            setSummaryBar(successRate, notificationCount30Day)
             setStatusDetails(
               "Currently running!",
               `Estimated <b>~${Math.ceil(detail / 60)}</b> m`,
-              `${uptime(successRate)}`,
             )
           },
           missedSeveral() {
             setRootStatus("failure")
+            setSummaryBar(successRate, notificationCount30Day)
             setStatusDetails(
               `Missed <b>${detail}</b> run${detail > 1 ? "s" : ""}.`,
               `Next run due ${nextRunDue()}`,
-              `${uptime(successRate)}`,
             )
           },
           missedLots() {
             setRootStatus("failure")
+            setSummaryBar(successRate, notificationCount30Day)
             setStatusDetails(
               "Temporarily offline",
               `Last run ${new Date(detail * 1000).toISOString().split("T")[0]}`,
-              `${uptime(successRate)}`,
             )
           },
           missedAll() {
             setRootStatus("failure")
+            setSummaryBar(null, null)
             setStatusDetails("Offline")
           },
         }[status]()
@@ -53,6 +55,18 @@
       function setStatusDetails(...details) {
         const statusDetails = document.getElementById("status-details")
         statusDetails.innerHTML = details.join(" <br> ")
+      }
+
+      function setSummaryBar(rate, count) {
+        const summaryLabel = document.getElementById("summary-label")
+        const summaryContent = document.getElementById("summary-content")
+        if (rate === null) {
+          summaryLabel.textContent = ""
+          summaryContent.innerHTML = ""
+        } else {
+          summaryLabel.textContent = "30d:"
+          summaryContent.innerHTML = `<b>${(rate * 100).toFixed(1)}%</b> uptime · <b>${count}</b> sent`
+        }
       }
 
       function setRootStatus(status) {
@@ -66,10 +80,6 @@
           minutesRemaining = Math.ceil(secondsRemaining / 60)
         if (secondsRemaining > 10) return `in <b>${minutesRemaining}</b> m`
         return "<b>now</b>"
-      }
-
-      function uptime(rate) {
-        return `<span class="uptime">30 day uptime: <b>${(rate * 100).toFixed(1)}%</b>`
       }
 
       function nearestHour(timestamp) {
@@ -128,6 +138,13 @@
           return recentActivations.length / perfectActivationsCount
         })()
 
+        const notificationCount30Day = (() => {
+          const timestamp30DaysAgo = Date.now() / 1000 - 30 * 24 * 60 * 60
+          return (recentNotifications.channels || [])
+            .filter((c) => c["start_timestamp"] > timestamp30DaysAgo)
+            .reduce((sum, c) => sum + (c["notified_user_count"] || 0), 0)
+        })()
+
         let missedActivations =
           (nearestHour(now) - nearestHour(latestNotificationTimestamp)) / 3600
 
@@ -136,6 +153,7 @@
           return setStatus(
             "success",
             successRate30Day,
+            notificationCount30Day,
             now - latestNotificationTimestamp,
           )
 
@@ -154,10 +172,11 @@
             })()
           if (now - nearestHour(now) < avgRunTime) {
             // Include this run in the success rate
-            successRate30Day = Math.min(1, successRate30Day + (1 / (30 * 24)))
+            successRate30Day = Math.min(1, successRate30Day + 1 / (30 * 24))
             return setStatus(
               "waiting",
               successRate30Day,
+              notificationCount30Day,
               avgRunTime - (now - nearestHour(now)),
             )
           }
@@ -167,11 +186,17 @@
             return setStatus(
               "waiting",
               successRate30Day,
+              notificationCount30Day,
               900 - (now - nearestHour(now)),
             )
 
           // There was legitimately a missed run
-          return setStatus("missedSeveral", successRate30Day, 1)
+          return setStatus(
+            "missedSeveral",
+            successRate30Day,
+            notificationCount30Day,
+            1,
+          )
         }
 
         // If there are less than X missed notifications, show that number and indicate failure
@@ -182,7 +207,12 @@
         ) {
           // If in first 15 mins, there could be one running right now
           if (now - nearestHour(now) < 900) missedActivations -= 1
-          return setStatus("missedSeveral", successRate30Day, missedActivations)
+          return setStatus(
+            "missedSeveral",
+            successRate30Day,
+            notificationCount30Day,
+            missedActivations,
+          )
         }
 
         // If there are more than X missed notifications, indicate that notifier is offline
@@ -192,6 +222,7 @@
             return setStatus(
               "missedLots",
               successRate30Day,
+              notificationCount30Day,
               latestNotificationTimestamp,
             )
           // If no last notification present (not currently possible?) imply permanently offline
@@ -266,11 +297,12 @@
 
       .status-container {
         display: grid;
-        grid-template-areas: "status header" "status footer";
+        grid-template-areas: "status header" "status footer" "summary-label summary-content";
         grid-template-columns: 3.25rem 10.75rem;
-        grid-template-rows: 1.5rem 3.5rem;
+        grid-template-rows: 1.375rem 2.375rem 1.25rem;
 
-        width: 14rem;
+        width: 224px;
+        height: 80px;
 
         border-radius: 0.3rem;
         background-color: #555;
@@ -317,7 +349,6 @@
         flex-direction: column;
         align-items: center;
         justify-content: center;
-        gap: 0.125rem;
 
         background-image: linear-gradient(
           to bottom,
@@ -368,16 +399,15 @@
       }
 
       footer {
-        display: flex;
-        align-items: center;
-        padding: 0.5rem;
+        align-content: center;
+        padding: 0.2rem 0.5rem 0;
         grid-area: footer;
         background-image: linear-gradient(
           to bottom,
           rgb(12, 12, 12, 0.1),
           transparent
         );
-        box-shadow: inset 0 0.1rem 0.2rem rgba(0, 0, 0, 0.25);
+        box-shadow: inset 0 0.1rem 0.2rem rgba(0, 0, 0, 0.2);
       }
 
       h1 {
@@ -399,13 +429,33 @@
         text-shadow: 0.1rem 0.1rem rgba(0, 0, 0, 0.25);
       }
 
-      .uptime {
-        opacity: 0.6;
-        display: block;
-        font-size: 0.8125rem;
-        font-style: italic;
-        text-align: center;
-        padding-top: 0.125rem;
+      .summary-label {
+        grid-area: summary-label;
+        background-color: color-mix(in srgb, var(--status-color) 60%, #333);
+        background-image: linear-gradient(
+          to bottom,
+          rgb(238, 238, 238, 0.1),
+          transparent,
+          rgb(12, 12, 12, 0.15)
+        );
+        box-shadow: inset 0 0.1rem 0.2rem rgba(0, 0, 0, 0.2);
+        align-content: center;
+        text-align: right;
+        font-size: 0.7rem;
+        font-weight: 600;
+        text-shadow: 0.05rem 0.05rem rgba(0, 0, 0, 0.25);
+        padding: 0.3rem 0.2rem;
+        transition: background-color 0.3s ease;
+      }
+
+      .summary-content {
+        grid-area: summary-content;
+        background-color: rgba(0, 0, 0, 0.25);
+        box-shadow: inset 0 0.1rem 0.2rem rgba(0, 0, 0, 0.2);
+        padding: 0.3rem 0.5rem;
+        font-size: 0.7rem;
+        opacity: 0.85;
+        text-shadow: 0.05rem 0.05rem rgba(0, 0, 0, 0.25);
       }
 
       .icon-logo,
@@ -467,6 +517,9 @@
       <footer>
         <p id="status-details">Checking...</p>
       </footer>
+
+      <div class="summary-label" id="summary-label"></div>
+      <div class="summary-content" id="summary-content"></div>
     </a>
   </body>
 </html>
