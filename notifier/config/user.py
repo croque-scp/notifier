@@ -1,7 +1,7 @@
 import logging
 from operator import itemgetter
 import re
-from typing import List, Optional, Tuple, TypedDict, Union, cast
+from typing import Any, List, Optional, Tuple, TypedDict, Union, cast
 
 import tomlkit
 from tomlkit.exceptions import TOMLKitError
@@ -122,7 +122,7 @@ def parse_raw_user_config(
 ) -> Tuple[RawUserConfig, str]:
     """Parses a raw user config string to a suitable format, also returning
     the config slug."""
-    config = dict(tomlkit.parse(raw_config))
+    config: dict[str, Any] = dict(tomlkit.parse(raw_config))
     slug = config.pop("slug", "")
     assert isinstance(slug, str)
     assert "username" in config

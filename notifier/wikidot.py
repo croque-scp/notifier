@@ -124,7 +124,7 @@ class Wikidot:
             if wiki["id"] == wiki_id
         )
         # If we're logged in, grab the token7, otherwise make one up
-        token7 = self._session.cookies.get(  # type:ignore # there is a mistake in the stubs somewhere causing RequestsCookieJar.get to appear as dict.get
+        token7 = self._session.cookies.get(
             "wikidot_token7", "7777777", domain=f"{wiki_id}.wikidot.com"
         )
 

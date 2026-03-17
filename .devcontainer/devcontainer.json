@@ -3,12 +3,7 @@
   "build": {
     "dockerfile": "Dockerfile"
   },
-  "features": {
-    "ghcr.io/devcontainers-extra/features/poetry:2": {
-      "version": "2.1.3"
-    }
-  },
-  "postCreateCommand": "poetry install",
+  "postCreateCommand": "uv sync",
   "customizations": {
     "vscode": {
       "settings": {

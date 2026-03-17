@@ -1,42 +1,43 @@
-[tool.poetry]
+[project]
 name = "notifier"
 version = "0.0.0"
 description = "Wikidot notifications"
-authors = ["Ross Williams <rossjrw@gmail.com>"]
-license = "MIT"
+authors = [{ name = "Ross Williams", email = "rossjrw@gmail.com" }]
+license = { text = "MIT" }
+requires-python = ">=3.13"
+dependencies = [
+    "APScheduler>=3.7",
+    "requests>=2.26",
+    "tomlkit>=0.7.2",
+    "pycron>=3.0",
+    "feedparser>=6.0.11",
+    "emoji>=1.4.2",
+    "yagmail[all]>=0.14.256",
+    "SecretStorage>=3.3.1",
+    "pymysql>=1.0.3",
+    "boto3>=1.26.160",
+    "python-dateutil>=2.9",
+    "typing-extensions>=4.7.1",
+    "beautifulsoup4>=4.13.4",
+    "lxml>=5.4",
+]
 
-[tool.poetry.dependencies]
-python = "^3.13"
-APScheduler = "^3.7.0"
-requests = "^2.26.0"
-tomlkit = "^0.7.2"
-pycron = "^3.0.0"
-feedparser = "^6.0.11"
-emoji = "^1.4.2"
-yagmail = {extras = ["all"], version = "^0.14.256"}
-SecretStorage = "^3.3.1"
-pymysql = "^1.0.3"
-boto3 = "^1.26.160"
-python-dateutil = "^2.9.0.post0"
-typing-extensions = "^4.7.1"
-mypy = "1.14"
-beautifulsoup4 = "^4.13.4"
-lxml = "5.4.0"
-
-[tool.poetry.group.dev.dependencies]
-black = "^22.3.0"
-pytest = "^8.4.1"
-isort = "^5.9.2"
-pylint = "^2.9.6"
-mypy = "^1.10.0"
-boto3-stubs = {extras = ["essential"], version = "^1.28.2"}
-types-beautifulsoup4 = "^4.12.0.5"
-types-requests = "^2.31.0.1"
-types-emoji = "^2.1.0.3"
-types-pymysql = "^1.0.19.7"
-types-python-dateutil = "^2.8.19.13"
-cffi = "^1.17.1"
-pytest-mock = "^3.14.1"
+[dependency-groups]
+dev = [
+    "black>=22.3",
+    "pytest>=8.4.1",
+    "isort>=5.9.2",
+    "pylint>=2.9.6",
+    "mypy==1.14",
+    "boto3-stubs[essential]>=1.28.2",
+    "types-beautifulsoup4>=4.12.0.5",
+    "types-requests>=2.31.0.1",
+    "types-emoji>=2.1.0.3",
+    "types-pymysql>=1.0.19.7",
+    "types-python-dateutil>=2.8.19.13",
+    "cffi>=1.17.1",
+    "pytest-mock>=3.14.1",
+]
 
 [tool.black]
 line-length = 79
@@ -49,12 +50,12 @@ skip_gitignore = true
 
 [tool.pylint.messages_control]
 disable = [
-  "invalid-name", # oh sorry did I forget to uppercase?
-  "missing-module-docstring", # filenames are good enough
-  "redefined-outer-name", # for pytest
-  "broad-except", # I understand the risks, but sometimes this is useful
-  "line-too-long", # black can handle itself
-  "consider-using-f-string", # f strings are way too brittle in 3.9
+  "invalid-name",
+  "missing-module-docstring",
+  "redefined-outer-name",
+  "line-too-long",
+  "consider-using-f-string",
+  "broad-except",
 ]
 
 [tool.mypy]
@@ -90,5 +91,5 @@ markers = [
 ]
 
 [build-system]
-requires = ["poetry-core>=1.0.0"]
-build-backend = "poetry.core.masonry.api"
+requires = ["hatchling"]
+build-backend = "hatchling.build"
