@@ -130,6 +130,7 @@ class Wikidot:
 
         # Try the module a few times with increasing delay in case it fails
         response = None
+        last_error: Optional[requests.ConnectionError] = None
         for attempt_count in range(self.MODULE_ATTEMPT_LIMIT):
             attempt_delay = 2**attempt_count * self.PAGINATION_DELAY_S
             logger.debug(
@@ -153,41 +154,42 @@ class Wikidot:
                     ),
                     cookies={"wikidot_token7": token7},
                 )
-            except ConnectionError as error:
-                will_retry = attempt_count < self.MODULE_ATTEMPT_LIMIT
+            except requests.ConnectionError as error:
+                last_error = error
                 logger.debug(
                     "Module connection failed %s",
                     {
                         "attempt_number": attempt_count + 1,
                         "attempt_delay_s": attempt_delay,
                         "max_attempts": self.MODULE_ATTEMPT_LIMIT,
-                        "will_retry": will_retry,
                     },
                     exc_info=error,
                 )
-                if will_retry:
-                    continue
-                raise OngoingConnectionError from error
+                continue
+            except Exception:
+                logger.error(
+                    "Unexpected error during module connection %s",
+                    {
+                        "attempt_number": attempt_count + 1,
+                        "wiki_id": wiki_id,
+                        "module_name": module_name,
+                    },
+                    exc_info=True,
+                )
+                raise
 
             if 500 <= response_raw.status_code <= 599:
-                will_retry = attempt_count < self.MODULE_ATTEMPT_LIMIT
-                if will_retry:
-                    logger.warning(
-                        "Wikidot internal failure, retrying in 10 seconds %s",
-                        {
-                            "attempt_number": attempt_count + 1,
-                            "max_attempts": self.MODULE_ATTEMPT_LIMIT,
-                            "will_retry": will_retry,
-                            "status_code": response_raw.status_code,
-                            "response_text": response_raw.text,
-                        },
-                    )
-                    time.sleep(10)
-                    continue
                 logger.warning(
-                    "Wikidot might be down %s", {"response": response}
+                    "Wikidot internal failure, retrying in 10 seconds %s",
+                    {
+                        "attempt_number": attempt_count + 1,
+                        "max_attempts": self.MODULE_ATTEMPT_LIMIT,
+                        "status_code": response_raw.status_code,
+                        "response_text": response_raw.text,
+                    },
                 )
-                raise Wikibork
+                time.sleep(10)
+                continue
 
             try:
                 response = response_raw.json()
@@ -209,25 +211,26 @@ class Wikidot:
                 and response["message"]
                 == "An error occurred while processing the request."
             ):
-                will_retry = attempt_count < self.MODULE_ATTEMPT_LIMIT
-                if will_retry:
-                    logger.warning(
-                        "Wikidot internal failure, retrying in 10 seconds %s",
-                        {
-                            "attempt_number": attempt_count + 1,
-                            "max_attempts": self.MODULE_ATTEMPT_LIMIT,
-                            "will_retry": will_retry,
-                        },
-                    )
-                    time.sleep(10)
-                    continue
                 logger.warning(
-                    "Wikidot might be down %s", {"response": response}
+                    "Wikidot internal failure, retrying in 10 seconds %s",
+                    {
+                        "attempt_number": attempt_count + 1,
+                        "max_attempts": self.MODULE_ATTEMPT_LIMIT,
+                    },
                 )
-                raise Wikibork
+                time.sleep(10)
+                continue
 
             # Successful response, break to parsing
             break
+        else:
+            # All retries exhausted
+            if last_error is not None:
+                raise OngoingConnectionError from last_error
+            logger.warning(
+                "Wikidot might be down %s", {"response": response}
+            )
+            raise Wikibork
         assert response is not None
 
         if response["status"] == "no_thread":
@@ -390,7 +393,6 @@ class Wikidot:
 
         for attempt_count in range(self.MODULE_ATTEMPT_LIMIT):
             attempt_delay = 2**attempt_count * self.PAGINATION_DELAY_S
-            will_retry = attempt_count < self.MODULE_ATTEMPT_LIMIT
             time.sleep(attempt_delay)
             response = self.post(
                 "https://www.wikidot.com/default--flow/login__LoginPopupScreen",
@@ -408,12 +410,9 @@ class Wikidot:
                         "attempt_number": attempt_count + 1,
                         "attempt_delay_s": attempt_delay,
                         "max_attempts": self.MODULE_ATTEMPT_LIMIT,
-                        "will_retry": will_retry,
                     },
                 )
-                if will_retry:
-                    continue
-                raise Wikibork
+                continue
 
             if response.status_code != 200:
                 logger.warning(
@@ -423,13 +422,14 @@ class Wikidot:
                         "attempt_number": attempt_count + 1,
                         "attempt_delay_s": attempt_delay,
                         "max_attempts": self.MODULE_ATTEMPT_LIMIT,
-                        "will_retry": will_retry,
                     },
                 )
-                if will_retry:
-                    continue
-                raise OngoingConnectionError
+                continue
             break
+        else:
+            if response.status_code >= 500:
+                raise Wikibork
+            raise OngoingConnectionError
 
         if "The login and password do not match" in response.text:
             raise RuntimeError("Failed to login")
@@ -513,7 +513,6 @@ class Wikidot:
         page_text = None
         for attempt_count in range(self.MODULE_ATTEMPT_LIMIT):
             attempt_delay = 2**attempt_count * self.PAGINATION_DELAY_S
-            will_retry = attempt_count < self.MODULE_ATTEMPT_LIMIT
             time.sleep(attempt_delay)
             response = self._session.get(page_url)
 
@@ -525,12 +524,9 @@ class Wikidot:
                         "attempt_number": attempt_count + 1,
                         "attempt_delay_s": attempt_delay,
                         "max_attempts": self.MODULE_ATTEMPT_LIMIT,
-                        "will_retry": will_retry,
                     },
                 )
-                if will_retry:
-                    continue
-                raise Wikibork
+                continue
 
             if response.status_code != 200:
                 logger.warning(
@@ -541,15 +537,16 @@ class Wikidot:
                         "attempt_number": attempt_count + 1,
                         "attempt_delay_s": attempt_delay,
                         "max_attempts": self.MODULE_ATTEMPT_LIMIT,
-                        "will_retry": will_retry,
                     },
                 )
-                if will_retry:
-                    continue
-                raise OngoingConnectionError
+                continue
 
             page_text = response.text
             break
+        else:
+            if response.status_code == 500:
+                raise Wikibork
+            raise OngoingConnectionError
         assert page_text is not None
 
         return int(

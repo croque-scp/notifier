@@ -159,7 +159,7 @@ A Docker Compose setup is present that will spin up a temporary MySQL database
 and run tests against it:
 
 ```shell
-docker compose -f docker-compose.test.yml up --build --abort-on-container-exit
+docker compose -f docker-compose.test.yml up --build notifier --abort-on-container-exit
 ```
 
 ## Status
