@@ -16,7 +16,12 @@ WITH post_with_flags AS (
     context_thread.thread_id AS thread_id,
     context_thread.thread_created_timestamp AS thread_timestamp,
     context_thread.thread_title AS thread_title,
-    context_thread.thread_creator_username AS thread_creator,
+    -- Fall back to first post author for Wikidot-created threads (#122).
+    -- Will be superseded by Crom-based page author lookup (#77).
+    COALESCE(
+      context_thread.thread_creator_username,
+      context_thread.first_post_author_username
+    ) AS thread_creator,
 
     context_parent_post.post_id AS parent_post_id,
     context_parent_post.posted_timestamp AS parent_posted_timestamp,

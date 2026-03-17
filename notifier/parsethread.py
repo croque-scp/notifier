@@ -209,7 +209,7 @@ def get_user_from_nametag(nametag: Tag) -> Tuple[Optional[str], Optional[str]]:
     if "anonymous" in classes:
         return None, None
     if nametag.get_text() == "Wikidot":
-        return None, "Wikidot"
+        return None, None
     # I don't think Wikidot normally returns just straight .printuser for
     # actual users anywhere unless explicitly asked for via ListPages, so
     # will ignore that for now
