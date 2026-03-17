@@ -686,3 +686,47 @@ def test_get_notifiable_users(sample_database: MySqlDriver) -> None:
         "53",  # T5U-Starter
         "55",  # T5U-Poster
     }
+
+
+@pytest.mark.needs_database
+def test_thread_creator_fallback_to_first_post_author(
+    sample_database: MySqlDriver,
+) -> None:
+    """When a thread has no creator (e.g. Wikidot-created page discussions),
+    the thread_creator field should fall back to the first post's author.
+    This is a heuristic: the first poster is presumed to be the thread
+    'owner'. See #122. Will be superseded by #77 (Crom integration)."""
+    sample_database.store_user_configs(
+        [u(60, "T6U-Sub", [sub("t-6")], [])],
+        overwrite_existing=False,
+    )
+    sample_database.store_context_thread(
+        {
+            "thread_id": "t-6",
+            "thread_created_timestamp": 200,
+            "thread_title": "Page Discussion Thread",
+            "thread_snippet": "",
+            "thread_creator_username": None,
+            "first_post_id": "p-61",
+            "first_post_author_user_id": "61",
+            "first_post_author_username": "T6U-FirstPoster",
+            "first_post_created_timestamp": 200,
+        }
+    )
+    sample_database.store_post(
+        {
+            "post_id": "p-62",
+            "posted_timestamp": 201,
+            "post_title": "A reply",
+            "post_snippet": "reply content",
+            "author_user_id": "62",
+            "author_username": "T6U-Replier",
+            "context_wiki_id": "my-wiki",
+            "context_forum_category_id": None,
+            "context_thread_id": "t-6",
+            "context_parent_post_id": None,
+        }
+    )
+    posts = sample_database.get_notifiable_posts_for_user("60", (0, 300))
+    assert len(posts) == 1
+    assert posts[0]["thread_creator"] == "T6U-FirstPoster"

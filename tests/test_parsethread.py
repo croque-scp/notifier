@@ -70,7 +70,7 @@ def test_get_user_from_nametag() -> None:
         "System user",
         """<span class="printuser">Wikidot</span>""",
         None,
-        "Wikidot",
+        None,
     ).test()
 
 
