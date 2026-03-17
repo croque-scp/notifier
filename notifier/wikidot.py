@@ -124,7 +124,7 @@ class Wikidot:
             if wiki["id"] == wiki_id
         )
         # If we're logged in, grab the token7, otherwise make one up
-        token7 = self._session.cookies.get(  # type:ignore # there is a mistake in the stubs somewhere causing RequestsCookieJar.get to appear as dict.get
+        token7 = self._session.cookies.get(
             "wikidot_token7", "7777777", domain=f"{wiki_id}.wikidot.com"
         )
 
@@ -391,18 +391,47 @@ class Wikidot:
         """Log in to a Wikidot account."""
         logger.info("Logging in...")
 
+        last_error: Optional[requests.ConnectionError] = None
         for attempt_count in range(self.MODULE_ATTEMPT_LIMIT):
             attempt_delay = 2**attempt_count * self.PAGINATION_DELAY_S
-            time.sleep(attempt_delay)
-            response = self.post(
-                "https://www.wikidot.com/default--flow/login__LoginPopupScreen",
-                data=dict(
-                    login=username,
-                    password=password,
-                    action="Login2Action",
-                    event="login",
-                ),
+            logger.debug(
+                "Trying login connection %s",
+                {
+                    "attempt_number": attempt_count + 1,
+                    "attempt_delay_s": attempt_delay,
+                    "max_attempts": self.MODULE_ATTEMPT_LIMIT,
+                },
             )
+            time.sleep(attempt_delay)
+            try:
+                response = self.post(
+                    "https://www.wikidot.com/default--flow/login__LoginPopupScreen",
+                    data=dict(
+                        login=username,
+                        password=password,
+                        action="Login2Action",
+                        event="login",
+                    ),
+                )
+            except requests.ConnectionError as error:
+                last_error = error
+                logger.debug(
+                    "Login connection failed %s",
+                    {
+                        "attempt_number": attempt_count + 1,
+                        "attempt_delay_s": attempt_delay,
+                        "max_attempts": self.MODULE_ATTEMPT_LIMIT,
+                    },
+                    exc_info=error,
+                )
+                continue
+            except Exception:
+                logger.error(
+                    "Unexpected error during login %s",
+                    {"attempt_number": attempt_count + 1},
+                    exc_info=True,
+                )
+                raise
             if response.status_code >= 500:
                 logger.warning(
                     "Wikibork when logging in %s",
@@ -427,6 +456,8 @@ class Wikidot:
                 continue
             break
         else:
+            if last_error is not None:
+                raise OngoingConnectionError from last_error
             if response.status_code >= 500:
                 raise Wikibork
             raise OngoingConnectionError
@@ -511,10 +542,44 @@ class Wikidot:
         )
 
         page_text = None
+        last_error: Optional[requests.ConnectionError] = None
         for attempt_count in range(self.MODULE_ATTEMPT_LIMIT):
             attempt_delay = 2**attempt_count * self.PAGINATION_DELAY_S
+            logger.debug(
+                "Trying page connection %s",
+                {
+                    "url": page_url,
+                    "attempt_number": attempt_count + 1,
+                    "attempt_delay_s": attempt_delay,
+                    "max_attempts": self.MODULE_ATTEMPT_LIMIT,
+                },
+            )
             time.sleep(attempt_delay)
-            response = self._session.get(page_url)
+            try:
+                response = self._session.get(page_url)
+            except requests.ConnectionError as error:
+                last_error = error
+                logger.debug(
+                    "Page connection failed %s",
+                    {
+                        "url": page_url,
+                        "attempt_number": attempt_count + 1,
+                        "attempt_delay_s": attempt_delay,
+                        "max_attempts": self.MODULE_ATTEMPT_LIMIT,
+                    },
+                    exc_info=error,
+                )
+                continue
+            except Exception:
+                logger.error(
+                    "Unexpected error getting page %s",
+                    {
+                        "url": page_url,
+                        "attempt_number": attempt_count + 1,
+                    },
+                    exc_info=True,
+                )
+                raise
 
             if response.status_code == 500:
                 logger.warning(
@@ -544,6 +609,8 @@ class Wikidot:
             page_text = response.text
             break
         else:
+            if last_error is not None:
+                raise OngoingConnectionError from last_error
             if response.status_code == 500:
                 raise Wikibork
             raise OngoingConnectionError

@@ -41,10 +41,10 @@ docker build --target execute --tag notifier:latest .
 
 Requires at least Python 3.13.
 
-Via [Poetry](https://python-poetry.org/):
+Via [uv](https://docs.astral.sh/uv/):
 
 ```shell
-poetry install
+uv sync
 ```
 
 ## Authentication
@@ -68,7 +68,7 @@ docker run --rm notifier:latest path_to_config_file path_to_auth_file
 Or locally:
 
 ```shell
-poetry run python3 -m notifier path_to_config_file path_to_auth_file
+uv run python3 -m notifier path_to_config_file path_to_auth_file
 ```
 
 Or with Docker:
@@ -121,20 +121,20 @@ Produce a sample digest and print it to stdout, where `[lang]` is the code
 of any supported language and `[method]` is either `pm` or `email`:
 
 ```shell
-poetry run python3 tests/make_sample_digest.py [lang] [method]
+uv run python3 tests/make_sample_digest.py [lang] [method]
 ```
 
 Lint:
 
 ```shell
-poetry run pylint notifier
-poetry run black notifier
+uv run pylint notifier
+uv run black notifier
 ```
 
 Typecheck:
 
 ```shell
-poetry run mypy notifier
+uv run mypy notifier
 ```
 
 ## Testing
@@ -144,7 +144,7 @@ poetry run mypy notifier
 To run tests directly on your machine:
 
 ```shell
-poetry run pytest --notifier-config path_to_config_file --notifier-auth path_to_auth_file
+uv run pytest --notifier-config path_to_config_file --notifier-auth path_to_auth_file
 ```
 
 "_test" will be appended to whatever database name is configured, as

@@ -19,7 +19,7 @@ def parse_thread_meta(thread: Tag) -> RawThreadMeta:
     """
     breadcrumbs = cast(Tag, thread.find(class_="forum-breadcrumbs"))
     category_link = list(cast(Iterable[Tag], breadcrumbs.find_all("a")))[-1]
-    match = re.search(r"c-[0-9]+", category_link.get_attribute_list("href")[0])
+    match = re.search(r"c-[0-9]+", category_link.get_attribute_list("href")[0] or "")
     if match:
         category_id: Optional[str] = match[0]
         category_name: Optional[str] = category_link.get_text()
@@ -78,7 +78,7 @@ def parse_thread_page(thread_id: str, thread_page: Tag) -> List[RawPost]:
             # Move to the post itself, to avoid deep searches accidentally
             # hitting replies
             post = cast(Tag, post_container.find(class_="post"))
-            post_id = post.get_attribute_list("id")[0]
+            post_id = post.get_attribute_list("id")[0] or ""
             # The post author and timestamp are kept in a .info - jump here to
             # avoid accidentally picking up users and timestamps from the post
             # body
@@ -165,7 +165,7 @@ def get_post_parent_id(post_container: Tag) -> Optional[str]:
     parent_element = cast(Tag, post_container.parent)
     parent_post_id = None
     if "post-container" in parent_element.get_attribute_list("class"):
-        parent_container_id = parent_element.get_attribute_list("id")[0]
+        parent_container_id = parent_element.get_attribute_list("id")[0] or ""
         parent_post_id = "post-" + parent_container_id.lstrip("fpc-")
     return parent_post_id
 
@@ -226,7 +226,7 @@ def get_timestamp(element: Tag) -> Optional[int]:
         posted_timestamp = [
             int(css_class.lstrip("time_"))
             for css_class in post_date.get_attribute_list("class")
-            if css_class.startswith("time_")
+            if css_class and css_class.startswith("time_")
         ][0]
     except (IndexError, ValueError):
         return None
