@@ -518,3 +518,71 @@ unknown_category_name = "Sonstige"
 thread_opener = "Thread:"
 post_replies_opener = "Antworten auf Nachrichten:"
 untitled_post_title = "(Titellose Nachricht)"
+
+[pt]
+frequency_hourly = "de hora em hora"
+frequency_8hourly = "de 8 em 8 horas"
+frequency_daily = "diária"
+frequency_weekly = "semanal"
+frequency_monthly = "mensal"
+subject = "[Notificações do Forum] {post_count} plural({post_count}|nova mensagem|novas mensagens)"
+intro = """|
+Olá! Este é o teu resumo de notificações {frequency} do {link_site}, informando-te sobre novas publicações nos tópicos que subscreveste
+
+Este serviço está a acompanhar:
+
+* {manual_sub_count} manual plural({manual_sub_count}|subscrição|subscrições), conforme definido na [{link_your_config} tua configuração de utilizador].
+
+* Subscrições automáticas de tópicos e publicações. [{link_info_automatic} Saiba o que constitui uma subscrição automática.]
+
+Esta conta ([[*user Notifier]]) é automatizada — qualquer resposta a esta mensagem não será vista. Se existir algum problema, contacta [[*user Croquembouche]] diretamente.
+
+-----
+
+[[=]]<>+ :closed_mailbox_with_raised_flag:<>[[/=]]
+
+-----
+"""
+unsub_footer = "Cancelar a subscrição destas notificações: {link_unsubscribe}"
+main_summary = "Tens {summary} de {wiki_count} plural({wiki_count}|wiki|wikis)"
+summary = """|
+{notification_count} plural({notification_count}|notificação|notificações) in {thread_count} plural({thread_count}|tópico|tópicos)
+"""
+unknown_category_name = "Outros"
+thread_opener = "Tópico:"
+post_replies_opener = "Respostas à publicação:"
+untitled_post_title = "(publicação sem título)"
+
+[pt_BR]
+frequency_hourly = "de hora em hora"
+frequency_8hourly = "de 8 em 8 horas"
+frequency_daily = "diária"
+frequency_weekly = "semanal"
+frequency_monthly = "mensal"
+subject = "[Notificações do Forum] {post_count} plural({post_count}|nova mensagem|novas mensagens)"
+intro = """|
+Olá! Este é o seu resumo de notificações {frequency} do {link_site}, informando sobre novas publicações nos tópicos que você assinou.
+
+Este serviço está monitorando:
+
+* {manual_sub_count} manual plural({manual_sub_count}|inscrição|inscrições), conforme definido na [{link_your_config} sua configuração de usuário].
+
+* Inscrições automáticas de tópicos e publicações. [{link_info_automatic} Saiba o que constitui uma inscrição automática.]
+
+Esta conta ([[*user Notifier]]) é automatizada — qualquer resposta a esta mensagem não será vista. Caso haja algum problema, entre em contato com [[*user Croquembouche]] diretamente.
+
+-----
+
+[[=]]<>+ :closed_mailbox_with_raised_flag:<>[[/=]]
+
+-----
+"""
+unsub_footer = "Cancelar a inscrição destas notificações: {link_unsubscribe}"
+main_summary = "Você tem {summary} de {wiki_count} plural({wiki_count}|wiki|wikis)"
+summary = """|
+{notification_count} plural({notification_count}|notificação|notificações) in {thread_count} plural({thread_count}|tópico|tópicos)
+"""
+unknown_category_name = "Outros"
+thread_opener = "Tópico:"
+post_replies_opener = "Respostas à publicação:"
+untitled_post_title = "(publicação sem título)"
